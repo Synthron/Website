@@ -7,19 +7,19 @@
   <meta name="color-scheme" content="light dark">
   <meta name="description" content="{{projectSummary}}">
   <title>{{projectTitle}} — {{name}}</title>
-  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../css/base.css">
-  <link rel="stylesheet" href="../css/layout.css">
-  <link rel="stylesheet" href="../css/components.css">
-  <link rel="stylesheet" href="../css/responsive.css">
-  <script type="module" src="../js/main.js"></script>
+  <link rel="icon" href="{{root}}favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="{{root}}css/base.css">
+  <link rel="stylesheet" href="{{root}}css/layout.css">
+  <link rel="stylesheet" href="{{root}}css/components.css">
+  <link rel="stylesheet" href="{{root}}css/responsive.css">
+  <script type="module" src="{{root}}js/main.js"></script>
 </head>
 <body>
   <!-- @include header -->
 
   <main class="site-main" id="main">
     <div class="container">
-      <p class="back-link"><a href="projects.html">← All projects</a></p>
+      <p class="back-link"><a href="{{root}}html/projects.html">← All projects</a></p>
 
       <!--
         ============================================================
@@ -58,7 +58,7 @@
             <div class="prose">
               <p>Placeholder paragraph. This layout places a small image inside a block of text. On wide screens the image floats to the right of the paragraph; on narrow screens it sits inline above the text. Use it for a small screenshot, a logo, or a diagram that supports the surrounding text.</p>
               <figure class="figure figure--small">
-                <img src="../assets/img/placeholder-square.svg" alt="Placeholder: small square image" width="400" height="400" loading="lazy" decoding="async">
+                <img src="{{root}}assets/img/placeholder-square.svg" alt="Placeholder: small square image" width="400" height="400" loading="lazy" decoding="async">
                 <figcaption>Placeholder caption for the small image.</figcaption>
               </figure>
               <p>Placeholder paragraph. The image is wrapped in a <code>figure</code> with a <code>figcaption</code> so the caption stays attached to the image. Keep the image small (a square or portrait crop works well) so it does not dominate the text.</p>
@@ -70,7 +70,7 @@
           <section class="project-section" aria-labelledby="layout-full">
             <h2 id="layout-full">3. Embedded full-width image</h2>
             <figure class="figure figure--full">
-              <img src="../assets/img/placeholder.svg" alt="Placeholder: wide full-width image" width="640" height="360" loading="lazy" decoding="async">
+              <img src="{{root}}assets/img/placeholder.svg" alt="Placeholder: wide full-width image" width="640" height="360" loading="lazy" decoding="async">
               <figcaption>Placeholder caption for the full-width image.</figcaption>
             </figure>
             <div class="prose">
@@ -88,7 +88,7 @@
                 <p>Placeholder paragraph. Keep the text column concise so the two columns stay balanced in height.</p>
               </div>
               <figure class="figure">
-                <img src="../assets/img/placeholder-portrait.svg" alt="Placeholder: portrait image beside text" width="360" height="480" loading="lazy" decoding="async">
+                <img src="{{root}}assets/img/placeholder-portrait.svg" alt="Placeholder: portrait image beside text" width="360" height="480" loading="lazy" decoding="async">
                 <figcaption>Placeholder caption for the side-by-side image.</figcaption>
               </figure>
             </div>
@@ -102,15 +102,15 @@
             </div>
             <div class="figure-grid">
               <figure class="figure">
-                <img src="../assets/img/placeholder.svg" alt="Placeholder: gallery image one" width="640" height="360" loading="lazy" decoding="async">
+                <img src="{{root}}assets/img/placeholder.svg" alt="Placeholder: gallery image one" width="640" height="360" loading="lazy" decoding="async">
                 <figcaption>Placeholder caption one.</figcaption>
               </figure>
               <figure class="figure">
-                <img src="../assets/img/placeholder-square.svg" alt="Placeholder: gallery image two" width="400" height="400" loading="lazy" decoding="async">
+                <img src="{{root}}assets/img/placeholder-square.svg" alt="Placeholder: gallery image two" width="400" height="400" loading="lazy" decoding="async">
                 <figcaption>Placeholder caption two.</figcaption>
               </figure>
               <figure class="figure">
-                <img src="../assets/img/placeholder-portrait.svg" alt="Placeholder: gallery image three" width="360" height="480" loading="lazy" decoding="async">
+                <img src="{{root}}assets/img/placeholder-portrait.svg" alt="Placeholder: gallery image three" width="360" height="480" loading="lazy" decoding="async">
                 <figcaption>Placeholder caption three.</figcaption>
               </figure>
             </div>

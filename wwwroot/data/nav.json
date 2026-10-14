@@ -1,6 +1,8 @@
 [
   { "label": "Home", "href": "index.html" },
+  { "label": "Über mich", "href": "html/about.html" },
   { "label": "Projekte", "href": "html/projects.html" },
   { "label": "Impressum", "href": "html/impressum.html" },
-  { "label": "Über mich", "href": "html/about.html" }
+  { "label": "Datenschutz", "href": "html/privacy.html" },
+  { "label": "Rechliche Hinweise", "href": "html/rechtliches.html" }
 ]

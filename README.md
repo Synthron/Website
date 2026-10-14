@@ -36,11 +36,11 @@ Website/
     │   └── footer.html    # Shared footer
     ├── html/              # Additional page templates
     │   ├── projects.html  # Project listing page with tag filter
-    │   ├── project-template.html  # Master project write-up template (all layouts; not built)
-    │   ├── placeholder-project-one.html  # Static project page (from template)
-    │   ├── placeholder-project-two.html  # Static project page (from template)
-    │   ├── placeholder-project-three.html  # Static project page (from template)
-    │   └── about.html     # About and contact page
+    │   ├── about.html     # About and contact page
+    │   └── proj/          # Individual project pages (one per project, named by `id`)
+    │       ├── project-template.html  # Master project write-up template (all layouts; not built)
+    │       ├── sy317.html # Static project page (from template)
+    │       └── placeholder-project-*.html  # Static project pages (from template)
     ├── css/
     │   ├── base.css       # Reset, custom properties, typography, colour schemes
     │   ├── layout.css     # Container, header, nav, footer, sections
@@ -73,7 +73,7 @@ Requires Node.js ≥ 18. There are no dependencies, so no `npm install` is neede
 | `npm start` | Build, then serve. |
 | `npm run clean` | Removes `dist/`. |
 
-The build copies `wwwroot/` to `dist/` except `partials/`, `data/` and `html/project-template.html`. HTML files and `favicon.svg` are processed in three passes: includes, tokens, directives. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
+The build copies `wwwroot/` to `dist/` except `partials/`, `data/` and `html/proj/project-template.html`. HTML files and `favicon.svg` are processed in three passes: includes, tokens, directives. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
 
 ### Build-time Templating
 
@@ -85,14 +85,14 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `{{name}}`, `{{year}}`, `{{footerNote}}`, `{{email}}`, `{{monogram}}` | Values from `data/site.json` (`monogram` = first letter of `name`). |
 | `{{root}}` | Relative path to the web root (`""` for root pages, `"../"` for pages in `html/`). |
 | `<!-- @nav -->` | Nav list built from `data/nav.json`; sets `aria-current="page"` on the entry whose `href` is the current page. Used in `partials/header.html`. |
-| `{{projectTitle}}`, `{{projectSummary}}` | Title/summary of the project whose `id` equals the page filename (`html/{id}.html`). |
+| `{{projectTitle}}`, `{{projectSummary}}` | Title/summary of the project whose `id` equals the page filename (`html/proj/{id}.html`). |
 | `<!-- @project-header -->` | Project page header (h1, summary, status/date, tags, links) from `data/projects.json`. |
 | `<!-- @projects all\|featured level=2\|3 id=list-id -->` | Pre-rendered project card grid, newest first. |
 | `<!-- @tag-filter list-id -->` | Tag filter buttons and status line for the list with that `id` (hidden until `js/projects.js` runs). |
 
 All inserted values are HTML-escaped. Use `{{name}}` (not a hard-coded name) in every `<title>` and `meta[name="description"]`. Source files in `wwwroot/` are templates and are not meant to be opened directly in a browser; open the built files in `dist/`.
 
-The build validates `data/projects.json` (required fields, unique lowercase ids, `YYYY-MM` dates, existing image and `html/{id}.html` page) and checks every internal `href`/`src` in the output.
+The build validates `data/projects.json` (required fields, unique lowercase ids, `YYYY-MM` dates, existing image and `html/proj/{id}.html` page) and checks every internal `href`/`src` in the output.
 
 ### Shared Header/Footer
 
@@ -143,14 +143,14 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 
 ### Project Write-up Template
 
-[`wwwroot/html/project-template.html`](wwwroot/html/project-template.html) is the master template for writing about a project. It is a reference page that is not built into `dist/`; it demonstrates every supported layout pattern with placeholder body content. Its header, title and description are generated from `data/projects.json` like any project page.
+[`wwwroot/html/proj/project-template.html`](wwwroot/html/proj/project-template.html) is the master template for writing about a project. It is a reference page that is not built into `dist/`; it demonstrates every supported layout pattern with placeholder body content. Its header, title and description are generated from `data/projects.json` like any project page.
 
-- To write a new project page, add the project to `data/projects.json`, copy the template to `html/{id}.html`, keep the includes and `@project-header`, and replace the placeholder body content.
+- To write a new project page, add the project to `data/projects.json`, copy the template to `html/proj/{id}.html`, keep the includes and `@project-header`, and replace the placeholder body content.
 - Each numbered section shows one layout pattern: pure text, text with a small image, full-width image, text/image side by side, image gallery, callout, code block, lists, and table.
 - The styles for all patterns live in `css/components.css` (base) and `css/responsive.css` (breakpoints at 640px and 960px). Do not add inline styles.
 - To add a NEW layout pattern, append a new numbered section to the template, add its styles to `css/components.css` (and `css/responsive.css` if it needs breakpoints), and note it here.
 - Placeholder images for different aspect ratios live in `assets/img/` (`placeholder.svg` wide, `placeholder-square.svg`, `placeholder-portrait.svg`).
-- Project cards link to a static page per project at `html/{id}.html` (e.g. `html/placeholder-project-one.html`). When adding a project to `data/projects.json`, create its page from this template and name it after the project `id`.
+- Project cards link to a static page per project at `html/proj/{id}.html` (e.g. `html/proj/placeholder-project-one.html`). When adding a project to `data/projects.json`, create its page from this template and name it after the project `id`.
 
 ### Placeholders
 
@@ -184,7 +184,7 @@ Name, copyright, footer note, email and favicon initial come from `data/site.jso
 }
 ```
 
-Adding a project means adding an entry to this file and creating `html/{id}.html` from the project template. Cards, filter, page title and page header are generated by the build.
+Adding a project means adding an entry to this file and creating `html/proj/{id}.html` from the project template. Cards, filter, page title and page header are generated by the build.
 
 ## Todo List
 

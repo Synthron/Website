@@ -7,12 +7,12 @@
   <meta name="color-scheme" content="light dark">
   <meta name="robots" content="noindex">
   <title>418 I'm a teapot — {{name}}</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/responsive.css">
-  <script type="module" src="js/main.js"></script>
+  <link rel="icon" href="{{root}}favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="{{root}}css/base.css">
+  <link rel="stylesheet" href="{{root}}css/layout.css">
+  <link rel="stylesheet" href="{{root}}css/components.css">
+  <link rel="stylesheet" href="{{root}}css/responsive.css">
+  <script type="module" src="{{root}}js/main.js"></script>
 </head>
 <body>
   <!-- @include header -->
@@ -42,7 +42,7 @@
         <p>You asked for a page that does not exist. The teapot, however, is very real — and it is not a coffee machine. It suggests you try the kettle instead.</p>
       </div>
 
-      <p><a class="button" href="index.html">Back to home</a></p>
+      <p><a class="button" href="{{root}}index.html">Back to home</a></p>
     </div>
   </main>
 

@@ -27,7 +27,8 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | `wwwroot/404.html` | Not-found page | Use the shared header/footer includes and stylesheet. |
 | `wwwroot/partials/` | Header and footer includes | Single copy of the shared markup. Not copied to `dist/`. |
 | `wwwroot/html/` | Secondary page templates | One page per file. Use `<!-- @include header -->` / `footer`. |
-| `wwwroot/html/project-template.html` | Master project write-up template | Reference for every supported project layout (not built). Copy sections into new project pages; append new layouts here over time. |
+| `wwwroot/html/proj/` | Individual project pages | One page per project, `{id}.html` matching `data/projects.json` (e.g. `sy317.html`), built by the `id` in `projects.json`. |
+| `wwwroot/html/proj/project-template.html` | Master project write-up template | Reference for every supported project layout (not built). Copy sections into new project pages; append new layouts here over time. |
 | `wwwroot/css/` | Stylesheets | Split by concern: `base`, `layout`, `components`, `responsive`. Use CSS custom properties for all colours and spacing. |
 | `wwwroot/js/` | Scripts | One module per concern (`nav`, `projects`, `main`). Use `type="module"` and no global variables. |
 | `wwwroot/data/` | JSON content (build input) | `projects.json` is the single source of truth for projects; `site.json` holds shared site info (name, copyright, email). Keep both valid JSON. Not copied to `dist/`. |
@@ -37,11 +38,11 @@ Note: `wwwroot/js/` and `wwwroot/assets/` exist but may be sparse. Create new fi
 
 ## Project Write-up Template
 
-[`wwwroot/html/project-template.html`](wwwroot/html/project-template.html) is the master template for writing about a project. It is a reference page that is not built into `dist/`; it demonstrates every supported layout pattern with placeholder body content. Header, title and description are generated from `data/projects.json`.
+[`wwwroot/html/proj/project-template.html`](wwwroot/html/proj/project-template.html) is the master template for writing about a project. It is a reference page that is not built into `dist/`; it demonstrates every supported layout pattern with placeholder body content. Header, title and description are generated from `data/projects.json`.
 
 Use it as follows:
 
-- To write a new project page, add the project to `data/projects.json`, copy the template to `html/{id}.html`, keep the includes and `<!-- @project-header -->`, and replace the placeholder body content.
+- To write a new project page, add the project to `data/projects.json`, copy the template to `html/proj/{id}.html`, keep the includes and `<!-- @project-header -->`, and replace the placeholder body content.
 - Each numbered section shows one layout pattern: pure text, text with a small image, full-width image, text/image side by side, image gallery, callout, code block, lists, and table.
 - The styles for all patterns live in `css/components.css` (base) and `css/responsive.css` (breakpoints at 640px and 960px). Do not add inline styles.
 - To add a NEW layout pattern, append a new numbered section to the template, add its styles to `css/components.css` (and `css/responsive.css` if it needs breakpoints), and note it in `README.md`.
@@ -87,7 +88,7 @@ Commands: `npm run build` (wwwroot → dist), `npm run serve`, `npm start` (both
 - Required fields: `id`, `title`, `summary`, `tags`, `status`, `date`, `links`, `image`, `featured`.
 - `id` values are unique, lowercase, hyphenated.
 - `date` format: `YYYY-MM`.
-- Each project needs a page `wwwroot/html/{id}.html`; the build fails otherwise.
+- Each project needs a page `wwwroot/html/proj/{id}.html`; the build fails otherwise.
 
 ## Workflow for Agents
 

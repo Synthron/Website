@@ -12,7 +12,7 @@ const DIST = path.join(ROOT, 'dist');
 
 // Source-only folders/files that are not copied to dist/.
 const SKIP_DIRS = new Set(['partials', 'data']);
-const SKIP_FILES = new Set(['html/project-template.html', '.gitkeep']);
+const SKIP_FILES = new Set(['project-template.html', '.gitkeep']);
 // Non-HTML files that also go through the token pass.
 const TEMPLATE_FILES = new Set(['favicon.svg']);
 const REQUIRED_PROJECT_FIELDS = ['id', 'title', 'summary', 'tags', 'status', 'date', 'links', 'image', 'featured'];
@@ -136,8 +136,8 @@ async function loadProjects() {
       continue;
     }
     if (!await exists(path.join(SRC, project.image))) fail(`${label}: image not found: ${project.image}`);
-    if (!await exists(path.join(SRC, 'html', `${project.id}.html`))) {
-      fail(`${label}: missing page wwwroot/html/${project.id}.html`);
+    if (!await exists(path.join(SRC, 'html', 'proj', `${project.id}.html`))) {
+      fail(`${label}: missing page wwwroot/html/proj/${project.id}.html`);
     }
     projects.push(project);
   }
@@ -197,7 +197,7 @@ function renderCard(project, root, level) {
   return `<article class="project-card" data-tags="${esc(JSON.stringify(project.tags))}">
   <img class="project-card__image" src="${esc(root + project.image)}" alt="" loading="lazy" decoding="async">
   <div class="project-card__body">
-    <${tag} class="project-card__title"><a class="project-card__link" href="${esc(`${root}html/${project.id}.html`)}">${esc(project.title)}</a></${tag}>
+    <${tag} class="project-card__title"><a class="project-card__link" href="${esc(`${root}html/proj/${project.id}.html`)}">${esc(project.title)}</a></${tag}>
     ${renderMeta(project)}
     <p class="project-card__summary">${esc(project.summary)}</p>
     ${renderTags(project.tags)}
@@ -328,7 +328,8 @@ async function build() {
     const ctx = {
       rel,
       site,
-      root: '../'.repeat(rel.split('/').length - 1),
+      // The 404 page can be served at any path, so its links must be root-relative.
+      root: rel === '404.html' ? '/' : '../'.repeat(rel.split('/').length - 1),
       project: rel.startsWith('html/') ? byId.get(path.posix.basename(rel, '.html')) : undefined,
     };
     let output = await readFile(from, 'utf8');
