@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    rect { fill: #1b1b1b; }
+    text { fill: #fdfdfc; }
+    @media (prefers-color-scheme: dark) {
+      rect { fill: #e9e9e6; }
+      text { fill: #121212; }
+    }
+  </style>
+  <!-- Placeholder monogram: replace "Y" with your initial -->
+  <rect width="32" height="32" rx="6"/>
+  <text x="16" y="22.5" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="700">Y</text>
+</svg>

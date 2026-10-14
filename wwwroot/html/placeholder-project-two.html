@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Placeholder Project Two — a placeholder project write-up.">
+  <title>Placeholder Project Two — {name}</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+  <script type="module" src="../js/main.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="site-brand" data-site-brand href="../index.html"></a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden>Menu</button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li><a class="site-nav__link" href="../index.html">Home</a></li>
+          <li><a class="site-nav__link" href="projects.html">Projects</a></li>
+          <li><a class="site-nav__link" href="about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <p class="back-link"><a href="projects.html">← All projects</a></p>
+
+      <article class="project-detail">
+        <header class="page-header">
+          <h1>Placeholder Project Two</h1>
+          <p class="page-header__lead">Placeholder entry — replace with a real project description. Summarise what this project is and why it exists.</p>
+          <p class="project-meta">
+            <span class="status">paused</span>
+            <time datetime="2026-05">May 2026</time>
+          </p>
+          <ul class="tag-list" aria-label="Tags">
+            <li><span class="tag">css</span></li>
+            <li><span class="tag">design</span></li>
+          </ul>
+        </header>
+
+        <div class="project-content">
+
+          <!-- 1. PURE TEXT -------------------------------------- -->
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Overview</h2>
+            <div class="prose">
+              <p>Placeholder paragraph. This is the opening section of the project write-up. Describe what the project does, the problem it solves, and why it exists. Keep paragraphs short and let the text breathe.</p>
+              <p>Placeholder paragraph. You can include <a href="https://example.com">inline links</a>, <strong>strong emphasis</strong>, <em>emphasis</em>, and <code>inline code</code> anywhere in the text.</p>
+            </div>
+          </section>
+
+          <!-- 4. TEXT AND IMAGE SIDE BY SIDE --------------------- -->
+          <section class="project-section" aria-labelledby="design">
+            <h2 id="design">Design</h2>
+            <div class="split">
+              <div class="prose">
+                <p>Placeholder paragraph. This layout puts text and an image in two columns. On wide screens they sit side by side; on narrow screens the image stacks below the text.</p>
+                <p>Placeholder paragraph. Keep the text column concise so the two columns stay balanced in height.</p>
+              </div>
+              <figure class="figure">
+                <img src="../assets/img/placeholder-portrait.svg" alt="Placeholder: portrait image beside text" width="360" height="480" loading="lazy" decoding="async">
+                <figcaption>Placeholder caption for the side-by-side image.</figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <!-- 8. LISTS ------------------------------------------ -->
+          <section class="project-section" aria-labelledby="features">
+            <h2 id="features">Features</h2>
+            <div class="prose">
+              <p>Placeholder paragraph. Use lists for features, steps, or key points.</p>
+              <ul>
+                <li>Placeholder feature one.</li>
+                <li>Placeholder feature two.</li>
+                <li>Placeholder feature three.</li>
+              </ul>
+            </div>
+          </section>
+
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <p data-site-copyright></p>
+      <p data-site-note>No cookies. No tracking.</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,142 @@
+/* Layout: container, header, footer, main, sections */
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  width: min(100% - 2 * var(--gutter), var(--container));
+  margin-inline: auto;
+}
+
+/* Header */
+.site-header {
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.site-header__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-4);
+}
+
+.site-brand {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.site-brand:hover {
+  color: var(--color-text);
+}
+
+/* Navigation (mobile first: stacked, collapsible via js/nav.js) */
+.site-nav {
+  flex-basis: 100%;
+}
+
+.site-nav.is-collapsed {
+  display: none;
+}
+
+.site-nav__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 0;
+  list-style: none;
+}
+
+.site-nav__link {
+  display: block;
+  padding-block: var(--space-2);
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.site-nav__link:hover {
+  color: var(--color-text);
+}
+
+.site-nav__link[aria-current="page"] {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* Main */
+.site-main {
+  flex: 1 0 auto;
+  padding-block: var(--space-7);
+}
+
+.section + .section {
+  margin-top: var(--space-8);
+}
+
+.section__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.page-header {
+  margin-bottom: var(--space-6);
+}
+
+.page-header__lead {
+  max-width: var(--measure);
+  margin-top: var(--space-3);
+  font-size: var(--text-lg);
+  color: var(--color-muted);
+}
+
+/* Intro (home) */
+.intro__lead {
+  max-width: var(--measure);
+  margin-top: var(--space-4);
+  font-size: var(--text-lg);
+  color: var(--color-muted);
+}
+
+.intro__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+/* Prose (long-form text pages) */
+.prose {
+  max-width: var(--measure);
+}
+
+.prose > * + * {
+  margin-top: var(--space-4);
+}
+
+.prose > h2 {
+  margin-top: var(--space-7);
+}
+
+/* Footer */
+.site-footer {
+  padding-block: var(--space-6);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.site-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+}

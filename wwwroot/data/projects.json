@@ -1,0 +1,35 @@
+[
+  {
+    "id": "placeholder-project-one",
+    "title": "Placeholder Project One",
+    "summary": "Placeholder entry — Test 1.",
+    "tags": ["javascript", "tool"],
+    "status": "active",
+    "date": "2026-09",
+    "links": { "repo": null, "demo": null },
+    "image": "assets/img/placeholder.svg",
+    "featured": true
+  },
+  {
+    "id": "placeholder-project-two",
+    "title": "Placeholder Project Two",
+    "summary": "Placeholder entry — replace with a real project description.",
+    "tags": ["css", "design"],
+    "status": "paused",
+    "date": "2026-05",
+    "links": { "repo": null, "demo": null },
+    "image": "assets/img/placeholder.svg",
+    "featured": true
+  },
+  {
+    "id": "placeholder-project-three",
+    "title": "Placeholder Project Three",
+    "summary": "Placeholder entry — replace with a real project description.",
+    "tags": ["javascript", "experiment"],
+    "status": "archived",
+    "date": "2025-11",
+    "links": { "repo": null, "demo": null },
+    "image": "assets/img/placeholder.svg",
+    "featured": false
+  }
+]

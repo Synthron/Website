@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Master template for project write-ups. Shows every supported layout pattern with placeholder content.">
+  <title>FooBar Template — Project Template</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+  <script type="module" src="../js/main.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="site-brand" data-site-brand href="../index.html"></a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden>Menu</button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li><a class="site-nav__link" href="../index.html">Home</a></li>
+          <li><a class="site-nav__link" href="projects.html">Projects</a></li>
+          <li><a class="site-nav__link" href="about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <p class="back-link"><a href="projects.html">← All projects</a></p>
+
+      <!--
+        ============================================================
+        MASTER PROJECT TEMPLATE
+        ============================================================
+        Copy this file to a new page (e.g. html/my-project.html) and
+        replace the placeholder content. Each numbered section below
+        demonstrates one layout pattern. Delete the sections you do
+        not need and keep the ones you do. The styles for all of
+        these live in css/components.css and css/responsive.css.
+
+        To add a NEW layout pattern later, append a new section here
+        AND add its styles to css/components.css (and responsive.css
+        if it needs breakpoints), then note it in README.md.
+        ============================================================
+      -->
+
+      <article class="project-detail">
+        <header class="page-header">
+          <h1>FooBar Template</h1>
+          <p class="page-header__lead">Placeholder lead: one or two sentences summarising what this project is and why it exists. Replace this text.</p>
+          <p class="project-meta">
+            <span class="status">active</span>
+            <time datetime="2026-10">Oct 2026</time>
+          </p>
+          <ul class="tag-list" aria-label="Tags">
+            <li><span class="tag">javascript</span></li>
+            <li><span class="tag">tool</span></li>
+            <li><span class="tag">template</span></li>
+          </ul>
+          <p class="intro__actions">
+            <a class="button" href="https://example.com/repo" rel="noopener noreferrer">Source</a>
+            <a class="button button--secondary" href="https://example.com/demo" rel="noopener noreferrer">Demo</a>
+          </p>
+        </header>
+
+        <div class="project-content">
+
+          <!-- 1. PURE TEXT -------------------------------------- -->
+          <section class="project-section" aria-labelledby="layout-text">
+            <h2 id="layout-text">1. Pure text</h2>
+            <div class="prose">
+              <p>Placeholder paragraph. This is the simplest layout: a block of prose with no images. Use it for the opening, for background, or for any section that is mostly explanation. Keep paragraphs short and let the text breathe.</p>
+              <p>Placeholder paragraph. You can include <a href="https://example.com">inline links</a>, <strong>strong emphasis</strong>, <em>emphasis</em>, and <code>inline code</code> anywhere in the text. The prose column is width-limited so long lines stay comfortable to read.</p>
+              <p>Placeholder paragraph. Add as many paragraphs as you need. The spacing between them is handled automatically by the <code>.prose</code> styles.</p>
+            </div>
+          </section>
+
+          <!-- 2. TEXT WITH SMALL IMAGE --------------------------- -->
+          <section class="project-section" aria-labelledby="layout-small">
+            <h2 id="layout-small">2. Text with a small image</h2>
+            <div class="prose">
+              <p>Placeholder paragraph. This layout places a small image inside a block of text. On wide screens the image floats to the right of the paragraph; on narrow screens it sits inline above the text. Use it for a small screenshot, a logo, or a diagram that supports the surrounding text.</p>
+              <figure class="figure figure--small">
+                <img src="../assets/img/placeholder-square.svg" alt="Placeholder: small square image" width="400" height="400" loading="lazy" decoding="async">
+                <figcaption>Placeholder caption for the small image.</figcaption>
+              </figure>
+              <p>Placeholder paragraph. The image is wrapped in a <code>figure</code> with a <code>figcaption</code> so the caption stays attached to the image. Keep the image small (a square or portrait crop works well) so it does not dominate the text.</p>
+              <p>Placeholder paragraph. Continue writing after the image as normal. The text flows around the floated image automatically.</p>
+            </div>
+          </section>
+
+          <!-- 3. FULL-WIDTH IMAGE -------------------------------- -->
+          <section class="project-section" aria-labelledby="layout-full">
+            <h2 id="layout-full">3. Embedded full-width image</h2>
+            <figure class="figure figure--full">
+              <img src="../assets/img/placeholder.svg" alt="Placeholder: wide full-width image" width="640" height="360" loading="lazy" decoding="async">
+              <figcaption>Placeholder caption for the full-width image.</figcaption>
+            </figure>
+            <div class="prose">
+              <p>Placeholder paragraph. A full-width image spans the entire content column. Use it for a hero screenshot, a banner, or a wide diagram. It sits on its own line, outside the prose column, so it can be wider than the text.</p>
+              <p>Placeholder paragraph. Place the figure before or after the related text. The wide 16:9 crop is the default for this layout.</p>
+            </div>
+          </section>
+
+          <!-- 4. TEXT AND IMAGE SIDE BY SIDE --------------------- -->
+          <section class="project-section" aria-labelledby="layout-split">
+            <h2 id="layout-split">4. Text and image side by side</h2>
+            <div class="split">
+              <div class="prose">
+                <p>Placeholder paragraph. This layout puts text and an image in two columns. On wide screens they sit side by side; on narrow screens the image stacks below the text. Use it to pair a short explanation with a visual, or to alternate text and image blocks down the page.</p>
+                <p>Placeholder paragraph. Keep the text column concise so the two columns stay balanced in height.</p>
+              </div>
+              <figure class="figure">
+                <img src="../assets/img/placeholder-portrait.svg" alt="Placeholder: portrait image beside text" width="360" height="480" loading="lazy" decoding="async">
+                <figcaption>Placeholder caption for the side-by-side image.</figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <!-- 5. IMAGE GALLERY ----------------------------------- -->
+          <section class="project-section" aria-labelledby="layout-gallery">
+            <h2 id="layout-gallery">5. Image gallery</h2>
+            <div class="prose">
+              <p>Placeholder paragraph. A gallery shows several images in a responsive row: one column on phones, two on tablets, three on desktop. Use it for screenshots, UI states, or a set of related visuals.</p>
+            </div>
+            <div class="figure-grid">
+              <figure class="figure">
+                <img src="../assets/img/placeholder.svg" alt="Placeholder: gallery image one" width="640" height="360" loading="lazy" decoding="async">
+                <figcaption>Placeholder caption one.</figcaption>
+              </figure>
+              <figure class="figure">
+                <img src="../assets/img/placeholder-square.svg" alt="Placeholder: gallery image two" width="400" height="400" loading="lazy" decoding="async">
+                <figcaption>Placeholder caption two.</figcaption>
+              </figure>
+              <figure class="figure">
+                <img src="../assets/img/placeholder-portrait.svg" alt="Placeholder: gallery image three" width="360" height="480" loading="lazy" decoding="async">
+                <figcaption>Placeholder caption three.</figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <!-- 6. CALLOUT / NOTE ---------------------------------- -->
+          <section class="project-section" aria-labelledby="layout-callout">
+            <h2 id="layout-callout">6. Callout / note</h2>
+            <div class="prose">
+              <p>Placeholder paragraph. Use a callout to highlight a note, a tip, or a warning that should stand out from the surrounding text.</p>
+              <aside class="callout">
+                <p><strong>Note:</strong> placeholder text for a callout. Use this for a tip, a caveat, or something worth drawing attention to.</p>
+              </aside>
+              <aside class="callout callout--warning">
+                <p><strong>Warning:</strong> placeholder text for a warning callout. Use the <code>callout--warning</code> variant for cautions.</p>
+              </aside>
+              <p>Placeholder paragraph. Continue the normal text after the callout.</p>
+            </div>
+          </section>
+
+          <!-- 7. CODE BLOCK -------------------------------------- -->
+          <section class="project-section" aria-labelledby="layout-code">
+            <h2 id="layout-code">7. Code block</h2>
+            <div class="prose">
+              <p>Placeholder paragraph. Use a code block to show a snippet, a config file, or a command. It scrolls horizontally on narrow screens.</p>
+            </div>
+            <pre class="code-block"><code>// Placeholder code snippet
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+
+console.log(greet("FooBar"));</code></pre>
+          </section>
+
+          <!-- 8. LISTS ------------------------------------------ -->
+          <section class="project-section" aria-labelledby="layout-lists">
+            <h2 id="layout-lists">8. Lists</h2>
+            <div class="prose">
+              <p>Placeholder paragraph. Use lists for features, steps, or key points.</p>
+              <h3>Unordered list</h3>
+              <ul>
+                <li>Placeholder feature one.</li>
+                <li>Placeholder feature two.</li>
+                <li>Placeholder feature three.</li>
+              </ul>
+              <h3>Ordered list</h3>
+              <ol>
+                <li>Placeholder step one.</li>
+                <li>Placeholder step two.</li>
+                <li>Placeholder step three.</li>
+              </ol>
+            </div>
+          </section>
+
+          <!-- 9. TABLE ------------------------------------------- -->
+          <section class="project-section" aria-labelledby="layout-table">
+            <h2 id="layout-table">9. Table</h2>
+            <div class="prose">
+              <p>Placeholder paragraph. Use a table for structured data such as specs, versions, or comparisons. It scrolls horizontally on narrow screens.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Placeholder table caption</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Column one</th>
+                    <th scope="col">Column two</th>
+                    <th scope="col">Column three</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Placeholder</td>
+                    <td>Placeholder</td>
+                    <td>Placeholder</td>
+                  </tr>
+                  <tr>
+                    <td>Placeholder</td>
+                    <td>Placeholder</td>
+                    <td>Placeholder</td>
+                  </tr>
+                  <tr>
+                    <td>Placeholder</td>
+                    <td>Placeholder</td>
+                    <td>Placeholder</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <p data-site-copyright></p>
+      <p data-site-note>No cookies. No tracking.</p>
+    </div>
+  </footer>
+</body>
+</html>

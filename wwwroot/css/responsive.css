@@ -1,0 +1,67 @@
+/* Responsive: breakpoints (640px, 960px) and fluid typography */
+
+@media (min-width: 640px) {
+  :root {
+    --gutter: 1.5rem;
+    --text-2xl: clamp(1.75rem, 1.4rem + 0.9vw, 2rem);
+    --text-3xl: clamp(2.125rem, 1.5rem + 1.6vw, 2.5rem);
+  }
+
+  .nav-toggle {
+    display: none;
+  }
+
+  .site-nav {
+    flex-basis: auto;
+  }
+
+  .site-nav.is-collapsed {
+    display: block;
+  }
+
+  .site-nav__list {
+    flex-direction: row;
+    gap: var(--space-5);
+  }
+
+  .site-nav__link {
+    padding-block: var(--space-1);
+  }
+
+  .project-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Project content layouts */
+  .split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .figure-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .figure--small {
+    float: right;
+    margin: var(--space-2) 0 var(--space-3) var(--space-5);
+  }
+}
+
+@media (min-width: 960px) {
+  :root {
+    --gutter: 2rem;
+    --text-3xl: clamp(2.5rem, 1.6rem + 1.5vw, 3rem);
+  }
+
+  .site-main {
+    padding-block: var(--space-8);
+  }
+
+  .project-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .figure-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
