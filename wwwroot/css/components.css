@@ -205,6 +205,15 @@
   font-size: var(--text-lg);
 }
 
+/* Teapot illustration (404 / 418 page) */
+.teapot {
+  width: 8rem;
+  max-width: 100%;
+  height: auto;
+  margin-block: var(--space-5);
+  color: var(--color-accent);
+}
+
 /* Messages (loading, empty, error) */
 .message {
   grid-column: 1 / -1;
