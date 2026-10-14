@@ -26,35 +26,66 @@
 
         <div class="project-content">
 
-          <!-- 1. PURE TEXT -------------------------------------- -->
-          <section class="project-section" aria-labelledby="overview">
-            <h2 id="overview">SY317</h2>
-            <div class="prose">
-              <p>Placeholder paragraph. This is the opening section of the project write-up. Describe what the project does, the problem it solves, and why it exists. Keep paragraphs short and let the text breathe.</p>
-              <p>Placeholder paragraph. You can include <a href="https://example.com">inline links</a>, <strong>strong emphasis</strong>, <em>emphasis</em>, and <code>inline code</code> anywhere in the text.</p>
+            <section class="project-section" aria-labelledby="layout-split">
+            <h2 id="layout-small">Übersicht</h2>
+            <div class="split">
+              <div class="prose">
+              <p>Der SY317, angelehnt an den LM317 mit den ersten Buchstaben meines Maker Usernamens, ist ein einstellbarer Festspannungsregler, pinkompatibel zu den bekannten 78xx Linear-Spannungsreglern.</p>
+              <p>Das Ziel war ein bezahlbarer Drop-In-Ersatz mit besserer Effizienz und höherem Ausgangsstrom. Dadurch entfällt die Notwendigkeit für Kühlkörper und potentielle Platzersparnis auf der Platine.</p>
+              </div>
+
+              <figure class="figure figure--small">
+                <img src="{{root}}assets/img/sy317_render.png" alt="3D-Render SY317" width="400" height="400" loading="lazy" decoding="async">
+                <figcaption>3D-Render SY317 aus KiCad</figcaption>
+              </figure>
+
             </div>
           </section>
 
-          <!-- 3. FULL-WIDTH IMAGE -------------------------------- -->
           <section class="project-section" aria-labelledby="screenshot">
-            <h2 id="screenshot">Screenshot</h2>
+            <h2 id="screenshot">Schaltplan</h2>
             <figure class="figure figure--full">
-              <img src="../../assets/img/sy317_sch.png" alt="Placeholder: wide project screenshot" width="640" height="360" loading="lazy" decoding="async">
-              <figcaption>Placeholder caption for the project screenshot.</figcaption>
+              <img src="{{root}}assets/img/sy317_sch.png" alt="Placeholder: wide project screenshot" loading="lazy" decoding="async">
+              <figcaption>Schalplan des Moduls</figcaption>
             </figure>
             <div class="prose">
-              <p>Placeholder paragraph. A full-width image spans the entire content column. Use it for a hero screenshot, a banner, or a wide diagram.</p>
+              <p>Der Schaltplan ist vergleichsweise einfach und minimalistisch aufgebaut. Eine 2,54mm Stiftleiste mit dem selben Pinout der 78xx-Reihe dient als Anschluss. Kernstück des Moduls ist der TPS56339 Schaltregler-IC von Texas Instruments.</p>
+              <p>Die entsprechende Schaltung drumherum ist die Beispielschaltung aus dem Datenblatt mit dem Unterschied, dass im Feedback-Pfad ein Potentiometer eingebaut ist. Dieses dient dazu, die Ausgangsspannung einzustellen. Die Induktivität ist etwas größer als der vorgeschlagene Wert zur besseren Glättung.</p>
+              <p>Auffällig sind die beiden DNP (Do Not Populate) Widerstände. Diese sind für eine optionale Undervoltage Lock-Out-Funktion vorgesehen, aber in meinem Falle aus Spargründen nicht eingebaut. Der Schaltregler hat einen internen Pull-Up, der bei Nichtbestückun diesen Pin auf Vin zieht und somit die Funktion deaktiviert.</p>
+              <p>Alle Bauteile abgesehen der Stiftleiste sind SMD. Um die Platinenkosten gering zu halten, wurde ebenfalls eine 2-lagige Platine angestrebt, mit solider GND-Fläche auf der Unterseite und dem VCC-Pfad auf der Oberseite.</p>
             </div>
           </section>
 
-          <!-- 6. CALLOUT / NOTE ---------------------------------- -->
-          <section class="project-section" aria-labelledby="notes">
-            <h2 id="notes">Notes</h2>
+          <section class="project-section" aria-labelledby="screenshot">
+            <h2 id="screenshot">Schaltplan</h2>
             <div class="prose">
-              <p>Placeholder paragraph. Use a callout to highlight a note, a tip, or a warning that should stand out from the surrounding text.</p>
-              <aside class="callout">
-                <p><strong>Note:</strong> placeholder text for a callout. Replace this with real project notes.</p>
-              </aside>
+              <p>Die Platine selbst wurde in der Tat 2-lagig mit KiCad erstellt. Dabei wurde ein sehr kleiner Formfaktor angestrebt und letzten Endes auch erreicht. Wenn man die Module neben einen klassischen TO-220 78xx IC legt, so ist die Platine nahezu exakt gleich groß, wenn die Pins mitgezählt werden.</p>
+            </div>
+            <figure class="figure figure--full">
+              <img src="{{root}}assets/img/sy317_pic.jpg" alt="Module neben 7812 IC" loading="lazy" decoding="async">
+              <figcaption>Fertige Module neben 7812 TO-220</figcaption>
+            </figure>
+            <div class="prose">
+            <p>Um die Kosten noch mehr zu reduzieren, wurden die Platinen als Nutzen erstellt. Da jedes Modul 10mm breit und 25mm lang ist, konnte ein 10x4-Raster verwendet werden, was in einer 100x100mm-Platine resultierte, die exakten maximalen Maße für den niedrigsten Preis bei JLCPCB.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="layout-lists">
+            <h2 id="layout-lists">Technische Daten</h2>
+            <div class="prose">
+              <p>Aber hier jetzt mal die technischen Daten. Zum Vergleich: die 78xx-ICs haben eine maximale Input-Spannung von 25-38V je nach Modell und einem maximalen Strom von 1.5A.</p>
+              <h3>SY317 Daten</h3>
+              <ul>
+                <li>Input-Spannung:  4,5V ... 24V</li>
+                <li>Output-Spannung: 0,8V ... 16V</li>
+                <li>Output-Strom: 3A</li>
+                <li>Schaltfrequenz: 500kHz</li>
+                <li>Effizienz: 80% bis über 90%</li>
+                <li>Dropout-Spannung: min. Vout * 0,03</li>
+              </ul>
+              <p>Man sieht, die Daten sprechen hier für sich. Die maximale Input-Spannung ist zwar geringer als bei den 78xx-ICs, aber der maximale Ausgangsstrom ist doppelt so hoch und die Effizienz ist deutlich besser.</p>
+              <p>Die Dropout-Spannung ist ebenfalls deutlich geringer, was bedeutet, dass man auch bei niedrigerer Eingangsspannung noch eine stabile Ausgangsspannung erhält.</p>
+              <p>Durch das Bestellen der Platinen als Nutzen und Bulk-Buy Orders für Bauteile, ein Modul kann, je nach Stückzahl, noch ca. 3€ kosten. Natürlich deutlich mehr als die 25 cent der 78xx-ICs, aber für Anwendungen, bei denen eine hohe Effizienz, wenig Platzbedard oder der höhere Strom gefordert ist, bieten diese Module eine sehr überzeugende Lösung.</p>
             </div>
           </section>
 

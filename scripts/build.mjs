@@ -170,24 +170,30 @@ function renderTags(tags) {
   return `<ul class="tag-list" aria-label="Tags">\n  ${items}\n</ul>`;
 }
 
-function renderLinks(project) {
+function renderLinks(project, root) {
   const items = [];
   for (const [key, label] of LINK_LABELS) {
     const href = safeExternalUrl(project.links?.[key]);
     if (!href) continue;
-    items.push(`<li><a class="button button--secondary" href="${esc(href)}" rel="noopener noreferrer">${label}<span class="visually-hidden"> for ${esc(project.title)}</span></a></li>`);
+    // The github mark is white, so it sits in a dark badge to stay visible
+    // on both light and dark surfaces. The repo link uses it as its leading
+    // icon; the demo link keeps a plain text button.
+    const icon = key === 'repo'
+      ? `<span class="link-list__badge"><img src="${esc(root)}assets/icons/GitHub_Invertocat_White.svg" alt="" width="18" height="18"></span>`
+      : '';
+    items.push(`<li><a class="button button--secondary" href="${esc(href)}" rel="noopener noreferrer">${icon}${label}<span class="visually-hidden"> for ${esc(project.title)}</span></a></li>`);
   }
   return items.length > 0 ? `<ul class="link-list">\n  ${items.join('\n  ')}\n</ul>` : '';
 }
 
-function renderProjectHeader(project) {
+function renderProjectHeader(project, ctx) {
   return [
     '<header class="page-header">',
     `<h1>${esc(project.title)}</h1>`,
     `<p class="page-header__lead">${esc(project.summary)}</p>`,
     renderMeta(project),
     renderTags(project.tags),
-    renderLinks(project),
+    renderLinks(project, ctx.root),
     '</header>',
   ].filter(Boolean).join('\n');
 }
@@ -275,7 +281,7 @@ function applyDirectives(html, ctx, projects, nav) {
           fail(`${ctx.rel}: @project-header needs a project with id "${path.basename(ctx.rel, '.html')}"`);
           return '';
         }
-        return renderProjectHeader(ctx.project);
+        return renderProjectHeader(ctx.project, ctx);
       default:
         fail(`${ctx.rel}: unknown directive @${name}`);
         return '';

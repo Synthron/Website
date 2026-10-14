@@ -115,7 +115,7 @@ body {
 
 /* Prose (long-form text pages) */
 .prose {
-  max-width: var(--measure);
+  max-width: 100%;
 }
 
 .prose > * + * {
