@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="color-scheme" content="light dark">
-  <meta name="description" content="Personal project website of {name} (placeholder).">
-  <title>Home — {name}</title>
+  <meta name="description" content="Personal project website of {{name}}.">
+  <title>Home — {{name}}</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">
@@ -15,26 +15,12 @@
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
-
-  <header class="site-header">
-    <div class="container site-header__inner">
-      <a class="site-brand" data-site-brand href="index.html"></a>
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden>Menu</button>
-      <nav class="site-nav" id="site-nav" aria-label="Main">
-        <ul class="site-nav__list">
-          <li><a class="site-nav__link" href="index.html" aria-current="page">Home</a></li>
-          <li><a class="site-nav__link" href="html/projects.html">Projects</a></li>
-          <li><a class="site-nav__link" href="html/about.html">About</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+  <!-- @include header -->
 
   <main class="site-main" id="main">
     <div class="container">
       <section class="section intro" aria-labelledby="intro-title">
-        <h1 id="intro-title">Hi, I’m Your Name.</h1>
+        <h1 id="intro-title">Hi, I’m {{name}}.</h1>
         <p class="intro__lead">Placeholder introduction: one or two sentences about what you build and why. Replace this text.</p>
         <p class="intro__actions">
           <a class="button" href="html/projects.html">View projects</a>
@@ -47,18 +33,11 @@
           <h2 id="featured-title">Featured projects</h2>
           <a href="html/projects.html">All projects</a>
         </div>
-        <div class="project-grid" id="featured-list" data-projects="featured" data-heading-level="3">
-          <noscript><p class="message">Enable JavaScript to see the featured projects, or browse the <a href="html/projects.html">project list</a>.</p></noscript>
-        </div>
+        <!-- @projects featured level=3 id=featured-list -->
       </section>
     </div>
   </main>
 
-  <footer class="site-footer">
-    <div class="container site-footer__inner">
-      <p data-site-copyright></p>
-      <p data-site-note>No cookies. No tracking.</p>
-    </div>
-  </footer>
+  <!-- @include footer -->
 </body>
 </html>

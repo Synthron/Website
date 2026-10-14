@@ -9,6 +9,6 @@ desktop.ini
 *.swp
 *~
 
-# Tooling (in case it is added later)
+# Tooling and build output
 node_modules/
 dist/

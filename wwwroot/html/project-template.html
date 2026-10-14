@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="color-scheme" content="light dark">
-  <meta name="description" content="Master template for project write-ups. Shows every supported layout pattern with placeholder content.">
-  <title>FooBar Template — Project Template</title>
+  <meta name="description" content="{{projectSummary}}">
+  <title>{{projectTitle}} — {{name}}</title>
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/layout.css">
@@ -15,21 +15,7 @@
   <script type="module" src="../js/main.js"></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
-
-  <header class="site-header">
-    <div class="container site-header__inner">
-      <a class="site-brand" data-site-brand href="../index.html"></a>
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden>Menu</button>
-      <nav class="site-nav" id="site-nav" aria-label="Main">
-        <ul class="site-nav__list">
-          <li><a class="site-nav__link" href="../index.html">Home</a></li>
-          <li><a class="site-nav__link" href="projects.html">Projects</a></li>
-          <li><a class="site-nav__link" href="about.html">About</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+  <!-- @include header -->
 
   <main class="site-main" id="main">
     <div class="container">
@@ -52,23 +38,7 @@
       -->
 
       <article class="project-detail">
-        <header class="page-header">
-          <h1>FooBar Template</h1>
-          <p class="page-header__lead">Placeholder lead: one or two sentences summarising what this project is and why it exists. Replace this text.</p>
-          <p class="project-meta">
-            <span class="status">active</span>
-            <time datetime="2026-10">Oct 2026</time>
-          </p>
-          <ul class="tag-list" aria-label="Tags">
-            <li><span class="tag">javascript</span></li>
-            <li><span class="tag">tool</span></li>
-            <li><span class="tag">template</span></li>
-          </ul>
-          <p class="intro__actions">
-            <a class="button" href="https://example.com/repo" rel="noopener noreferrer">Source</a>
-            <a class="button button--secondary" href="https://example.com/demo" rel="noopener noreferrer">Demo</a>
-          </p>
-        </header>
+        <!-- @project-header -->
 
         <div class="project-content">
 
@@ -237,11 +207,6 @@ console.log(greet("FooBar"));</code></pre>
     </div>
   </main>
 
-  <footer class="site-footer">
-    <div class="container site-footer__inner">
-      <p data-site-copyright></p>
-      <p data-site-note>No cookies. No tracking.</p>
-    </div>
-  </footer>
+  <!-- @include footer -->
 </body>
 </html>

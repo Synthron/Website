@@ -1,0 +1,16 @@
+{
+  "name": "website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal project website. Static pages are built from wwwroot/ into dist/ with zero runtime dependencies.",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "clean": "node -e \"import('node:fs').then((fs) => fs.rmSync('dist', { recursive: true, force: true }))\"",
+    "serve": "node scripts/serve.mjs",
+    "start": "npm run build && npm run serve"
+  }
+}
