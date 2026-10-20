@@ -49,7 +49,9 @@ Website/
     ├── js/
     │   ├── main.js        # Bootstrap, initialises modules per page
     │   ├── projects.js    # Tag filter for the pre-rendered project list
-    │   └── nav.js         # Mobile navigation toggle
+    │   ├── nav.js         # Mobile navigation toggle
+    │   └── vendor/        # Vendored third-party JS (no CDN)
+    │       └── esp-web-tools/  # ESP Web Tools web flasher (self-contained)
     ├── data/              # Build input only (not copied to dist/)
     │   ├── nav.json       # Navigation entries (label + href)
     │   ├── projects.json  # Project entries (single source of truth)
@@ -60,6 +62,8 @@ Website/
         │   ├── placeholder-square.svg  # Placeholder (square)
         │   ├── placeholder-portrait.svg  # Placeholder (portrait)
         │   └── GitHub_Invertocat_White.svg  # Github mark (leading icon in the Source button)
+        ├── firmware/      # Web-flasher suites (one folder per firmware variant)
+        │   └── nixie-clock/  # bootloader.bin, partitions.bin, firmware.bin, manifest.json
         └── icons/         # SVG icons (.gitkeep until first icon)
 ```
 
@@ -153,6 +157,17 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 - Placeholder images for different aspect ratios live in `assets/img/` (`placeholder.svg` wide, `placeholder-square.svg`, `placeholder-portrait.svg`).
 - Project cards link to a static page per project at `html/proj/{id}.html` (e.g. `html/proj/placeholder-project-one.html`). When adding a project to `data/projects.json`, create its page from this template and name it after the project `id`.
 
+### Firmware / Web Flasher
+
+Some projects ship firmware that visitors can flash to an ESP32 directly from the browser over USB-serial. This uses [ESP Web Tools](https://esphome.github.io/esp-web-tools/) (vendored locally — no CDN, no external requests).
+
+- The library lives in `js/vendor/esp-web-tools/` (all modules of the `dist/web/` build, kept as-is so relative imports resolve). Reference it with `<script type="module" src="{{root}}js/vendor/esp-web-tools/install-button.js"></script>`.
+- Firmware suites live in `assets/firmware/<suite>/` (copied to `dist/` like any other asset). Each suite is a folder holding its own `manifest.json` and the binaries it references, e.g. `assets/firmware/nixie-clock/{bootloader.bin, partitions.bin, firmware.bin, manifest.json}`. Different projects or variants live in separate folders, so each can use the same file names without collisions.
+- Each `manifest.json` references the binaries in its own folder (paths are relative to the manifest). For a plain app image (typical Arduino/PlatformIO build) flash **all three** parts with the correct offsets: `bootloader.bin` at `0x1000`, `partitions.bin` at `0x8000`, and the app at `0x10000`. Flashing a plain app at offset `0` overwrites the bootloader and partition table ("invalid header" boot-loop). If you instead use a combined/factory image, offset `0` is correct. The `.bin` files are provided separately and are not committed.
+- To flash, add one `<esp-web-install-button manifest="{{root}}assets/firmware/<suite>/manifest.json"></esp-web-install-button>` per firmware variant — you can add several buttons on one page, each targeting a different manifest. See section 10 ("Firmware / web flasher") in `project-template.html` for a working example with two buttons. Include the vendored script before `</body>`.
+- The page CSP must allow the component's injected styles: add `style-src 'self' 'unsafe-inline'` to the `Content-Security-Policy` meta tag. The flasher needs a secure context (HTTPS or `localhost`) for the WebSerial API — serving over a LAN IP like `http://192.168.x.x` will not expose WebSerial.
+- On **Linux**, Chrome/Chromium hides the Web Serial API by default; launch with `google-chrome --enable-features=WebSerialPorts` (fully quit Chrome first, or the flag is ignored). On macOS/Windows WebSerial works out of the box in current Chrome/Edge.
+
 ### Placeholders
 
 Name, copyright, footer note, email and favicon initial come from `data/site.json`. Still to replace with real content: the intro on `index.html`, the text on `html/about.html`, the three `placeholder-project-*` entries in `data/projects.json` and their page bodies.
@@ -218,6 +233,7 @@ Adding a project means adding an entry to this file and creating `html/proj/{id}
 - [x] `js/nav.js`: accessible mobile menu (button with `aria-expanded`, Escape to close)
 - [x] `js/main.js`: bootstrap that initialises modules per page
 - [x] Filtering by tag (no persistence, no cookies)
+- [x] Web flasher for ESP32 firmware (vendored ESP Web Tools, `assets/firmware/<suite>/manifest.json`, `nixie-clock.html`)
 
 ### Phase 3b — npm Build
 - [x] `package.json` (no dependencies) with `build`, `clean`, `serve`, `start` scripts

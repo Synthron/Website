@@ -1,12 +1,12 @@
 [
   {
-    "id": "placeholder-project-one",
-    "title": "Placeholder Project One",
-    "summary": "Placeholder entry — Test 1.",
-    "tags": ["javascript", "tool"],
+    "id": "nixie-clock",
+    "title": "Nixie Uhr",
+    "summary": "Nixie-Uhr mit ESP32, Z5600M Nixie-Röhren und RTC. ",
+    "tags": ["hardware", "electronics", "software", "tubes", "esp32"],
     "status": "active",
     "date": "2026-09",
-    "links": { "repo": null, "demo": null },
+    "links": { "repo": "https://github.com/Synthron/Nixie", "demo": null },
     "image": "assets/img/placeholder.svg",
     "featured": true
   },
