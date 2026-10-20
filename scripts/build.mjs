@@ -14,7 +14,7 @@ const DIST = path.join(ROOT, 'dist');
 const SKIP_DIRS = new Set(['partials', 'data']);
 const SKIP_FILES = new Set(['project-template.html', '.gitkeep']);
 // Non-HTML files that also go through the token pass.
-const TEMPLATE_FILES = new Set(['favicon.svg']);
+const TEMPLATE_FILES = new Set(['favicon.svg', 'robots.txt']);
 const REQUIRED_PROJECT_FIELDS = ['id', 'title', 'summary', 'tags', 'status', 'date', 'links', 'image', 'featured'];
 const LINK_LABELS = [['repo', 'Source'], ['demo', 'Demo']];
 
@@ -78,12 +78,32 @@ async function loadSite() {
   if (site.copyrightYear !== undefined && !Number.isInteger(site.copyrightYear)) {
     fail('data/site.json: "copyrightYear" must be an integer');
   }
+
+  // Canonical base URL for sitemap.xml and the robots.txt Sitemap line.
+  let url = '';
+  if (typeof site.url !== 'string' || site.url === '') {
+    fail('data/site.json: "url" must be a non-empty string');
+  } else {
+    try {
+      const parsed = new URL(site.url);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        fail('data/site.json: "url" must be an http(s) URL');
+      } else {
+        url = parsed.href.replace(/\/+$/, '');
+      }
+    } catch {
+      fail('data/site.json: "url" must be a valid absolute URL');
+    }
+  }
+
   return {
     name: site.name ?? '',
     footerNote: site.footerNote ?? '',
     email: site.email ?? '',
     year: site.copyrightYear ?? new Date().getFullYear(),
     monogram: Array.from(site.name ?? '').find((char) => char.trim() !== '')?.toUpperCase() ?? '',
+    url,
+    sitemapUrl: url ? `${url}/sitemap.xml` : '',
   };
 }
 
@@ -254,6 +274,8 @@ function applyTokens(text, ctx) {
       footerNote: ctx.site.footerNote,
       email: ctx.site.email,
       monogram: ctx.site.monogram,
+      url: ctx.site.url,
+      sitemapUrl: ctx.site.sitemapUrl,
       root: ctx.root,
       projectTitle: ctx.project?.title,
       projectSummary: ctx.project?.summary,
@@ -302,6 +324,25 @@ async function checkLinks(rel, html) {
   }
 }
 
+function renderSitemap(pages, baseUrl, byId) {
+  const entries = [];
+  for (const [rel] of pages) {
+    if (rel === '404.html') continue;
+    const loc = rel === 'index.html' ? `${baseUrl}/` : `${baseUrl}/${rel}`;
+    const project = rel.startsWith('html/proj/') ? byId.get(path.posix.basename(rel, '.html')) : undefined;
+    const lines = [`    <loc>${loc}</loc>`];
+    if (project?.date) lines.push(`    <lastmod>${project.date}-01</lastmod>`);
+    entries.push(`  <url>\n${lines.join('\n')}\n  </url>`);
+  }
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    entries.join('\n'),
+    '</urlset>',
+    '',
+  ].join('\n');
+}
+
 // Build
 
 async function build() {
@@ -347,6 +388,10 @@ async function build() {
   }
 
   for (const [rel, html] of pages) await checkLinks(rel, html);
+
+  if (site.url) {
+    await writeFile(path.join(DIST, 'sitemap.xml'), renderSitemap(pages, site.url, byId));
+  }
   return pages.length;
 }
 

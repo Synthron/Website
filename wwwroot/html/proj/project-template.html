@@ -208,6 +208,10 @@ console.log(greet("FooBar"));</code></pre>
             <div class="prose">
               <p>Placeholder paragraph. To let visitors flash firmware to an ESP32 over USB-serial, add one <code><esp-web-install-button></code> per firmware suite. Each button points at its own <code>manifest.json</code> under <code>assets/firmware/<suite>/</code> (e.g. <code>assets/firmware/nixie-clock/manifest.json</code>). Add as many buttons as you have firmware variants.</p>
               <p>Placeholder paragraph. The ESP Web Tools library is vendored locally (no CDN), so also include the script before <code></body></code> and allow the component's injected styles in the CSP (<code>style-src 'self' 'unsafe-inline'</code>). The flasher needs a secure context (HTTPS or <code>localhost</code>).</p>
+              <p>
+                <strong>Hinweis:</strong> Die Installation der Firmware
+                löscht alle vorherigen Einstellungen. Außerdem ist der Chrome- oder Edge-Browser erforderlich, da die WebUSB-API von Firefox und Safari <strong>nicht unterstützt</strong> wird.
+              </p>
             </div>
             <esp-web-install-button manifest="{{root}}assets/firmware/nixie-clock/manifest.json"></esp-web-install-button>
             <esp-web-install-button manifest="{{root}}assets/firmware/dummy/manifest.json"></esp-web-install-button>
