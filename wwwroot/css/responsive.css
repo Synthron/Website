@@ -28,6 +28,10 @@
     padding-block: var(--space-1);
   }
 
+  .site-footer__nav {
+    flex-basis: auto;
+  }
+
   .project-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

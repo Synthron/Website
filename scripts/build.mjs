@@ -107,12 +107,13 @@ async function loadSite() {
   };
 }
 
-async function loadNav() {
-  const data = await readJson(path.join(SRC, 'data/nav.json'));
-  if (!Array.isArray(data) || data.length === 0) throw new Error('data/nav.json: expected a non-empty array');
+async function loadNav(file) {
+  const rel = `data/${file}`;
+  const data = await readJson(path.join(SRC, rel));
+  if (!Array.isArray(data) || data.length === 0) throw new Error(`${rel}: expected a non-empty array`);
   const items = [];
   for (const [index, item] of data.entries()) {
-    const label = `data/nav.json[${index}]`;
+    const label = `${rel}[${index}]`;
     if (typeof item?.label !== 'string' || item.label.trim() === '') {
       fail(`${label}: "label" must be a non-empty string`);
       continue;
@@ -167,15 +168,15 @@ async function loadProjects() {
 // Rendering
 
 // Nav links are relative to the web root; `aria-current` marks the current page.
-function renderNav(items, ctx) {
+function renderNav(items, ctx, cls = { list: 'site-nav__list', link: 'site-nav__link' }) {
   const links = items.map((item) => {
     if (item.external) {
-      return `<li><a class="site-nav__link" href="${esc(item.href)}" rel="noopener noreferrer">${esc(item.label)}</a></li>`;
+      return `<li><a class="${cls.link}" href="${esc(item.href)}" rel="noopener noreferrer">${esc(item.label)}</a></li>`;
     }
     const current = item.href.split(/[?#]/)[0] === ctx.rel ? ' aria-current="page"' : '';
-    return `<li><a class="site-nav__link" href="${esc(ctx.root + item.href)}"${current}>${esc(item.label)}</a></li>`;
+    return `<li><a class="${cls.link}" href="${esc(ctx.root + item.href)}"${current}>${esc(item.label)}</a></li>`;
   });
-  return `<ul class="site-nav__list">\n${links.join('\n')}\n</ul>`;
+  return `<ul class="${cls.list}">\n${links.join('\n')}\n</ul>`;
 }
 
 function renderMeta(project) {
@@ -288,12 +289,14 @@ function applyTokens(text, ctx) {
   });
 }
 
-function applyDirectives(html, ctx, projects, nav) {
+function applyDirectives(html, ctx, projects, nav, footerNav) {
   return html.replace(/<!--\s*@([\w-]+)([^>]*?)-->/g, (match, name, rawArgs) => {
     const args = rawArgs.trim().split(/\s+/).filter(Boolean);
     switch (name) {
       case 'nav':
         return renderNav(nav, ctx);
+      case 'footer-nav':
+        return renderNav(footerNav, ctx, { list: 'site-footer__list', link: 'site-footer__link' });
       case 'projects':
         return renderProjectList(projects, args, ctx);
       case 'tag-filter':
@@ -347,7 +350,8 @@ function renderSitemap(pages, baseUrl, byId) {
 
 async function build() {
   const site = await loadSite();
-  const nav = await loadNav();
+  const nav = await loadNav('nav.json');
+  const footerNav = await loadNav('footer-nav.json');
   const projects = await loadProjects();
   const byId = new Map(projects.map((project) => [project.id, project]));
 
@@ -382,7 +386,7 @@ async function build() {
     let output = await readFile(from, 'utf8');
     output = applyIncludes(output, partials, rel);
     output = applyTokens(output, ctx);
-    output = applyDirectives(output, ctx, projects, nav);
+    output = applyDirectives(output, ctx, projects, nav, footerNav);
     await writeFile(to, output);
     if (isHtml) pages.push([rel, output]);
   }

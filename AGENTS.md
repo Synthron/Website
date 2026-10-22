@@ -31,7 +31,7 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | `wwwroot/html/proj/project-template.html` | Master project write-up template | Reference for every supported project layout (not built). Copy sections into new project pages; append new layouts here over time. |
 | `wwwroot/css/` | Stylesheets | Split by concern: `base`, `layout`, `components`, `responsive`. Use CSS custom properties for all colours and spacing. |
 | `wwwroot/js/` | Scripts | One module per concern (`nav`, `projects`, `main`). Use `type="module"` and no global variables. |
-| `wwwroot/data/` | JSON content (build input) | `projects.json` is the single source of truth for projects; `site.json` holds shared site info (name, copyright, email). Keep both valid JSON. Not copied to `dist/`. |
+| `wwwroot/data/` | JSON content (build input) | `projects.json` is the single source of truth for projects; `site.json` holds shared site info (name, copyright, email); `nav.json`/`footer-nav.json` drive the header/footer navs. Keep all valid JSON. Not copied to `dist/`. |
 | `wwwroot/assets/` | Images and icons | Prefer SVG; use WebP for raster images; always provide `alt` text. |
 
 Note: `wwwroot/js/` and `wwwroot/assets/` exist but may be sparse. Create new files there only when the task requires it.
@@ -53,7 +53,7 @@ Use it as follows:
 Commands: `npm run build` (wwwroot → dist), `npm run serve`, `npm start` (both), `npm run clean`. Full reference of includes, `{{tokens}}` and `@directives` is in [`README.md`](README.md#build-time-templating).
 
 - Never hard-code generated content (site name, year, footer note, email, nav, project titles/summaries/cards) in pages. Use `{{name}}`, `{{email}}`, `<!-- @include header -->`, `<!-- @project-header -->`, `<!-- @projects … -->`, etc.
-- The navbar comes from `data/nav.json` via `<!-- @nav -->` in `partials/header.html`; never hard-code nav links.
+- The navbar comes from `data/nav.json` via `<!-- @nav -->` in `partials/header.html`; the footer nav comes from `data/footer-nav.json` via `<!-- @footer-nav -->` in `partials/footer.html`; never hard-code nav links.
 - Shared info lives in `data/site.json` (`name`, `copyrightYear`, `footerNote`, `email`); the build fills header, footer, titles, descriptions, contact link and the favicon monogram.
 - Use `{{name}}` (not a hard-coded name) in every `<title>` and `meta[name="description"]`.
 - Browser scripts must not fetch content; everything is pre-rendered. Keep the build free of dependencies.
@@ -99,6 +99,7 @@ Commands: `npm run build` (wwwroot → dist), `npm run serve`, `npm start` (both
 5. Do not create files that are not part of the planned outline without updating the outline in `README.md` first.
 6. After editing HTML/CSS/JS, run `npm run build`, then verify `dist/` (e.g. `npm run serve`) in a browser at 320px, 768px and 1280px widths where possible.
 7. Do not commit, push, or deploy unless explicitly asked.
+8. When a task is completed, include a ready-to-use commit message (short summary line plus a bullet list of the concrete changes) in the final result, even if no commit is being made.
 
 ## Definition of Done
 

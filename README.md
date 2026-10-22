@@ -33,7 +33,7 @@ Website/
     ├── robots.txt         # Crawler rules
     ├── partials/          # Build-time includes (not copied to dist/)
     │   ├── header.html    # Shared skip link, header and nav
-    │   └── footer.html    # Shared footer
+    │   └── footer.html    # Shared footer (copyright, footer nav)
     ├── html/              # Additional page templates
     │   ├── projects.html  # Project listing page with tag filter
     │   ├── about.html     # About and contact page
@@ -53,9 +53,10 @@ Website/
     │   └── vendor/        # Vendored third-party JS (no CDN)
     │       └── esp-web-tools/  # ESP Web Tools web flasher (self-contained)
     ├── data/              # Build input only (not copied to dist/)
-    │   ├── nav.json       # Navigation entries (label + href)
-    │   ├── projects.json  # Project entries (single source of truth)
-    │   └── site.json      # Shared site info (name, copyright, email)
+    │   ├── nav.json        # Header navigation entries (label + href)
+    │   ├── footer-nav.json # Footer navigation entries (label + href)
+    │   ├── projects.json   # Project entries (single source of truth)
+    │   └── site.json       # Shared site info (name, copyright, email)
     └── assets/
         ├── img/           # Optimised images (WebP/SVG preferred)
         │   ├── placeholder.svg  # Placeholder project image (wide)
@@ -93,6 +94,7 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `{{url}}`, `{{sitemapUrl}}` | Canonical base URL and `https://…/sitemap.xml` from `data/site.json` (`url`). Used by `robots.txt`. |
 | `{{root}}` | Relative path to the web root (`""` for root pages, `"../"` for pages in `html/`). |
 | `<!-- @nav -->` | Nav list built from `data/nav.json`; sets `aria-current="page"` on the entry whose `href` is the current page. Used in `partials/header.html`. |
+| `<!-- @footer-nav -->` | Footer nav list built from `data/footer-nav.json`; same `aria-current="page"` handling as `@nav`. Used in `partials/footer.html`. |
 | `{{projectTitle}}`, `{{projectSummary}}` | Title/summary of the project whose `id` equals the page filename (`html/proj/{id}.html`). |
 | `<!-- @project-header -->` | Project page header (h1, summary, status/date, tags, links) from `data/projects.json`. |
 | `<!-- @projects all\|featured level=2\|3 id=list-id -->` | Pre-rendered project card grid, newest first. |
@@ -116,9 +118,20 @@ The header (skip link, brand, nav) and footer live once in `wwwroot/partials/`. 
 </header>
 ```
 
+The footer mirrors the header: a `site-footer__nav` element (fed by `@footer-nav`) next to the copyright info:
+
+```html
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <nav class="site-footer__nav" aria-label="Footer">…</nav>
+    <div class="site-footer__info">…</div>
+  </div>
+</footer>
+```
+
 ### Navigation (`data/nav.json`)
 
-The navbar is generated from `data/nav.json`, an ordered array. Add, remove or reorder entries to control which pages appear.
+The navbar is generated from `data/nav.json`, an ordered array; the footer nav comes from `data/footer-nav.json` via `<!-- @footer-nav -->` (see `partials/footer.html`). Add, remove or reorder entries in either file to control which pages appear.
 
 ```json
 [
@@ -127,7 +140,7 @@ The navbar is generated from `data/nav.json`, an ordered array. Add, remove or r
 ]
 ```
 
-`href` is relative to the web root (the build prefixes `../` where needed) or an absolute `http(s)` URL (rendered with `rel="noopener noreferrer"`). Internal targets must exist or the build fails on the broken link.
+`href` is relative to the web root (the build prefixes `../` where needed) or an absolute `http(s)` URL (rendered with `rel="noopener noreferrer"`). Internal targets must exist or the build fails on the broken link. Both `nav.json` and `footer-nav.json` use the same schema.
 
 ### Site Config (`data/site.json`)
 
@@ -243,6 +256,7 @@ Adding a project means adding an entry to this file and creating `html/proj/{id}
 - [x] `scripts/build.mjs`: wwwroot/ → dist/, includes, tokens, directives, data validation, link check
 - [x] `scripts/serve.mjs`: local preview of `dist/`
 - [x] Navbar generated from `data/nav.json` (`@nav` directive)
+- [x] Footer nav generated from `data/footer-nav.json` (`@footer-nav` directive)
 - [x] Shared header/footer as partials; site.json content generated at build time
 - [x] Project lists, project headers and tag filter pre-rendered; runtime `fetch` removed
 
