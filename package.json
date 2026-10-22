@@ -10,6 +10,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "clean": "node -e \"import('node:fs').then((fs) => fs.rmSync('dist', { recursive: true, force: true }))\"",
+    "create": "node scripts/create.mjs",
     "serve": "node scripts/serve.mjs",
     "start": "npm run build && npm run serve"
   }

@@ -24,6 +24,7 @@ Website/
 ├── package.json           # npm scripts (no dependencies)
 ├── scripts/
 │   ├── build.mjs          # Build: wwwroot/ -> dist/
+│   ├── create.mjs         # Scaffold a new project page + projects.json entry
 │   └── serve.mjs          # Local preview server for dist/
 ├── dist/                  # Build output (generated, git-ignored, deploy this)
 └── wwwroot/               # Source (build input)
@@ -75,6 +76,7 @@ Requires Node.js ≥ 18. There are no dependencies, so no `npm install` is neede
 | Command | Effect |
 | --- | --- |
 | `npm run build` | Deletes `dist/` and rebuilds it from `wwwroot/`. Exits non-zero on invalid data, unknown tokens/includes or broken internal links. |
+| `npm run create -- "Name" "Brief"` | Scaffolds a new project: copies `project-template.html` to `html/proj/{id}.html` and registers the project in `data/projects.json`. |
 | `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` env var overrides). |
 | `npm start` | Build, then serve. |
 | `npm run clean` | Removes `dist/`. |
@@ -173,6 +175,22 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 - Placeholder images for different aspect ratios live in `assets/img/` (`placeholder.svg` wide, `placeholder-square.svg`, `placeholder-portrait.svg`).
 - Project cards link to a static page per project at `html/proj/{id}.html` (e.g. `html/proj/placeholder-project-one.html`). When adding a project to `data/projects.json`, create its page from this template and name it after the project `id`.
 
+### Scaffolding a New Project (`npm run create`)
+
+`npm run create` scaffolds a new project from the master template so you do not have to copy files and hand-edit JSON. It takes two arguments: the project **name** and a one-sentence **brief** (used as the `summary`).
+
+```sh
+npm run create -- "My Project" "One-sentence description of the project."
+```
+
+The command:
+
+- Derives a lowercase, hyphenated `id` from the name (e.g. `My Project` → `my-project`) and refuses to run if that `id` already exists in `data/projects.json` or as a page in `html/proj/`.
+- Copies `html/proj/project-template.html` to `html/proj/{id}.html` (without the master-template instruction comment).
+- Appends an entry to `data/projects.json` with the required schema: `id`, `title` (the name), `summary` (the brief), empty `tags`, `status: "active"`, `date` (current `YYYY-MM`), `links` (`repo`/`demo` both `null`), the placeholder image, and `featured: false`.
+
+After scaffolding, replace the placeholder body on the new page and set `tags`, `links` and `image` in `data/projects.json`, then run `npm run build`.
+
 ### Firmware / Web Flasher
 
 Some projects ship firmware that visitors can flash to an ESP32 directly from the browser over USB-serial. This uses [ESP Web Tools](https://esphome.github.io/esp-web-tools/) (vendored locally — no CDN, no external requests).
@@ -259,6 +277,7 @@ Adding a project means adding an entry to this file and creating `html/proj/{id}
 - [x] Footer nav generated from `data/footer-nav.json` (`@footer-nav` directive)
 - [x] Shared header/footer as partials; site.json content generated at build time
 - [x] Project lists, project headers and tag filter pre-rendered; runtime `fetch` removed
+- [x] `npm run create`: scaffold a new project page from the template and register it in `projects.json`
 
 ### Phase 4 — Quality
 - [ ] Test layout at 320px, 768px, 1280px widths

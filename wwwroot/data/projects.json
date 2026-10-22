@@ -3,10 +3,19 @@
     "id": "nixie-clock",
     "title": "Nixie Uhr",
     "summary": "Nixie-Uhr mit ESP32, Z5600M Nixie-Röhren und RTC. ",
-    "tags": ["hardware", "electronics", "software", "tubes", "esp32"],
+    "tags": [
+      "hardware",
+      "electronics",
+      "software",
+      "tubes",
+      "esp32"
+    ],
     "status": "active",
     "date": "2026-09",
-    "links": { "repo": "https://github.com/Synthron/Nixie", "demo": null },
+    "links": {
+      "repo": "https://github.com/Synthron/Nixie",
+      "demo": null
+    },
     "image": "assets/img/placeholder.svg",
     "featured": true
   },
@@ -14,10 +23,17 @@
     "id": "sy317",
     "title": "SY317 - 78xx Spanungsregler-Ersatz",
     "summary": "Drop-In Schaltregler-Replacement für 78xx Spannungsregler, mit einstellbarer Ausgangsspannung und höherem Ausgangsstrom.",
-    "tags": ["hardware", "electronics", "power-supply"],
+    "tags": [
+      "hardware",
+      "electronics",
+      "power-supply"
+    ],
     "status": "finished",
     "date": "2026-05",
-    "links": { "repo": "https://github.com/Synthron/SY317", "demo": null },
+    "links": {
+      "repo": "https://github.com/Synthron/SY317",
+      "demo": null
+    },
     "image": "assets/img/sy317_render.png",
     "featured": true
   },
@@ -25,10 +41,16 @@
     "id": "placeholder-project-two",
     "title": "Placeholder Project Two",
     "summary": "Placeholder entry — Test 2.",
-    "tags": ["css", "layout"],
+    "tags": [
+      "css",
+      "layout"
+    ],
     "status": "active",
     "date": "2026-09",
-    "links": { "repo": null, "demo": null },
+    "links": {
+      "repo": null,
+      "demo": null
+    },
     "image": "assets/img/placeholder.svg",
     "featured": false
   }
