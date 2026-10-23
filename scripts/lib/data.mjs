@@ -1,9 +1,25 @@
 // Loading and validation of wwwroot/data/*.json.
 
 import path from 'node:path';
-import { SRC, exists, fail, readJson } from './util.mjs';
+import { SRC, exists, fail, readJson, safeExternalUrl } from './util.mjs';
 
 const REQUIRED_PROJECT_FIELDS = ['id', 'title', 'summary', 'tags', 'status', 'date', 'links', 'image', 'featured'];
+
+// D10: allowed status values. Values contain spaces and capitals; slugify one
+// before using it as a CSS class hook.
+export const STATUS_VALUES = ['in Arbeit', 'fertig', 'pausiert', 'veraltet', 'Konzept', 'abgebrochen'];
+
+const LINK_KEYS = ['repo', 'demo'];
+const slugLike = (value) => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(value);
+
+// S13: image paths must resolve inside wwwroot/ — relative only, no ".." or "."
+// segments, no backslashes, no drive letters or leading slash.
+function insideWorkspace(value) {
+  if (typeof value !== 'string' || value === '' || value.startsWith('/') || value.includes('\\') || /^[a-zA-Z]:/.test(value)) {
+    return false;
+  }
+  return !value.split('/').some((segment) => segment === '..' || segment === '.');
+}
 
 export async function loadSite() {
   const site = await readJson(path.join(SRC, 'data/site.json'));
@@ -86,8 +102,34 @@ export async function loadProjects() {
       fail(`${label}: date must be YYYY-MM`);
       continue;
     }
-    if (!Array.isArray(project.tags) || !project.tags.every((tag) => typeof tag === 'string')) {
-      fail(`${label}: tags must be an array of strings`);
+    for (const key of ['title', 'summary']) {
+      if (typeof project[key] !== 'string' || project[key].trim() === '') {
+        fail(`${label}: "${key}" must be a non-empty string`);
+      }
+    }
+    if (!STATUS_VALUES.includes(project.status)) {
+      fail(`${label}: "status" must be one of: ${STATUS_VALUES.join(', ')}`);
+    }
+    if (typeof project.featured !== 'boolean') fail(`${label}: "featured" must be a boolean`);
+    if (typeof project.links !== 'object' || project.links === null || Array.isArray(project.links)) {
+      fail(`${label}: "links" must be an object with "repo"/"demo" as string | null`);
+    } else {
+      for (const key of LINK_KEYS) {
+        if (project.links[key] !== null && project.links[key] !== undefined && !safeExternalUrl(project.links[key])) {
+          fail(`${label}: "links.${key}" must be null or a valid http(s) URL`);
+        }
+      }
+    }
+    if (!Array.isArray(project.tags)) {
+      fail(`${label}: "tags" must be an array of strings`);
+      continue;
+    }
+    for (const tag of project.tags) {
+      if (typeof tag !== 'string' || !slugLike(tag)) fail(`${label}: invalid tag "${tag}" (lowercase, hyphenated)`);
+    }
+    if (new Set(project.tags).size !== project.tags.length) fail(`${label}: duplicate tags`);
+    if (!insideWorkspace(project.image)) {
+      fail(`${label}: "image" must stay within wwwroot/ (no "../" or absolute path): ${project.image}`);
       continue;
     }
     if (!await exists(path.join(SRC, project.image))) fail(`${label}: image not found: ${project.image}`);

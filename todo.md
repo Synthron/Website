@@ -286,10 +286,10 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
       Done when: renaming `assets/firmware/nixie-clock/manifest.json` makes the build fail (rename it back afterwards).
 - [x] **S11** Validate firmware manifests: valid JSON, `builds[].parts[].path` files exist, offsets are integers. Binaries are committed (D3), so the check always has its inputs.
       Files: `scripts/build.mjs`, `README.md` · Refs: §2
-- [ ] **S12** Validate `projects.json` field types: `title`/`summary` non-empty strings, `status` in the D10 enum (`in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`), `featured` boolean, `links` shape, tag format, no duplicate tags. Also list the enum in the AGENTS.md "Data" section.
+- [x] **S12** Validate `projects.json` field types: `title`/`summary` non-empty strings, `status` in the D10 enum (`in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`), `featured` boolean, `links` shape, tag format, no duplicate tags. Also list the enum in the AGENTS.md "Data" section.
       Same commit: migrate existing data (`active` → `in Arbeit`, `finished` → `fertig`), change the default status in `create.mjs` to `in Arbeit`, update the README Data Model example and document the enum. If a status is ever used as a CSS hook, slugify it (values contain spaces and capitals).
       Files: `scripts/build.mjs`, `scripts/create.mjs`, `wwwroot/data/projects.json`, `README.md` · Refs: §2
-- [ ] **S13** Reject `image` paths that leave `wwwroot/` (`../`) and fail on non-null `links` values that are not valid http(s) URLs (they are silently dropped today).
+- [x] **S13** Reject `image` paths that leave `wwwroot/` (`../`) and fail on non-null `links` values that are not valid http(s) URLs (they are silently dropped today).
       Files: `scripts/build.mjs` · Refs: §2
 
 **Production**

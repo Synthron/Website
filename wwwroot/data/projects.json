@@ -10,7 +10,7 @@
       "tubes",
       "esp32"
     ],
-    "status": "active",
+    "status": "in Arbeit",
     "date": "2026-09",
     "links": {
       "repo": "https://github.com/Synthron/Nixie",
@@ -21,14 +21,14 @@
   },
   {
     "id": "sy317",
-    "title": "SY317 - 78xx Spansungsregler-Ersatz",
+    "title": "SY317 - 78xx Spannungsregler-Ersatz",
     "summary": "Drop-In Schaltregler-Replacement für 78xx Spannungsregler, mit einstellbarer Ausgangsspannung und höherem Ausgangsstrom.",
     "tags": [
       "hardware",
       "electronics",
       "power-supply"
     ],
-    "status": "finished",
+    "status": "fertig",
     "date": "2026-05",
     "links": {
       "repo": "https://github.com/Synthron/SY317",
@@ -45,7 +45,7 @@
       "css",
       "layout"
     ],
-    "status": "active",
+    "status": "in Arbeit",
     "date": "2026-09",
     "links": {
       "repo": null,

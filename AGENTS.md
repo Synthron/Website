@@ -113,6 +113,9 @@ Commands: `npm run build` (wwwroot → dist), `npm run serve`, `npm start` (both
 - `data/projects.json` must match the schema documented in `README.md`.
 - Required fields: `id`, `title`, `summary`, `tags`, `status`, `date`, `links`, `image`, `featured`.
 - `id` values are unique, lowercase, hyphenated.
+- `status` is one of: `in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`.
+- `tags` are lowercase and hyphenated (same rule as `id`), no duplicates per project.
+- `links.repo` / `links.demo` are `null` or an http(s) URL; `image` is a relative path inside `wwwroot/` (no `../`).
 - `date` format: `YYYY-MM`.
 - Each project needs a page `wwwroot/html/proj/{id}.html`; the build fails otherwise.
 

@@ -68,7 +68,7 @@ async function main() {
     title: name,
     summary: brief,
     tags: [],
-    status: 'active',
+    status: 'in Arbeit',
     date: currentMonth(),
     links: { repo: null, demo: null },
     image: 'assets/img/placeholder.svg',
