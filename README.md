@@ -20,6 +20,7 @@ Website/
 ├── README.md              # This file: directives, outline, todos
 ├── AGENTS.md              # Instructions for AI agents / contributors (AGENTS.md)
 ├── .gitignore             # Ignore OS/editor junk, node_modules/, dist/
+├── .gitattributes         # LF line endings for text; binary for .bin/.jpg/.png/.webp
 ├── .editorconfig          # Indentation and encoding rules
 ├── .nvmrc                # Pins the local Node.js version to 22 (nvm)
 ├── package.json           # npm scripts (no dependencies)
