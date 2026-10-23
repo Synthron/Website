@@ -15,7 +15,7 @@ import { checkLinks } from './lib/checks.mjs';
 const SKIP_DIRS = new Set(['partials', 'data']);
 const SKIP_FILES = new Set(['project-template.html', '.gitkeep']);
 // Non-HTML files that also go through the token pass.
-const TEMPLATE_FILES = new Set(['favicon.svg', 'robots.txt']);
+const TEMPLATE_FILES = new Set(['robots.txt']);
 
 async function build() {
   const site = await loadSite();

@@ -36,7 +36,6 @@ export async function loadSite() {
     footerNote: site.footerNote ?? '',
     email: site.email ?? '',
     year: site.copyrightYear ?? new Date().getFullYear(),
-    monogram: Array.from(site.name ?? '').find((char) => char.trim() !== '')?.toUpperCase() ?? '',
     url,
     sitemapUrl: url ? `${url}/sitemap.xml` : '',
   };

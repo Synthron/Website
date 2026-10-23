@@ -36,7 +36,8 @@ Website/
 └── wwwroot/               # Source (build input)
     ├── index.html         # Entry page (home / overview)
     ├── 404.html           # Not-found page
-    ├── favicon.svg        # Monogram favicon (template; initial comes from site.json)
+    ├── .htaccess          # Apache config for dm7wb.de (error page, headers, caching; production only)
+    ├── favicon.svg        # Logo favicon (simplified trace; also the header brand icon)
     ├── robots.txt         # Crawler rules
     ├── partials/          # Build-time includes (not copied to dist/)
     │   ├── head.html      # Shared <head> content (charset, CSP, favicon, CSS, main.js)
@@ -45,9 +46,13 @@ Website/
     ├── html/              # Additional page templates
     │   ├── projects.html  # Project listing page with tag filter
     │   ├── about.html     # About and contact page
+    │   ├── impressum.html # Legal: imprint
+    │   ├── privacy.html   # Legal: privacy policy
+    │   ├── rechtliches.html # Legal: legal notes
     │   └── proj/          # Individual project pages (one per project, named by `id`)
     │       ├── project-template.html  # Master project write-up template (all layouts; not built)
     │       ├── sy317.html # Static project page (from template)
+    │       ├── nixie-clock.html  # Static project page (from template)
     │       └── placeholder-project-*.html  # Static project pages (from template)
     ├── css/
     │   ├── base.css       # Reset, custom properties, typography, colour schemes
@@ -70,10 +75,12 @@ Website/
         │   ├── placeholder.svg  # Placeholder project image (wide)
         │   ├── placeholder-square.svg  # Placeholder (square)
         │   ├── placeholder-portrait.svg  # Placeholder (portrait)
-        │   └── GitHub_Invertocat_White.svg  # Github mark (leading icon in the Source button)
+        │   └── sy317_*    # sy317 project images (pic, render, schematic)
         ├── firmware/      # Web-flasher suites (one folder per firmware variant)
-        │   └── nixie-clock/  # bootloader.bin, partitions.bin, firmware.bin, manifest.json
-        └── icons/         # SVG icons (.gitkeep until first icon)
+        │   ├── nixie-clock/  # bootloader.bin, partitions.bin, firmware.bin, manifest.json
+        │   └── dummy/        # Example suite referenced by project-template.html
+        └── icons/         # SVG icons
+            └── GitHub_Invertocat_White.svg  # Github mark (leading icon in the Source button)
 ```
 
 ### Build and Preview
@@ -88,7 +95,7 @@ Requires Node.js ≥ 18. There are no dependencies, so no `npm install` is neede
 | `npm start` | Build, then serve. |
 | `npm run clean` | Removes `dist/`. |
 
-The build copies `wwwroot/` to `dist/` except `partials/`, `data/` and `html/proj/project-template.html`. HTML files, `favicon.svg` and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then the `@raw` blocks are put back unchanged. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
+The build copies `wwwroot/` to `dist/` except `partials/`, `data/` and `html/proj/project-template.html`. HTML files and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then the `@raw` blocks are put back unchanged. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
 
 The build also generates `dist/sitemap.xml` from every built page (excluding `404.html`; `index.html` becomes the root URL, project pages carry a `lastmod` from their `date`) and fills the `Sitemap:` line in `dist/robots.txt`. Both use the canonical `url` in `data/site.json`. Keep `data/site.json`'s `url` current when the site moves domains.
 
@@ -100,7 +107,7 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | --- | --- |
 | `<!-- @include head -->` / `<!-- @include header -->` / `<!-- @include footer -->` | Inserts `partials/head.html` / `partials/header.html` / `partials/footer.html` (any file in `partials/` works by its name). |
 | `{{csp}}` | Content Security Policy for the page. Pages containing `<esp-web-install-button>` automatically get `style-src 'self' 'unsafe-inline'` added. Used in `partials/head.html`. |
-| `{{name}}`, `{{year}}`, `{{footerNote}}`, `{{email}}`, `{{monogram}}` | Values from `data/site.json` (`monogram` = first letter of `name`). |
+| `{{name}}`, `{{year}}`, `{{footerNote}}`, `{{email}}` | Values from `data/site.json`. |
 | `{{url}}`, `{{sitemapUrl}}` | Canonical base URL and `https://…/sitemap.xml` from `data/site.json` (`url`). Used by `robots.txt`. |
 | `{{root}}` | Relative path to the web root (`""` for root pages, `"../"` for pages in `html/`). |
 | `<!-- @nav -->` | Nav list built from `data/nav.json`; sets `aria-current="page"` on the entry whose `href` is the current page. Used in `partials/header.html`. |
@@ -169,7 +176,7 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 
 | Field | Used for |
 | --- | --- |
-| `name` | Header brand, `{{name}}` in titles/descriptions/intro, footer copyright, favicon monogram. |
+| `name` | Header brand, `{{name}}` in titles/descriptions/intro, footer copyright. |
 | `copyrightYear` | Footer copyright line (optional; defaults to the build year). |
 | `footerNote` | Footer note. |
 | `email` | Contact `mailto:` link on the About page. |
@@ -216,14 +223,14 @@ Some projects ship firmware that visitors can flash to an ESP32 directly from th
 
 - The library lives in `js/vendor/esp-web-tools/` (all modules of the `dist/web/` build, kept as-is so relative imports resolve). Reference it with `<script type="module" src="{{root}}js/vendor/esp-web-tools/install-button.js"></script>`.
 - Firmware suites live in `assets/firmware/<suite>/` (copied to `dist/` like any other asset). Each suite is a folder holding its own `manifest.json` and the binaries it references, e.g. `assets/firmware/nixie-clock/{bootloader.bin, partitions.bin, firmware.bin, manifest.json}`. Different projects or variants live in separate folders, so each can use the same file names without collisions.
-- Each `manifest.json` references the binaries in its own folder (paths are relative to the manifest). For a plain app image (typical Arduino/PlatformIO build) flash **all three** parts with the correct offsets: `bootloader.bin` at `0x1000`, `partitions.bin` at `0x8000`, and the app at `0x10000`. Flashing a plain app at offset `0` overwrites the bootloader and partition table ("invalid header" boot-loop). If you instead use a combined/factory image, offset `0` is correct. The `.bin` files are provided separately and are not committed.
+- Each `manifest.json` references the binaries in its own folder (paths are relative to the manifest). For a plain app image (typical Arduino/PlatformIO build) flash **all three** parts with the correct offsets: `bootloader.bin` at `0x1000`, `partitions.bin` at `0x8000`, and the app at `0x10000`. Flashing a plain app at offset `0` overwrites the bootloader and partition table ("invalid header" boot-loop). If you instead use a combined/factory image, offset `0` is correct. The binaries are committed in git per suite in `assets/firmware/<suite>/`; they are not provided separately, so a checkout always contains everything the build and deployment need.
 - To flash, add one `<esp-web-install-button manifest="{{root}}assets/firmware/<suite>/manifest.json"></esp-web-install-button>` per firmware variant — you can add several buttons on one page, each targeting a different manifest. See section 10 ("Firmware / web flasher") in `project-template.html` for a working example with two buttons. Include the vendored script before `</body>`.
 - The page CSP must allow the component's injected styles (`style-src 'self' 'unsafe-inline'`). The build adds this automatically via `{{csp}}` on every page that contains `<esp-web-install-button>`; other pages keep the strict policy. The flasher needs a secure context (HTTPS or `localhost`) for the WebSerial API — serving over a LAN IP like `http://192.168.x.x` will not expose WebSerial.
 - On **Linux**, Chrome/Chromium hides the Web Serial API by default; launch with `google-chrome --enable-features=WebSerialPorts` (fully quit Chrome first, or the flag is ignored). On macOS/Windows WebSerial works out of the box in current Chrome/Edge.
 
 ### Placeholders
 
-Name, copyright, footer note, email and favicon initial come from `data/site.json`. Still to replace with real content: the intro on `index.html`, the text on `html/about.html`, the three `placeholder-project-*` entries in `data/projects.json` and their page bodies.
+Name, copyright, footer note and email come from `data/site.json`. Still to replace with real content: the intro on `index.html`, the text on `html/about.html`, the three `placeholder-project-*` entries in `data/projects.json` and their page bodies.
 
 ### Supporting Files
 
@@ -234,7 +241,7 @@ Name, copyright, footer note, email and favicon initial come from `data/site.jso
 | `package.json` | npm scripts only; no dependencies. |
 | `wwwroot/robots.txt` | Crawler rules; the `Sitemap:` line is filled from `data/site.json` at build time. |
 | `dist/sitemap.xml` | Generated by the build from all built pages (excludes `404.html`); not a source file. |
-| `wwwroot/favicon.svg` | Monogram favicon template; `{{monogram}}` is filled at build time. |
+| `wwwroot/favicon.svg` | Logo favicon (simplified SVG trace); also used as the header brand icon. |
 | `wwwroot/404.html` | Minimal not-found page using the shared stylesheet. |
 
 ### Data Model (`data/projects.json`)
@@ -253,7 +260,7 @@ Name, copyright, footer note, email and favicon initial come from `data/site.jso
 }
 ```
 
-Adding a project means adding an entry to this file and creating `html/proj/{id}.html` from the project template. Cards, filter, page title and page header are generated by the build. The project header's **Source** button (from `links.repo`) renders with the Github mark (`assets/img/GitHub_Invertocat_White.svg`) as a leading badge; the **Demo** button (from `links.demo`) stays a plain text button. Omit the link to hide its button.
+Adding a project means adding an entry to this file and creating `html/proj/{id}.html` from the project template. Cards, filter, page title and page header are generated by the build. The project header's **Source** button (from `links.repo`) renders with the Github mark (`assets/icons/GitHub_Invertocat_White.svg`) as a leading badge; the **Demo** button (from `links.demo`) stays a plain text button. Omit the link to hide its button.
 
 ## Todo List
 
@@ -273,7 +280,7 @@ Adding a project means adding an entry to this file and creating `html/proj/{id}
 ### Phase 2 — Content & Structure
 - [x] Home page: intro, featured projects (placeholder text)
 - [x] `html/projects.html`: full project listing
-- [x] `html/project.html`: detail template (driven by `?id=` query parameter)
+- ~~[x] `html/project.html`: detail template (driven by `?id=` query parameter)~~ — obsolete; replaced by static `html/proj/{id}.html` pages
 - [x] `html/about.html`: about and contact (contact via plain `mailto:` link)
 - [x] Shared header/footer markup, documented how to keep it consistent across pages
 - [x] `html/project-template.html`: master project write-up template with all layout patterns
@@ -310,7 +317,8 @@ Adding a project means adding an entry to this file and creating `html/proj/{id}
 
 ### Phase 5 — Release
 - [ ] Choose hosting (static: GitHub Pages, Netlify, or self-hosted)
-- [ ] Add `sitemap.xml` and meta descriptions / Open Graph tags
+- [x] Add `sitemap.xml` (done: generated by the build)
+- [ ] Add meta descriptions / Open Graph tags
 - [ ] Write a short deployment note in this README (deploy the contents of `dist/`)
 
 ## Open Decisions

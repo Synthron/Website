@@ -255,17 +255,17 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **Content and docs (no code)**
 
-- [ ] **S01** Fix the typo "Spanungsregler" → "Spannungsregler" and the trailing space in the `nixie-clock` summary.
+- [x] **S01** Fix the typo "Spanungsregler" → "Spannungsregler" and the trailing space in the `nixie-clock` summary.
       Files: `wwwroot/data/projects.json` · Refs: §1 Content
-- [ ] **S02** Correct the GitHub icon path in the README (`assets/icons/`, outline and Data Model section) and delete `assets/icons/.gitkeep`.
+- [x] **S02** Correct the GitHub icon path in the README (`assets/icons/`, outline and Data Model section) and delete `assets/icons/.gitkeep`.
       Files: `README.md`, `wwwroot/assets/icons/.gitkeep` · Refs: §1
-- [ ] **S03** Add the missing paths to the README outline: `.htaccess`, `impressum.html`, `privacy.html`, `rechtliches.html`, `nixie-clock.html`, `assets/firmware/dummy/`, `assets/img/sy317_*`.
+- [x] **S03** Add the missing paths to the README outline: `.htaccess`, `impressum.html`, `privacy.html`, `rechtliches.html`, `nixie-clock.html`, `assets/firmware/dummy/`, `assets/img/sy317_*`.
       Files: `README.md` · Refs: §1
-- [ ] **S04** Clean up the README todo list: strike the obsolete `html/project.html?id=` item, split Phase 5 into "sitemap.xml (done)" and "meta descriptions / Open Graph (open)".
+- [x] **S04** Clean up the README todo list: strike the obsolete `html/project.html?id=` item, split Phase 5 into "sitemap.xml (done)" and "meta descriptions / Open Graph (open)".
       Files: `README.md` · Refs: §1
-- [ ] **S05** Make the firmware docs match D3 (keep tracked): rewrite the README sentence "The `.bin` files are provided separately and are not committed" to say the binaries are committed per suite in `assets/firmware/<suite>/`.
+- [x] **S05** Make the firmware docs match D3 (keep tracked): rewrite the README sentence "The `.bin` files are provided separately and are not committed" to say the binaries are committed per suite in `assets/firmware/<suite>/`.
       Files: `README.md` · Refs: §1
-- [ ] **S06** Make the favicon docs match D4 (traced logo): rewrite the README favicon text (outline + Supporting Files). Remove the now unused `{{monogram}}` token from the build and the README token table, and drop `favicon.svg` from `TEMPLATE_FILES`.
+- [x] **S06** Make the favicon docs match D4 (traced logo): rewrite the README favicon text (outline + Supporting Files). Remove the now unused `{{monogram}}` token from the build and the README token table, and drop `favicon.svg` from `TEMPLATE_FILES`.
       Files: `README.md`, `scripts/build.mjs` · Refs: §1
 
 **Repository setup**

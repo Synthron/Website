@@ -2,7 +2,7 @@
   {
     "id": "nixie-clock",
     "title": "Nixie Uhr",
-    "summary": "Nixie-Uhr mit ESP32, Z5600M Nixie-Röhren und RTC. ",
+    "summary": "Nixie-Uhr mit ESP32, Z5600M Nixie-Röhren und RTC.",
     "tags": [
       "hardware",
       "electronics",
@@ -21,7 +21,7 @@
   },
   {
     "id": "sy317",
-    "title": "SY317 - 78xx Spanungsregler-Ersatz",
+    "title": "SY317 - 78xx Spansungsregler-Ersatz",
     "summary": "Drop-In Schaltregler-Replacement für 78xx Spannungsregler, mit einstellbarer Ausgangsspannung und höherem Ausgangsstrom.",
     "tags": [
       "hardware",

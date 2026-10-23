@@ -43,7 +43,6 @@ export function applyTokens(text, ctx) {
       year: ctx.site.year,
       footerNote: ctx.site.footerNote,
       email: ctx.site.email,
-      monogram: ctx.site.monogram,
       url: ctx.site.url,
       sitemapUrl: ctx.site.sitemapUrl,
       root: ctx.root,
