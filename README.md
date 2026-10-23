@@ -72,7 +72,8 @@ Website/
     │   ├── nav.json        # Header navigation entries (label + href)
     │   ├── footer-nav.json # Footer navigation entries (label + href)
     │   ├── projects.json   # Project entries (single source of truth)
-    │   └── site.json       # Shared site info (name, copyright, email)
+    │   ├── site.json       # Shared site info (lang, name, copyright, email)
+    │   └── strings.json    # German UI strings (count labels, buttons, aria)
     └── assets/
         ├── img/           # Optimised images (WebP/SVG preferred)
         │   ├── placeholder.svg  # Placeholder project image (wide)
@@ -121,6 +122,7 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | --- | --- |
 | `<!-- @include head -->` / `<!-- @include header -->` / `<!-- @include footer -->` | Inserts `partials/head.html` / `partials/header.html` / `partials/footer.html` (any file in `partials/` works by its name). |
 | `{{csp}}` | Content Security Policy for the page. Pages containing `<esp-web-install-button>` automatically get `style-src 'self' 'unsafe-inline'` added. Used in `partials/head.html`. |
+| `{{lang}}` | Page language code from `data/site.json` (`lang`), used in `<html lang="{{lang}}">`. |
 | `{{name}}`, `{{year}}`, `{{footerNote}}`, `{{email}}` | Values from `data/site.json`. |
 | `{{url}}`, `{{sitemapUrl}}` | Canonical base URL and `https://…/sitemap.xml` from `data/site.json` (`url`). Used by `robots.txt`. |
 | `{{root}}` | Relative path to the web root (`""` for root pages, `"../"` for pages in `html/`). |
@@ -154,8 +156,8 @@ The header (skip link, brand, nav) and footer live once in `wwwroot/partials/`. 
 <header class="site-header">
   <div class="container site-header__inner">
     <a class="site-brand" href="…">…</a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden>Menu</button>
-    <nav class="site-nav" id="site-nav" aria-label="Main">…</nav>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden>Menü</button>
+    <nav class="site-nav" id="site-nav" aria-label="Hauptnavigation">…</nav>
   </div>
 </header>
 ```
@@ -165,7 +167,7 @@ The footer mirrors the header: a `site-footer__nav` element (fed by `@footer-nav
 ```html
 <footer class="site-footer">
   <div class="container site-footer__inner">
-    <nav class="site-footer__nav" aria-label="Footer">…</nav>
+    <nav class="site-footer__nav" aria-label="Fußbereich">…</nav>
     <div class="site-footer__info">…</div>
   </div>
 </footer>
@@ -190,6 +192,7 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 
 | Field | Used for |
 | --- | --- |
+| `lang` | Page language code (used by `<html lang="{{lang}}">` and `formatDate`). |
 | `name` | Header brand, `{{name}}` in titles/descriptions/intro, footer copyright. |
 | `copyrightYear` | Footer copyright line (optional; defaults to the build year). |
 | `footerNote` | Footer note. |
@@ -203,6 +206,7 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 | --- | --- |
 | `data-tag-filter="<list-id>"` | Filter host for the list with that `id`; `js/projects.js` reveals it and toggles cards via their `data-tags`. |
 | `data-filter-status="<list-id>"` | Live status text with the result count. |
+| `data-count-singular` / `data-count-plural` / `data-with-tag` / `data-lang` | German count words and the "mit Tag" connector, rendered from `data/strings.json` so `js/projects.js` never hard-codes labels. |
 
 ### Project Write-up Template
 

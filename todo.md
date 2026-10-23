@@ -382,12 +382,15 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **Language** (D1: German content and UI)
 
-- [ ] **S39** Add `"lang": "de"` to `site.json`, a `{{lang}}` token, and use `<html lang="{{lang}}">` in all pages and the template.
+- [x] **S39** Add `"lang": "de"` to `site.json`, a `{{lang}}` token, and use `<html lang="{{lang}}">` in all pages and the template.
       Files: `site.json`, `build.mjs`, all `wwwroot/**/*.html`, `README.md` · Refs: §4.4
-- [ ] **S40** Move generated UI strings into `site.json` (or `data/strings.json`) and translate them: "1 Projekt" / "N Projekte", "Nach Tag filtern", "Alle", "Noch keine Projekte", "Quellcode", "Demo", date locale `de` ("Sept. 2026"). Render the filter count labels as `data-*` attributes so `js/projects.js` does not hard-code them.
+      Done: `lang` in `data/site.json` + validated in `loadSite`; `{{lang}}` token in `scripts/lib/pipeline.mjs`; `<html lang="{{lang}}">` in every page + `project-template.html`. README token table + Site Config table updated. Built output: `<html lang="de">`.
+- [x] **S40** Move generated UI strings into `site.json` (or `data/strings.json`) and translate them: "1 Projekt" / "N Projekte", "Nach Tag filtern", "Alle", "Noch keine Projekte", "Quellcode", "Demo", date locale `de` ("Sept. 2026"). Render the filter count labels as `data-*` attributes so `js/projects.js` does not hard-code them.
       Files: `build.mjs`, `js/projects.js`, data file, `README.md` · Refs: §4.4
-- [ ] **S41** Translate the remaining hard-coded UI text in pages and partials to German ("View projects", "About me", "Skip to content", "Menu", "Featured projects", "All projects", "← All projects" …).
+      Done: new `data/strings.json` (German labels) + `loadStrings()` validation in `scripts/lib/data.mjs`; renderers (`renderMeta`/`renderTags`/`renderLinks`/`renderProjectHeader`/`renderCard`/`renderProjectList`/`renderTagFilter`) take strings and `lang`; `formatDate(value, locale)` with `de`; tag filter emits `data-count-singular/plural`, `data-with-tag`, `data-lang` so `js/projects.js` builds labels from attributes (no hard-coded words). Removed dead `countLabel` from `util.mjs`. README Script Hooks + outline updated.
+- [x] **S41** Translate the remaining hard-coded UI text in pages and partials to German ("View projects", "About me", "Skip to content", "Menu", "Featured projects", "All projects", "← All projects" …).
       Files: `index.html`, `404.html`, `partials/header.html`, `html/*.html`, `html/proj/*.html` · Refs: §4.4
+      Done: `index.html` (Start/Projekte ansehen/Über mich/Ausgewählte Projekte/Alle Projekte), `404.html` (German prose + Zurück zur Startseite), `partials/header.html` (Zum Inhalt springen/Menü/Hauptnavigation), `partials/footer.html` (Fußbereich), `projects.html`, `about.html`, legal pages (Impressum/Datenschutz/Rechtliche Hinweise titles + German meta descriptions; wording untouched), all project pages + template ("← Alle Projekte"). Built output checked: no English UI strings or `lang="en"` left.
 
 **Scaffolding scripts**
 

@@ -39,6 +39,7 @@ export function applyIncludes(html, partials, rel) {
 export function applyTokens(text, ctx) {
   return text.replace(/\{\{\s*([\w:]+)\s*\}\}/g, (match, key, offset) => {
     const values = {
+      lang: ctx.site.lang,
       name: ctx.site.name,
       year: ctx.site.year,
       footerNote: ctx.site.footerNote,
@@ -58,7 +59,7 @@ export function applyTokens(text, ctx) {
   });
 }
 
-export function applyDirectives(html, ctx, projects, nav, footerNav) {
+export function applyDirectives(html, ctx, projects, nav, footerNav, strings) {
   return html.replace(/<!--\s*@([\w-]+)([^>]*?)-->/g, (match, name, rawArgs, offset) => {
     const args = rawArgs.trim().split(/\s+/).filter(Boolean);
     switch (name) {
@@ -67,15 +68,15 @@ export function applyDirectives(html, ctx, projects, nav, footerNav) {
       case 'footer-nav':
         return renderNav(footerNav, ctx, { list: 'site-footer__list', link: 'site-footer__link' });
       case 'projects':
-        return renderProjectList(projects, args, ctx);
+        return renderProjectList(projects, args, ctx, strings);
       case 'tag-filter':
-        return renderTagFilter(projects, args);
+        return renderTagFilter(projects, args, ctx.site.lang, strings);
       case 'project-header':
         if (!ctx.project) {
           fail(`${ref(ctx.rel, html, offset)}: @project-header needs a project with id "${path.basename(ctx.rel, '.html')}"`);
           return '';
         }
-        return renderProjectHeader(ctx.project, ctx);
+        return renderProjectHeader(ctx.project, ctx, strings);
       default:
         fail(`${ref(ctx.rel, html, offset)}: unknown directive @${name}`);
         return '';

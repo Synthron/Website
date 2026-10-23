@@ -70,10 +70,9 @@ export function safeExternalUrl(value) {
   }
 }
 
-export function formatDate(value) {
+export function formatDate(value, locale = 'en') {
   const match = /^(\d{4})-(\d{2})$/.exec(value);
   const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1));
-  return date.toLocaleDateString('en', { year: 'numeric', month: 'short', timeZone: 'UTC' });
+  return date.toLocaleDateString(locale, { year: 'numeric', month: 'short', timeZone: 'UTC' });
 }
 
-export const countLabel = (count) => (count === 1 ? '1 project' : `${count} projects`);

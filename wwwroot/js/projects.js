@@ -1,7 +1,7 @@
 // Tag filter enhancement. Project lists are pre-rendered at build time;
 // this only shows the filter and toggles cards by their data-tags.
-
-const countLabel = (count) => (count === 1 ? '1 project' : `${count} projects`);
+// German count words come from the status element's data-* attributes
+// (rendered by the build from data/strings.json), never hard-coded here.
 
 function parseTags(card) {
   try {
@@ -22,6 +22,11 @@ export function initTagFilter(host) {
 
   const status = document.querySelector(`[data-filter-status="${CSS.escape(host.dataset.tagFilter)}"]`);
 
+  const countLabel = (count) => {
+    const word = count === 1 ? status?.dataset.countSingular : status?.dataset.countPlural;
+    return word ? `${count} ${word}` : String(count);
+  };
+
   host.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-tag]');
     if (!button) return;
@@ -33,7 +38,11 @@ export function initTagFilter(host) {
       entry.card.hidden = !show;
       if (show) visible += 1;
     });
-    if (status) status.textContent = tag ? `${countLabel(visible)} tagged “${tag}”` : countLabel(visible);
+    if (status) {
+      status.textContent = tag
+        ? `${countLabel(visible)} ${status.dataset.withTag ?? ''} “${tag}”`
+        : countLabel(visible);
+    }
   });
 
   host.hidden = false;

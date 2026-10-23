@@ -1,9 +1,10 @@
 // HTML/XML renderers for directives and generated files. All data is escaped.
+// UI labels come from data/strings.json (S40); dates use the site language.
 
 import path from 'node:path';
-import { countLabel, esc, formatDate, safeExternalUrl } from './util.mjs';
+import { esc, formatDate, safeExternalUrl } from './util.mjs';
 
-const LINK_LABELS = [['repo', 'Source'], ['demo', 'Demo']];
+const LINK_LABELS = [['repo', 'repo'], ['demo', 'demo']];
 
 // Nav links are relative to the web root; `aria-current` marks the current page.
 export function renderNav(items, ctx, cls = { list: 'site-nav__list', link: 'site-nav__link' }) {
@@ -17,21 +18,21 @@ export function renderNav(items, ctx, cls = { list: 'site-nav__list', link: 'sit
   return `<ul class="${cls.list}">\n${links.join('\n')}\n</ul>`;
 }
 
-export function renderMeta(project) {
+export function renderMeta(project, lang) {
   return `<p class="project-meta">
   <span class="status">${esc(project.status)}</span>
-  <time datetime="${esc(project.date)}">${esc(formatDate(project.date))}</time>
+  <time datetime="${esc(project.date)}">${esc(formatDate(project.date, lang))}</time>
 </p>`;
 }
 
-export function renderTags(tags) {
+export function renderTags(tags, strings) {
   const items = tags.map((tag) => `<li><span class="tag">${esc(tag)}</span></li>`).join('\n  ');
-  return `<ul class="tag-list" aria-label="Tags">\n  ${items}\n</ul>`;
+  return `<ul class="tag-list" aria-label="${esc(strings.tagsLabel)}">\n  ${items}\n</ul>`;
 }
 
-export function renderLinks(project, root) {
+export function renderLinks(project, root, strings) {
   const items = [];
-  for (const [key, label] of LINK_LABELS) {
+  for (const [key, stringKey] of LINK_LABELS) {
     const href = safeExternalUrl(project.links?.[key]);
     if (!href) continue;
     // The github mark is white, so it sits in a dark badge to stay visible
@@ -40,32 +41,33 @@ export function renderLinks(project, root) {
     const icon = key === 'repo'
       ? `<span class="link-list__badge"><img src="${esc(root)}assets/icons/GitHub_Invertocat_White.svg" alt="" width="18" height="18"></span>`
       : '';
-    items.push(`<li><a class="button button--secondary" href="${esc(href)}" rel="noopener noreferrer">${icon}${label}<span class="visually-hidden"> for ${esc(project.title)}</span></a></li>`);
+    const label = strings[stringKey];
+    items.push(`<li><a class="button button--secondary" href="${esc(href)}" rel="noopener noreferrer">${icon}${esc(label)}<span class="visually-hidden"> für ${esc(project.title)}</span></a></li>`);
   }
   return items.length > 0 ? `<ul class="link-list">\n  ${items.join('\n  ')}\n</ul>` : '';
 }
 
-export function renderProjectHeader(project, ctx) {
+export function renderProjectHeader(project, ctx, strings) {
   return [
     '<header class="page-header">',
     `<h1>${esc(project.title)}</h1>`,
     `<p class="page-header__lead">${esc(project.summary)}</p>`,
-    renderMeta(project),
-    renderTags(project.tags),
-    renderLinks(project, ctx.root),
+    renderMeta(project, ctx.site.lang),
+    renderTags(project.tags, strings),
+    renderLinks(project, ctx.root, strings),
     '</header>',
   ].filter(Boolean).join('\n');
 }
 
-export function renderCard(project, root, level) {
+export function renderCard(project, root, level, strings) {
   const tag = `h${level}`;
   return `<article class="project-card" data-tags="${esc(JSON.stringify(project.tags))}">
   <img class="project-card__image" src="${esc(root + project.image)}" alt="" loading="lazy" decoding="async">
   <div class="project-card__body">
     <${tag} class="project-card__title"><a class="project-card__link" href="${esc(`${root}html/proj/${project.id}.html`)}">${esc(project.title)}</a></${tag}>
-    ${renderMeta(project)}
+    ${renderMeta(project, strings.lang)}
     <p class="project-card__summary">${esc(project.summary)}</p>
-    ${renderTags(project.tags)}
+    ${renderTags(project.tags, strings)}
   </div>
 </article>`;
 }
@@ -74,7 +76,7 @@ export function renderCard(project, root, level) {
 // the sitemap. Cards for drafts would leak in-browser otherwise.
 const published = (projects) => projects.filter((project) => project.draft !== true);
 
-export function renderProjectList(projects, args, ctx) {
+export function renderProjectList(projects, args, ctx, strings) {
   const [mode, ...rest] = args;
   const options = Object.fromEntries(rest.map((arg) => arg.split('=')));
   const level = options.level === '2' ? 2 : 3;
@@ -82,21 +84,22 @@ export function renderProjectList(projects, args, ctx) {
   const selection = mode === 'featured' ? visible.filter((project) => project.featured === true) : visible;
   const id = options.id ? ` id="${esc(options.id)}"` : '';
   const inner = selection.length > 0
-    ? selection.map((project) => renderCard(project, ctx.root, level)).join('\n')
-    : '<p class="message">No projects to show yet.</p>';
+    ? selection.map((project) => renderCard(project, ctx.root, level, strings)).join('\n')
+    : `<p class="message">${esc(strings.noProjects)}</p>`;
   return `<div class="project-grid"${id}>\n${inner}\n</div>`;
 }
 
 // Starts hidden; js/projects.js reveals it. Without JS the full list shows.
-export function renderTagFilter(projects, args) {
+export function renderTagFilter(projects, args, lang, strings) {
   const [listId] = args;
   const visible = published(projects);
   const tags = [...new Set(visible.flatMap((project) => project.tags))].sort((a, b) => a.localeCompare(b));
-  const buttons = ['', ...tags].map((tag) => `<button class="tag-filter__button" type="button" data-tag="${esc(tag)}" aria-pressed="${tag === ''}">${tag === '' ? 'All' : esc(tag)}</button>`);
-  return `<div class="tag-filter" role="group" aria-label="Filter by tag" data-tag-filter="${esc(listId)}" hidden>
+  const buttons = ['', ...tags].map((tag) => `<button class="tag-filter__button" type="button" data-tag="${esc(tag)}" aria-pressed="${tag === ''}">${tag === '' ? esc(strings.all) : esc(tag)}</button>`);
+  const format = (count) => count === 1 ? `1 ${strings.countSingular}` : `${count} ${strings.countPlural}`;
+  return `<div class="tag-filter" role="group" aria-label="${esc(strings.tagFilterLabel)}" data-tag-filter="${esc(listId)}" hidden>
 ${buttons.join('\n')}
 </div>
-<p class="filter-status" role="status" data-filter-status="${esc(listId)}">${countLabel(visible.length)}</p>`;
+<p class="filter-status" role="status" data-filter-status="${esc(listId)}" data-count-singular="${esc(strings.countSingular)}" data-count-plural="${esc(strings.countPlural)}" data-with-tag="${esc(strings.withTag)}" data-lang="${esc(lang)}">${esc(format(visible.length))}</p>`;
 }
 
 export function renderSitemap(pages, baseUrl, byId) {

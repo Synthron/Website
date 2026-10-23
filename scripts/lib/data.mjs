@@ -3,6 +3,10 @@
 import path from 'node:path';
 import { SRC, exists, fail, readJson, safeExternalUrl } from './util.mjs';
 
+// S40: the German UI strings rendered into pages and exposed to js/projects.js
+// via data-* attributes. Keys are the singular/plural count words and labels.
+const STRING_KEYS = ['countSingular', 'countPlural', 'withTag', 'tagFilterLabel', 'tagsLabel', 'all', 'noProjects', 'repo', 'demo'];
+
 const REQUIRED_PROJECT_FIELDS = ['id', 'title', 'summary', 'tags', 'status', 'date', 'links', 'image', 'featured'];
 
 // D10: allowed status values. Values contain spaces and capitals; slugify one
@@ -23,7 +27,7 @@ function insideWorkspace(value) {
 
 export async function loadSite() {
   const site = await readJson(path.join(SRC, 'data/site.json'));
-  for (const key of ['name', 'footerNote', 'email']) {
+  for (const key of ['lang', 'name', 'footerNote', 'email']) {
     if (typeof site[key] !== 'string' || site[key] === '') fail(`data/site.json: "${key}" must be a non-empty string`);
   }
   if (site.copyrightYear !== undefined && !Number.isInteger(site.copyrightYear)) {
@@ -48,6 +52,7 @@ export async function loadSite() {
   }
 
   return {
+    lang: site.lang ?? 'de',
     name: site.name ?? '',
     footerNote: site.footerNote ?? '',
     email: site.email ?? '',
@@ -55,6 +60,19 @@ export async function loadSite() {
     url,
     sitemapUrl: url ? `${url}/sitemap.xml` : '',
   };
+}
+
+export async function loadStrings() {
+  const data = await readJson(path.join(SRC, 'data/strings.json'));
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    throw new Error('data/strings.json: expected an object');
+  }
+  for (const key of STRING_KEYS) {
+    if (typeof data[key] !== 'string' || data[key] === '') {
+      fail(`data/strings.json: "${key}" must be a non-empty string`);
+    }
+  }
+  return data;
 }
 
 export async function loadNav(file) {

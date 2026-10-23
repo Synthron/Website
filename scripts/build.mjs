@@ -6,7 +6,7 @@
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DIST, ROOT, SRC, errors, posix, shortHash, walk, warnings } from './lib/util.mjs';
-import { loadNav, loadProjects, loadSite } from './lib/data.mjs';
+import { loadNav, loadProjects, loadSite, loadStrings } from './lib/data.mjs';
 import { renderSitemap } from './lib/render.mjs';
 import {
   applyCacheBusting, applyDirectives, applyIncludes, applyTokens, isFlasherPage,
@@ -63,6 +63,8 @@ async function build({ check = false } = {}) {
   const nav = await loadNav('nav.json');
   const footerNav = await loadNav('footer-nav.json');
   const projects = await loadProjects();
+  // The German UI labels (S40); `lang` is merged in for formatDate().
+  const strings = { ...await loadStrings(), lang: site.lang };
   await checkFirmwareManifests();
   const byId = new Map(projects.map((project) => [project.id, project]));
 
@@ -107,7 +109,7 @@ async function build({ check = false } = {}) {
     output = protectRaw(applyIncludes(output, partials, rel), raw, rel);
     ctx.flasher = isFlasherPage(output);
     output = applyTokens(output, ctx);
-    output = applyDirectives(output, ctx, projects, nav, footerNav);
+    output = applyDirectives(output, ctx, projects, nav, footerNav, strings);
     // Cache busting before raw blocks are restored, so code samples stay as-is.
     output = applyCacheBusting(output, rel, versions);
     output = restoreRaw(output, raw);

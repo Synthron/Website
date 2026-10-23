@@ -55,7 +55,7 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | `wwwroot/css/` | Stylesheets | Split by concern: `base`, `layout`, `components`, `responsive`. Use CSS custom properties for all colours and spacing. |
 | `wwwroot/js/` | Scripts | One module per concern (`nav`, `projects`, `main`). Use `type="module"` and no global variables. |
 | `wwwroot/js/vendor/` | Vendored third-party JS | See Protected Files. |
-| `wwwroot/data/` | JSON content (build input) | `projects.json` is the single source of truth for projects; `site.json` holds shared site info; `nav.json`/`footer-nav.json` drive the navs. Keep all valid JSON. Not copied to `dist/`. |
+| `wwwroot/data/` | JSON content (build input) | `projects.json` is the single source of truth for projects; `site.json` holds shared site info (`lang`, name, copyright, email); `strings.json` holds the German UI strings; `nav.json`/`footer-nav.json` drive the navs. Keep all valid JSON. Not copied to `dist/`. |
 | `wwwroot/assets/img/` | Images | Prefer SVG; raster images preferably WebP (no hard size limit); always provide `alt` text. |
 | `wwwroot/assets/icons/` | SVG icons | e.g. the GitHub mark used by the Source button. |
 | `wwwroot/assets/firmware/<suite>/` | Web-flasher suites | One folder per firmware variant: `manifest.json` plus the binaries it references. |

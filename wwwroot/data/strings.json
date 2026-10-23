@@ -1,0 +1,11 @@
+{
+  "countSingular": "Projekt",
+  "countPlural": "Projekte",
+  "withTag": "mit Tag",
+  "tagFilterLabel": "Nach Tag filtern",
+  "tagsLabel": "Schlagwörter",
+  "all": "Alle",
+  "noProjects": "Noch keine Projekte",
+  "repo": "Quellcode",
+  "demo": "Demo"
+}
