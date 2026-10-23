@@ -1,5 +1,6 @@
 // Shared paths, error collection and small helpers for the build.
 
+import { createHash } from 'node:crypto';
 import { access, readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,6 +38,11 @@ export async function walk(dir, base = '') {
   }
   return files;
 }
+
+// Content hashes for cache busting: first 8 hex chars of the SHA-256 of a
+// file. Deterministic: the version changes automatically when the file does.
+export const sha256Hex = (data) => createHash('sha256').update(data).digest('hex');
+export const shortHash = (data) => sha256Hex(data).slice(0, 8);
 
 export function safeExternalUrl(value) {
   if (typeof value !== 'string' || value === '') return null;

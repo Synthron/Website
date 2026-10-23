@@ -30,7 +30,7 @@ Website/
 │   │   ├── util.mjs       # Paths, error collection, escaping, small helpers
 │   │   ├── data.mjs       # Load and validate data/*.json
 │   │   ├── render.mjs     # HTML/XML renderers for directives and sitemap
-│   │   ├── pipeline.mjs   # @raw, includes, tokens, directives
+│   │   ├── pipeline.mjs   # @raw, includes, tokens, directives, cache busting (assets/JS/CSS)
 │   │   └── checks.mjs     # Checks on the rendered output (links)
 │   ├── create.mjs         # Scaffold a new project page + projects.json entry
 │   └── serve.mjs          # Local preview server for dist/
@@ -97,9 +97,18 @@ Requires Node.js ≥ 22. There are no dependencies, so no `npm install` is neede
 | `npm start` | Build, then serve. |
 | `npm run clean` | Removes `dist/`. |
 
-The build copies `wwwroot/` to `dist/` except `partials/`, `data/` and `html/proj/project-template.html`. HTML files and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then the `@raw` blocks are put back unchanged. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
+The build copies `wwwroot/` to `dist/` except `partials/`, `data/` and `html/proj/project-template.html`. HTML files and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then local asset URLs are cache-busted and finally the `@raw` blocks are put back unchanged. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
 
 The build also generates `dist/sitemap.xml` from every built page (excluding `404.html`; `index.html` becomes the root URL, project pages carry a `lastmod` from their `date`) and fills the `Sitemap:` line in `dist/robots.txt`. Both use the canonical `url` in `data/site.json`. Keep `data/site.json`'s `url` current when the site moves domains.
+
+### Caching and Cache Busting
+
+The build appends a `?v=<hash>` query string to URLs of local cacheable assets (`.css`, `.js`, images, `favicon.svg`): `<link rel="stylesheet" href="css/base.css?v=c6e1b42a">`. `<hash>` is the first 8 hex characters of the SHA-256 of the file's **content** (computed with `node:crypto`), so it changes automatically whenever the file changes — no counters or stored state, and the build stays deterministic. This makes it safe to serve versioned assets with a long `Cache-Control` in `wwwroot/.htaccess`, while HTML, firmware manifests and `.bin` files stay unversioned and are revalidated there too.
+
+- Our own ES modules (`js/main.js` → `./nav.js?v=…`) and CSS `url(…)` references are versioned too, on output only. `js/vendor/` internals are left untouched (their chunk file names already carry hashes); only `install-button.js` gets `?v=` from the HTML.
+- The link check strips the `?v=` suffix before resolving, so broken links still fail the build.
+- A build pass is deterministic: running twice yields identical hashes, and touching one file only changes the hashes of that file and of the files that reference it.
+- Never hard-code a `?v=` suffix in `wwwroot/` sources; it is added at build time only.
 
 ### Build-time Templating
 

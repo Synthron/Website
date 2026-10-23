@@ -1,4 +1,4 @@
-// Page pipeline: raw blocks out -> includes -> tokens -> directives -> raw blocks back in.
+// Page pipeline: raw blocks out -> includes -> tokens -> directives -> versioning -> raw blocks back in.
 
 import path from 'node:path';
 import { esc, fail } from './util.mjs';
@@ -80,5 +80,63 @@ export function applyDirectives(html, ctx, projects, nav, footerNav) {
         fail(`${ctx.rel}: unknown directive @${name}`);
         return '';
     }
+  });
+}
+
+// --- Cache busting -----------------------------------------------------------
+// Appends ?v=<hash> to local asset URLs so dist/ files can be cached forever
+// (.htaccess). Versions come from the content-hash map built by the build
+// (see build.mjs); lookups resolve wwwroot-relative paths.
+
+// Versionable file types: stylesheets, scripts, images, favicon.svg. HTML,
+// firmware manifests and .bin files stay unversioned (they are revalidated).
+const ASSET_RE = /\.(css|js|svg|png|jpe?g|webp|gif|ico)$/i;
+const SCHEME_RE = /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i;
+const URL_ATTR_RE = /\b(href|src)="([^"]*)"/g;
+const JS_IMPORT_RE = /(['"])(\.{1,2}\/[^'"\s]+\.js)\1/g;
+const CSS_URL_RE = /url\(\s*(['"]?)([^'")]+)\1\s*\)/g;
+
+// Resolve a page-relative (or root-relative with a leading "/") URL to the
+// wwwroot-relative path the version map is keyed by.
+function resolvePath(rel, url) {
+  const pathname = url.split(/[?#]/)[0];
+  if (pathname.startsWith('/')) return pathname.slice(1);
+  return path.posix.normalize(path.posix.join(path.posix.dirname(rel), pathname));
+}
+
+// HTML: version href/src pointing at versionable assets. Runs before raw
+// blocks are restored, so code samples are never rewritten.
+export function applyCacheBusting(html, rel, versions) {
+  return html.replace(URL_ATTR_RE, (match, attr, value) => {
+    if (value === '' || SCHEME_RE.test(value)) return match;
+    const key = resolvePath(rel, value);
+    const hash = versions.get(key);
+    if (!hash || !ASSET_RE.test(key)) return match;
+    return `${attr}="${value.split(/[?#]/)[0]}?v=${hash}"`;
+  });
+}
+
+// Our own ES modules: version relative import specifiers ('./nav.js') so a
+// cached main.js never refetches stale nav.js/projects.js when one of them is
+// re-hashed. Skip js/vendor/ internals (their chunks already carry hashes in
+// their file names; only install-button.js gets ?v= from the HTML).
+export function versionJsImports(source, rel, versions) {
+  return source.replace(JS_IMPORT_RE, (match, quote, spec) => {
+    const key = resolvePath(rel, spec);
+    const hash = versions.get(key);
+    if (!hash || key.startsWith('js/vendor/')) return match;
+    return `${quote}${spec.split(/[?#]/)[0]}?v=${hash}${quote}`;
+  });
+}
+
+// Stylesheets: version url(...) references to local images.
+export function versionCssUrls(source, rel, versions) {
+  return source.replace(CSS_URL_RE, (match, quote, url) => {
+    const value = url.trim();
+    if (value === '' || SCHEME_RE.test(value)) return match;
+    const key = resolvePath(rel, value);
+    const hash = versions.get(key);
+    if (!hash || !ASSET_RE.test(key)) return match;
+    return `url(${quote}${value.split(/[?#]/)[0]}?v=${hash}${quote})`;
   });
 }
