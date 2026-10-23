@@ -1,7 +1,9 @@
 // Minimal static file server for dist/ (local preview only).
+// Sends Cache-Control: no-store so CSS/JS changes are never stale while
+// developing; mirrors Apache by redirecting directory requests to add a "/".
 
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -24,15 +26,41 @@ const TYPES = {
   '.xml': 'application/xml; charset=utf-8',
 };
 
+const NO_STORE = 'no-store';
+
+async function isDirectory(file) {
+  try {
+    return (await stat(file)).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 async function send(res, status, file) {
   const body = await readFile(file);
-  res.writeHead(status, { 'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream' });
+  res.writeHead(status, {
+    'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream',
+    'Cache-Control': NO_STORE,
+  });
   res.end(body);
 }
 
 createServer(async (req, res) => {
   try {
-    let pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    const url = new URL(req.url, 'http://localhost');
+    let pathname = decodeURIComponent(url.pathname);
+    if (!pathname.endsWith('/')) {
+      const file = path.join(DIST, path.normalize(pathname));
+      if (file.startsWith(DIST + path.sep) && await isDirectory(file)) {
+        res.writeHead(301, {
+          // Use the original (still encoded) path so special characters survive.
+          Location: `${url.pathname}/${url.search}`,
+          'Cache-Control': NO_STORE,
+        });
+        res.end();
+        return;
+      }
+    }
     if (pathname.endsWith('/')) pathname += 'index.html';
     const file = path.join(DIST, path.normalize(pathname));
     if (!file.startsWith(DIST + path.sep)) throw new Error('outside root');
@@ -41,7 +69,7 @@ createServer(async (req, res) => {
     try {
       await send(res, 404, path.join(DIST, '404.html'));
     } catch {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': NO_STORE });
       res.end('Not found');
     }
   }

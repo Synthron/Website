@@ -339,8 +339,9 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **Preview server**
 
-- [ ] **S27** Add `Cache-Control: no-store` to all preview responses and redirect directory requests without a trailing slash.
+- [x] **S27** Add `Cache-Control: no-store` to all preview responses and redirect directory requests without a trailing slash.
       Files: `scripts/serve.mjs` · Refs: §3 serve
+      Done: `send()` and the fallback 404 set `Cache-Control: no-store`; directory requests without a trailing slash get a 301 to `<path>/` (query preserved, original encoding kept); verified with curl (`/html` -> 301 to `/html/`, `?x=1` kept).
 
 **Build foundations** (these unlock later steps)
 
