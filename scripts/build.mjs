@@ -5,7 +5,7 @@
 
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { DIST, ROOT, SRC, errors, posix, shortHash, walk } from './lib/util.mjs';
+import { DIST, ROOT, SRC, errors, posix, shortHash, walk, warnings } from './lib/util.mjs';
 import { loadNav, loadProjects, loadSite } from './lib/data.mjs';
 import { renderSitemap } from './lib/render.mjs';
 import {
@@ -55,7 +55,7 @@ async function computeVersions(files) {
   return { versions, outputs };
 }
 
-async function build() {
+async function build({ check = false } = {}) {
   const site = await loadSite();
   const nav = await loadNav('nav.json');
   const footerNav = await loadNav('footer-nav.json');
@@ -68,8 +68,10 @@ async function build() {
     partials[path.basename(file, '.html')] = (await readFile(path.join(SRC, 'partials', file), 'utf8')).trim();
   }
 
-  await rm(DIST, { recursive: true, force: true });
-  await mkdir(DIST, { recursive: true });
+  if (!check) {
+    await rm(DIST, { recursive: true, force: true });
+    await mkdir(DIST, { recursive: true });
+  }
 
   const files = (await walk(SRC)).filter((rel) => !isSkipped(rel));
   const { versions, outputs } = await computeVersions(files);
@@ -78,10 +80,11 @@ async function build() {
   for (const rel of files) {
     const from = path.join(SRC, rel);
     const to = path.join(DIST, rel);
-    await mkdir(path.dirname(to), { recursive: true });
 
     const isHtml = rel.endsWith('.html');
     if (!isHtml && !TEMPLATE_FILES.has(rel)) {
+      if (check) continue; // validation only: nothing to write
+      await mkdir(path.dirname(to), { recursive: true });
       // CSS and our own JS are rewritten (url/import cache busting) in dist/.
       if (outputs.has(rel)) await writeFile(to, outputs.get(rel));
       else await copyFile(from, to);
@@ -105,26 +108,41 @@ async function build() {
     // Cache busting before raw blocks are restored, so code samples stay as-is.
     output = applyCacheBusting(output, rel, versions);
     output = restoreRaw(output, raw);
-    await writeFile(to, output);
+    if (!check) {
+      await mkdir(path.dirname(to), { recursive: true });
+      await writeFile(to, output);
+    }
     if (isHtml) pages.push([rel, output]);
   }
 
-  for (const [rel, html] of pages) await checkLinks(rel, html);
+  // In --check mode nothing was written, so resolve links against wwwroot/.
+  const base = check ? SRC : DIST;
+  for (const [rel, html] of pages) await checkLinks(rel, html, base);
 
-  if (site.url) {
+  if (site.url && !check) {
     await writeFile(path.join(DIST, 'sitemap.xml'), renderSitemap(pages, site.url, byId));
   }
   return pages.length;
 }
 
+// --check: validate everything, write nothing (used by `npm run check` and
+// the pre-commit hook). Errors print like a normal build and exit non-zero.
+const check = process.argv.includes('--check');
+
 try {
-  const count = await build();
+  const count = await build({ check });
   if (errors.length > 0) {
     console.error(`Build failed with ${errors.length} error(s):`);
     errors.forEach((message) => console.error(`  - ${message}`));
     process.exit(1);
   }
-  console.log(`Built ${count} page(s) into ${posix(path.relative(ROOT, DIST))}/`);
+  if (warnings.length > 0) {
+    console.error(`${warnings.length} warning(s):`);
+    warnings.forEach((message) => console.error(`  - ${message}`));
+  }
+  console.log(check
+    ? `Checked ${count} page(s), no output written.`
+    : `Built ${count} page(s) into ${posix(path.relative(ROOT, DIST))}/`);
 } catch (error) {
   console.error(`Build failed: ${error.message}`);
   process.exit(1);

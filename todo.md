@@ -345,13 +345,16 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **Build foundations** (these unlock later steps)
 
-- [ ] **S28** Error messages with `file:line` (track the line of each match in includes/tokens/directives/link check).
+- [x] **S28** Error messages with `file:line` (track the line of each match in includes/tokens/directives/link check).
       Files: `scripts/build.mjs` · Refs: §2
       Done when: an unknown token prints `wwwroot/…html:NN: unknown token {{x}}`.
-- [ ] **S29** Add a non-fatal `warn()` channel next to `fail()`; print warnings after a successful build (D9).
+      Done: `lineCol` + `ref()` in `scripts/lib/util.mjs`; includes/tokens/directives in `scripts/lib/pipeline.mjs` and `checkLinks` in `scripts/lib/checks.mjs` report `wwwroot/<rel>:line:col` via the regex match offset. Verified: `wwwroot/html/about.html:62:4: unknown token {{nonsensToken}}` and `wwwroot/404.html:22:29: broken link "/missing-target.html"`.
+- [x] **S29** Add a non-fatal `warn()` channel next to `fail()`; print warnings after a successful build (D9).
       Files: `scripts/build.mjs` · Refs: §2
-- [ ] **S30** Add `--check` (validate everything, write nothing) and the `npm run check` script (D9). Document it in the README commands table.
+      Done: `warnings = []` + `warn()` in `scripts/lib/util.mjs`; `build.mjs` prints them after a successful build/check (before the summary line). No warnings emitted yet (S32/S33 add them).
+- [x] **S30** Add `--check` (validate everything, write nothing) and the `npm run check` script (D9). Document it in the README commands table.
       Files: `scripts/build.mjs`, `package.json`, `README.md` · Refs: §2, §3
+      Done: `build({ check })` skips all writes (`rm`/`mkdir`/`copyFile`/`writeFile`, sitemap) and resolves links against `wwwroot/`; CLI reads `--check`; `package.json` gains `"check"`; README commands table documents it. Verified: after `npm run clean && npm run check`, `dist/` is not recreated and exits 0.
 
 **Build checks** (each is a separate commit; depends on S29)
 

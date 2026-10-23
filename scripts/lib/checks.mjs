@@ -2,7 +2,7 @@
 
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { DIST, SRC, exists, fail } from './util.mjs';
+import { DIST, SRC, exists, fail, ref } from './util.mjs';
 
 const SCHEME = /^([a-z][a-z0-9+.-]*:|\/\/|#)/i;
 const LINK_ATTRS = /\b(href|src|manifest|poster|srcset)="([^"]*)"/g;
@@ -13,13 +13,18 @@ function urls(value, attr) {
   return value.split(',').map((candidate) => candidate.trim().split(/\s+/)[0]);
 }
 
-export async function checkLinks(rel, html) {
+// `base` is the tree the targets are resolved against: `dist/` when building,
+// `wwwroot/` when running `--check` (which writes nothing).
+export async function checkLinks(rel, html, base = DIST) {
   const dir = path.posix.dirname(rel);
-  for (const [, attr, value] of html.matchAll(LINK_ATTRS)) {
+  for (const match of html.matchAll(LINK_ATTRS)) {
+    const [, attr, value] = match;
     for (const url of urls(value, attr)) {
       if (url === '' || SCHEME.test(url)) continue;
       const target = path.posix.normalize(path.posix.join(dir, url.split(/[?#]/)[0]));
-      if (target.startsWith('..') || !await exists(path.join(DIST, target))) fail(`${rel}: broken link "${url}"`);
+      if (target.startsWith('..') || !await exists(path.join(base, target))) {
+        fail(`${ref(rel, html, match.index)}: broken link "${url}"`);
+      }
     }
   }
 }

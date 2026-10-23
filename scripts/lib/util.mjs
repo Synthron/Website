@@ -12,6 +12,22 @@ export const DIST = path.join(ROOT, 'dist');
 export const errors = [];
 export const fail = (message) => errors.push(message);
 
+// Non-fatal diagnostics; printed after a successful build (see build.mjs).
+export const warnings = [];
+export const warn = (message) => warnings.push(message);
+
+// 1-based "line:col" of an offset within text, for error messages.
+export const lineCol = (text, offset) => {
+  const before = text.slice(0, offset);
+  const line = before.split('\n').length;
+  const col = offset - before.lastIndexOf('\n');
+  return `${line}:${col}`;
+};
+
+// "wwwroot/<rel>:<line>:<col>" reference for a match offset, so a VS Code
+// problem matcher can link the message to the source file.
+export const ref = (rel, text, offset) => `wwwroot/${rel}:${lineCol(text, offset)}`;
+
 export const esc = (value) => String(value)
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')

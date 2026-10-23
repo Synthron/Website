@@ -1,7 +1,7 @@
 // Page pipeline: raw blocks out -> includes -> tokens -> directives -> versioning -> raw blocks back in.
 
 import path from 'node:path';
-import { esc, fail } from './util.mjs';
+import { esc, fail, ref } from './util.mjs';
 import { renderNav, renderProjectHeader, renderProjectList, renderTagFilter } from './render.mjs';
 
 const RAW_BLOCK = /<!--\s*@raw\s*-->([\s\S]*?)<!--\s*@endraw\s*-->/g;
@@ -12,8 +12,8 @@ const RAW_PLACEHOLDER = /\u0000raw(\d+)\u0000/g;
 export function protectRaw(text, store, rel) {
   return text
     .replace(RAW_BLOCK, (_, content) => `\u0000raw${store.push(content) - 1}\u0000`)
-    .replace(RAW_MARKER, (marker) => {
-      fail(`${rel}: unmatched ${marker.replace(/<!--\s*|\s*-->/g, '')}`);
+    .replace(RAW_MARKER, (marker, offset) => {
+      fail(`${ref(rel, text, offset)}: unmatched ${marker.replace(/<!--\s*|\s*-->/g, '')}`);
       return '';
     });
 }
@@ -27,9 +27,9 @@ const CSP_FLASHER = `${CSP}; style-src 'self' 'unsafe-inline'`;
 export const isFlasherPage = (html) => /<esp-web-install-button\b/.test(html);
 
 export function applyIncludes(html, partials, rel) {
-  return html.replace(/<!--\s*@include\s+([\w-]+)\s*-->/g, (_, name) => {
+  return html.replace(/<!--\s*@include\s+([\w-]+)\s*-->/g, (match, name, offset) => {
     if (!(name in partials)) {
-      fail(`${rel}: unknown include "${name}"`);
+      fail(`${ref(rel, html, offset)}: unknown include "${name}"`);
       return '';
     }
     return partials[name];
@@ -37,7 +37,7 @@ export function applyIncludes(html, partials, rel) {
 }
 
 export function applyTokens(text, ctx) {
-  return text.replace(/\{\{\s*([\w:]+)\s*\}\}/g, (match, key) => {
+  return text.replace(/\{\{\s*([\w:]+)\s*\}\}/g, (match, key, offset) => {
     const values = {
       name: ctx.site.name,
       year: ctx.site.year,
@@ -51,7 +51,7 @@ export function applyTokens(text, ctx) {
       projectSummary: ctx.project?.summary,
     };
     if (values[key] === undefined) {
-      fail(`${ctx.rel}: unknown token ${match}`);
+      fail(`${ref(ctx.rel, text, offset)}: unknown token ${match}`);
       return '';
     }
     return esc(values[key]);
@@ -59,7 +59,7 @@ export function applyTokens(text, ctx) {
 }
 
 export function applyDirectives(html, ctx, projects, nav, footerNav) {
-  return html.replace(/<!--\s*@([\w-]+)([^>]*?)-->/g, (match, name, rawArgs) => {
+  return html.replace(/<!--\s*@([\w-]+)([^>]*?)-->/g, (match, name, rawArgs, offset) => {
     const args = rawArgs.trim().split(/\s+/).filter(Boolean);
     switch (name) {
       case 'nav':
@@ -72,12 +72,12 @@ export function applyDirectives(html, ctx, projects, nav, footerNav) {
         return renderTagFilter(projects, args);
       case 'project-header':
         if (!ctx.project) {
-          fail(`${ctx.rel}: @project-header needs a project with id "${path.basename(ctx.rel, '.html')}"`);
+          fail(`${ref(ctx.rel, html, offset)}: @project-header needs a project with id "${path.basename(ctx.rel, '.html')}"`);
           return '';
         }
         return renderProjectHeader(ctx.project, ctx);
       default:
-        fail(`${ctx.rel}: unknown directive @${name}`);
+        fail(`${ref(ctx.rel, html, offset)}: unknown directive @${name}`);
         return '';
     }
   });
