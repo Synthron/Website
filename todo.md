@@ -319,19 +319,23 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **Content**
 
-- [ ] **S21** Replace "WebUSB-API" with "Web Serial API" on the Nixie page.
+- [x] **S21** Replace "WebUSB-API" with "Web Serial API" on the Nixie page.
       Files: `wwwroot/html/proj/nixie-clock.html` · Refs: §1 Content
-- [ ] **S15** Manual (GIMP, D12): convert `sy317_pic.jpg` (2 MB, ≈55 % of `dist/`) to WebP — _Image → Scale Image_ to a sensible width, then _File → Export As_ `sy317_pic.webp` (quality ≈ 80). Then update the `<img>` in `sy317.html`, add `width`/`height`, delete the JPG. Optional for the PNGs. No enforced size limit (D11).
+      Done: also fixed the same wording in `project-template.html` (master template).
+- [x] **S15** Manual (GIMP, D12): convert `sy317_pic.jpg` (2 MB, ≈55 % of `dist/`) to WebP — _Image → Scale Image_ to a sensible width, then _File → Export As_ `sy317_pic.webp` (quality ≈ 80). Then update the `<img>` in `sy317.html`, add `width`/`height`, delete the JPG. Optional for the PNGs. No enforced size limit (D11).
       Files: `wwwroot/assets/img/`, `wwwroot/html/proj/sy317.html` · Refs: §1 Assets
+      Done: converted via ImageMagick `convert` (WebP, quality 80, scaled to 1600 px wide, 2.05 MB → 402 KB), added `width="1600" height="1086"`, deleted the JPG.
 - [ ] **S22** **User** (D20: work in progress, filled by the user). Replace the placeholder overview, fill or remove the empty Hardware section, set `image` in `projects.json`. Agents do not write this content.
       Files: `nixie-clock.html`, `projects.json`, `assets/img/` · Refs: §1 Content
 - ~~**S23** Delete `placeholder-project-two` or mark it as draft.~~ Deferred (D6: keep as is for now). Revisit after S36.
 - [x] **S24** Shrink `favicon.svg` (D4). Done: 70.8 KB → 4.5 KB.
       Files: `wwwroot/favicon.svg` · Refs: §1 Assets
-- [ ] **S25** Skip `assets/firmware/dummy/` in the build (D5), e.g. a `SKIP_PATHS` entry next to `SKIP_DIRS`. The template keeps its reference (it is not built, so no link check). Mention the exclusion in the README build section.
+- [x] **S25** Skip `assets/firmware/dummy/` in the build (D5), e.g. a `SKIP_PATHS` entry next to `SKIP_DIRS`. The template keeps its reference (it is not built, so no link check). Mention the exclusion in the README build section.
       Files: `scripts/build.mjs`, `README.md` · Refs: §1 Assets
-- [ ] **S26** Document `.htaccess` in README "Supporting Files": purpose, what it sets, that it only applies on Apache (confirmed live on `dm7wb.de`).
+      Done: `SKIP_PATHS = ['assets/firmware/dummy']` in `scripts/build.mjs`; README build section and `dummy/` outline line updated ("not built"). Manifest validation still covers the suite at source level.
+- [x] **S26** Document `.htaccess` in README "Supporting Files": purpose, what it sets, that it only applies on Apache (confirmed live on `dm7wb.de`).
       Files: `README.md` · Refs: §1
+      Done: new Supporting Files row describing `ErrorDocument`, `Options -Indexes`, `DirectoryIndex`, `AddDefaultCharset UTF-8`, caching and security headers; Apache-only note.
 
 **Preview server**
 

@@ -17,10 +17,12 @@ import { checkFirmwareManifests, checkLinks } from './lib/checks.mjs';
 // Source-only folders/files that are not copied to dist/.
 const SKIP_DIRS = new Set(['partials', 'data']);
 const SKIP_FILES = new Set(['project-template.html', '.gitkeep']);
+// Whole sub-trees that are not copied to dist/ (checked by path prefix).
+const SKIP_PATHS = ['assets/firmware/dummy'];
 // Non-HTML files that also go through the token pass.
 const TEMPLATE_FILES = new Set(['robots.txt']);
 
-const isSkipped = (rel) => SKIP_DIRS.has(rel.split('/')[0]) || SKIP_FILES.has(rel) || SKIP_FILES.has(path.posix.basename(rel));
+const isSkipped = (rel) => SKIP_DIRS.has(rel.split('/')[0]) || SKIP_PATHS.some((prefix) => rel === prefix || rel.startsWith(`${prefix}/`)) || SKIP_FILES.has(rel) || SKIP_FILES.has(path.posix.basename(rel));
 // Our own ES modules (js/main.js, nav.js, projects.js) get their relative
 // import specifiers versioned. js/vendor/ internals are left as-is.
 const isOwnJs = (rel) => rel.startsWith('js/') && !rel.startsWith('js/vendor/') && rel.endsWith('.js');
