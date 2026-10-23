@@ -373,10 +373,12 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **Dev loop**
 
-- [ ] **S37** `npm run dev`: initial build, start the server, rebuild on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`, recursive). Build errors are printed, the server keeps running.
+- [x] **S37** `npm run dev`: initial build, start the server, rebuild on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`, recursive). Build errors are printed, the server keeps running.
       Files: `scripts/dev.mjs`, `package.json`, `README.md` · Refs: §3
-- [ ] **S38** Live reload via Server-Sent Events (D14); the reload script is served and injected only by the dev server, never written to `dist/`.
+      Done: `scripts/dev.mjs` (initial `runBuild()`, `fs.watch(..., { recursive: true })` on `wwwroot/` + `scripts/` with a 150 ms debounce, serialized rebuild with a queued follow-up), `"dev"` script in `package.json`, README commands table + outline + AGENTS.md directory table. Note: recursive `fs.watch` needs Node ≥ 20 on Linux — verified with Node 22.23.4 (system default is 18; `.nvmrc` pins 22).
+- [x] **S38** Live reload via Server-Sent Events (D14); the reload script is served and injected only by the dev server, never written to `dist/`.
       Files: `scripts/dev.mjs` · Refs: §3
+      Done: dev server injects `<script src="/__reload.js">` into served HTML (in-memory only), serves `/__reload.js` (opens the SSE stream) and `/__reload` (`text/event-stream`; broadcasts `data: reload` after each successful build). `dist/` verified clean — no `__reload` files. CSP (`'self'`) holds: both are same-origin. Verified live: touching `about.html` rebuilt and delivered `data: reload` to a connected client.
 
 **Language** (D1: German content and UI)
 

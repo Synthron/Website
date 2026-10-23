@@ -33,6 +33,7 @@ Website/
 │   │   ├── pipeline.mjs   # @raw, includes, tokens, directives, cache busting (assets/JS/CSS)
 │   │   └── checks.mjs     # Checks on the rendered output (links)
 │   ├── create.mjs         # Scaffold a new project page + projects.json entry
+│   ├── dev.mjs            # Dev server: build, serve, watch, live reload
 │   └── serve.mjs          # Local preview server for dist/
 ├── dist/                  # Build output (generated, git-ignored, deploy this)
 └── wwwroot/               # Source (build input)
@@ -94,6 +95,7 @@ Requires Node.js ≥ 22. There are no dependencies, so no `npm install` is neede
 | `npm run build` | Deletes `dist/` and rebuilds it from `wwwroot/`. Exits non-zero on invalid data, unknown tokens/includes or broken internal links. |
 | `npm run check` | Validation only: runs every build check (data, firmware manifests, tokens/includes/directives, links) and **writes nothing**. Fast pre-commit check; used by the git hook. |
 | `npm run create -- "Name" "Brief"` | Scaffolds a new project: copies `project-template.html` to `html/proj/{id}.html` and registers the project in `data/projects.json`. |
+| `npm run dev` | Build once, serve `dist/`, then rebuild automatically on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`). Live reload via Server-Sent Events: the dev server injects a same-origin `<script src="/__reload.js">` into served HTML and broadcasts a reload after each successful build — never written into `dist/`, and the CSP (`'self'`) still holds. Build errors print to the terminal; the server keeps running so a fix triggers the next rebuild. |
 | `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` env var overrides) with `Cache-Control: no-store`; redirects directory requests to add the trailing slash. |
 | `npm start` | Build, then serve. |
 | `npm run clean` | Removes `dist/`. |
