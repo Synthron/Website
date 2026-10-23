@@ -70,11 +70,16 @@ export function renderCard(project, root, level) {
 </article>`;
 }
 
+// S36: draft projects are built but excluded from lists, the tag filter and
+// the sitemap. Cards for drafts would leak in-browser otherwise.
+const published = (projects) => projects.filter((project) => project.draft !== true);
+
 export function renderProjectList(projects, args, ctx) {
   const [mode, ...rest] = args;
   const options = Object.fromEntries(rest.map((arg) => arg.split('=')));
   const level = options.level === '2' ? 2 : 3;
-  const selection = mode === 'featured' ? projects.filter((project) => project.featured === true) : projects;
+  const visible = published(projects);
+  const selection = mode === 'featured' ? visible.filter((project) => project.featured === true) : visible;
   const id = options.id ? ` id="${esc(options.id)}"` : '';
   const inner = selection.length > 0
     ? selection.map((project) => renderCard(project, ctx.root, level)).join('\n')
@@ -85,20 +90,22 @@ export function renderProjectList(projects, args, ctx) {
 // Starts hidden; js/projects.js reveals it. Without JS the full list shows.
 export function renderTagFilter(projects, args) {
   const [listId] = args;
-  const tags = [...new Set(projects.flatMap((project) => project.tags))].sort((a, b) => a.localeCompare(b));
+  const visible = published(projects);
+  const tags = [...new Set(visible.flatMap((project) => project.tags))].sort((a, b) => a.localeCompare(b));
   const buttons = ['', ...tags].map((tag) => `<button class="tag-filter__button" type="button" data-tag="${esc(tag)}" aria-pressed="${tag === ''}">${tag === '' ? 'All' : esc(tag)}</button>`);
   return `<div class="tag-filter" role="group" aria-label="Filter by tag" data-tag-filter="${esc(listId)}" hidden>
 ${buttons.join('\n')}
 </div>
-<p class="filter-status" role="status" data-filter-status="${esc(listId)}">${countLabel(projects.length)}</p>`;
+<p class="filter-status" role="status" data-filter-status="${esc(listId)}">${countLabel(visible.length)}</p>`;
 }
 
 export function renderSitemap(pages, baseUrl, byId) {
   const entries = [];
   for (const [rel] of pages) {
     if (rel === '404.html') continue;
-    const loc = rel === 'index.html' ? `${baseUrl}/` : `${baseUrl}/${rel}`;
     const project = rel.startsWith('html/proj/') ? byId.get(path.posix.basename(rel, '.html')) : undefined;
+    if (project?.draft) continue;
+    const loc = rel === 'index.html' ? `${baseUrl}/` : `${baseUrl}/${rel}`;
     const lines = [`    <loc>${loc}</loc>`];
     if (project?.date) lines.push(`    <lastmod>${project.date}-01</lastmod>`);
     entries.push(`  <url>\n${lines.join('\n')}\n  </url>`);

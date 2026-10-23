@@ -111,6 +111,11 @@ export async function loadProjects() {
       fail(`${label}: "status" must be one of: ${STATUS_VALUES.join(', ')}`);
     }
     if (typeof project.featured !== 'boolean') fail(`${label}: "featured" must be a boolean`);
+    // S36: optional. Draft pages are still built but hidden from lists, the
+    // tag filter and sitemap.xml.
+    if (project.draft !== undefined && typeof project.draft !== 'boolean') {
+      fail(`${label}: "draft" must be a boolean`);
+    }
     if (typeof project.links !== 'object' || project.links === null || Array.isArray(project.links)) {
       fail(`${label}: "links" must be an object with "repo"/"demo" as string | null`);
     } else {

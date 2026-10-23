@@ -2,7 +2,7 @@
 
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { DIST, SRC, exists, fail, ref } from './util.mjs';
+import { DIST, SRC, exists, fail, ref, walk, warn } from './util.mjs';
 
 const SCHEME = /^([a-z][a-z0-9+.-]*:|\/\/|#)/i;
 const LINK_ATTRS = /\b(href|src|manifest|poster|srcset)="([^"]*)"/g;
@@ -67,5 +67,96 @@ export async function checkFirmwareManifests() {
         if (!await exists(file)) fail(`${label}: file not found: ${part.path}`);
       }
     }
+  }
+}
+
+// --- Page-level diagnostics (S31-S35) ---------------------------------------
+// S31: warn about html/proj/*.html without a projects.json entry.
+export function checkOrphanPages(pages, byId) {
+  for (const [rel] of pages) {
+    if (rel.startsWith('html/proj/') && !byId.has(path.posix.basename(rel, '.html'))) {
+      warn(`wwwroot/${rel}: project page without a data/projects.json entry`);
+    }
+  }
+}
+
+// S32: warn about unused images in assets/img/ and leftover placeholder text.
+export async function checkUnusedAssets(pages) {
+  const imgFiles = (await walk(SRC)).filter((rel) => rel.startsWith('assets/img/'));
+  const pageText = pages.map(([, html]) => html).join('\n');
+  for (const rel of imgFiles) {
+    if (!pageText.includes(`assets/img/${path.posix.basename(rel)}`)) {
+      warn(`wwwroot/${rel}: not referenced by any built page`);
+    }
+  }
+}
+
+export function checkPlaceholderText(pages) {
+  for (const [rel, html] of pages) {
+    if (html.includes('Placeholder paragraph')) {
+      warn(`wwwroot/${rel}: contains leftover "Placeholder paragraph" text`);
+    }
+  }
+}
+
+// S33: same-page and cross-page anchor targets must exist; ids must be unique.
+function collectIds(html) {
+  return [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
+}
+
+export function checkAnchors(pages) {
+  const idsByRel = new Map(pages.map(([rel, html]) => [rel, collectIds(html)]));
+  for (const [rel, html] of pages) {
+    const dir = path.posix.dirname(rel);
+    for (const match of html.matchAll(/href="([^"]*#[^"]+)"/g)) {
+      const [, href] = match;
+      const [pagePart, ...rest] = href.split('#');
+      const id = rest.join('#').split('?')[0];
+      if (id === '' || SCHEME.test(pagePart)) continue;
+      if (pagePart === '') {
+        if (!idsByRel.get(rel).includes(id)) {
+          fail(`${ref(rel, html, match.index)}: unknown anchor "#${id}" on this page`);
+        }
+        continue;
+      }
+      let target = path.posix.normalize(path.posix.join(dir, pagePart.split(/[?#]/)[0]));
+      if (target.startsWith('/')) target = target.slice(1);
+      if (target.startsWith('..')) continue; // broken page link reported by checkLinks
+      if (!idsByRel.get(target)?.includes(id)) {
+        fail(`${ref(rel, html, match.index)}: unknown anchor "${pagePart}#${id}" (no id="${id}" in ${target})`);
+      }
+    }
+    const seen = new Set();
+    for (const match of html.matchAll(/\bid="([^"]+)"/g)) {
+      if (seen.has(match[1])) fail(`${ref(rel, html, match.index)}: duplicate id "${match[1]}"`);
+      seen.add(match[1]);
+    }
+  }
+}
+
+// S34: HTML rule lint. Violations fail the build (D13). Runs on the rendered
+// page, so project-page h1s (from @project-header) count correctly.
+export function checkHtmlRules(rel, html) {
+  const h1s = (html.match(/<h1\b/g) || []).length;
+  if (h1s !== 1) fail(`wwwroot/${rel}: expected exactly one <h1>, found ${h1s}`);
+  if (!/<html\b[^>]*\blang\s*=\s*"[^"]+"/i.test(html)) {
+    fail(`wwwroot/${rel}: <html lang="..."> attribute missing`);
+  }
+  for (const match of html.matchAll(/<img\b[^>]*>/g)) {
+    if (!/\balt\s*=/.test(match[0])) fail(`${ref(rel, html, match.index)}: <img> without alt attribute`);
+  }
+  for (const match of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>/gi)) {
+    fail(`${ref(rel, html, match.index)}: inline <script> without src`);
+  }
+  for (const match of html.matchAll(/\sstyle\s*=/g)) {
+    fail(`${ref(rel, html, match.index)}: style attribute (inline styles are not allowed)`);
+  }
+}
+
+// S35: a page with <esp-web-install-button> must load the vendored script.
+export function checkFlasherScript(rel, html) {
+  if (!/<esp-web-install-button\b/.test(html)) return;
+  if (!/<script\b[^>]*src="[^"]*js\/vendor\/esp-web-tools\/install-button\.js[^"]*"/.test(html)) {
+    fail(`wwwroot/${rel}: <esp-web-install-button> needs the vendored install-button.js script tag`);
   }
 }

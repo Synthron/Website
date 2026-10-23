@@ -278,6 +278,7 @@ Field validation (enforced by the build, failures abort `npm run build`):
 - `title` and `summary` are non-empty strings.
 - `status` is one of: `in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`. Values contain spaces and capitals, so slugify before using one as a CSS hook.
 - `featured` is a boolean.
+- `draft` (optional) is a boolean when present. Draft projects keep their page built and their `html/proj/{id}.html` link working, but are excluded from project lists, the tag filter and `sitemap.xml` — useful for projects that are not ready to be shown yet.
 - `links` is an object; `repo` and `demo` are `null` or a valid http(s) URL (anything else fails the build).
 - `tags` are lowercase and hyphenated (same rule as `id`) and must not repeat within a project.
 - `image` is a relative path that resolves inside `wwwroot/`; `../` segments and absolute paths are rejected.

@@ -358,12 +358,18 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **Build checks** (each is a separate commit; depends on S29)
 
-- [ ] **S31** Warning: orphan pages in `html/proj/` without a `projects.json` entry.
-- [ ] **S32** Warning: unused files in `assets/img/`, leftover "Placeholder paragraph" text in built pages (expected for `placeholder-project-two`, D6). No size warning (D11).
-- [ ] **S33** Check same-page and cross-page anchors (`#id`) and duplicate `id`s per page.
-- [ ] **S34** HTML rule lint, **fails the build** (D13): exactly one `h1`, `alt` on every `img`, no `style="…"`, no inline `<script>`, `lang` on `<html>`. Fix existing violations in the same commit.
-- [ ] **S35** Flasher pages: if a page contains `<esp-web-install-button>`, require the vendored `install-button.js` script tag (the CSP exception is automatic since S62).
-- [ ] **S36** Optional `draft: true` in `projects.json` (D9): page is built but excluded from lists, tag filter and sitemap. Document in README Data Model.
+- [x] **S31** Warning: orphan pages in `html/proj/` without a `projects.json` entry.
+      Done: `checkOrphanPages` in `scripts/lib/checks.mjs`; wired into `build.mjs`. No orphans today.
+- [x] **S32** Warning: unused files in `assets/img/`, leftover "Placeholder paragraph" text in built pages (expected for `placeholder-project-two`, D6). No size warning (D11).
+      Done: `checkUnusedAssets` + `checkPlaceholderText` in `scripts/lib/checks.mjs`. Currently warns: `placeholder-square.svg` (template-only) and "Placeholder paragraph" on `about.html`, `nixie-clock.html`, `placeholder-project-two.html`.
+- [x] **S33** Check same-page and cross-page anchors (`#id`) and duplicate `id`s per page.
+      Done: `checkAnchors` in `scripts/lib/checks.mjs` (same-page, `page.html#id` cross-page, duplicate ids). Caught 5 real duplicates; fixed in S34's commit.
+- [x] **S34** HTML rule lint, **fails the build** (D13): exactly one `h1`, `alt` on every `img`, no `style="…"`, no inline `<script>`, `lang` on `<html>`. Fix existing violations in the same commit.
+      Done: `checkHtmlRules` in `scripts/lib/checks.mjs`. Fixed violations: privacy.html duplicated sections 4–6 + stray `</ul>` (removed by user + leftover tag), sy317.html second `id="screenshot"` → `platine`, rechtliches.html second `id="software-und-firmware"` → `lizenz-software-und-firmware`.
+- [x] **S35** Flasher pages: if a page contains `<esp-web-install-button>`, require the vendored `install-button.js` script tag (the CSP exception is automatic since S62).
+      Done: `checkFlasherScript` in `scripts/lib/checks.mjs`; nixie-clock.html passes.
+- [x] **S36** Optional `draft: true` in `projects.json` (D9): page is built but excluded from lists, tag filter and sitemap. Document in README Data Model.
+      Done: `draft` accepted/validated in `scripts/lib/data.mjs`; `published()` filter in `scripts/lib/render.mjs` (lists, tag filter, sitemap); README Data Model updated. Verified: drafting `placeholder-project-two` removed it from cards/sitemap/count ("2 projects") while its page stayed built; reverted again.
 
 **Dev loop**
 

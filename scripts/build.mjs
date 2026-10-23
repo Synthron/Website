@@ -12,7 +12,10 @@ import {
   applyCacheBusting, applyDirectives, applyIncludes, applyTokens, isFlasherPage,
   protectRaw, restoreRaw, versionCssUrls, versionJsImports,
 } from './lib/pipeline.mjs';
-import { checkFirmwareManifests, checkLinks } from './lib/checks.mjs';
+import {
+  checkAnchors, checkFirmwareManifests, checkFlasherScript, checkHtmlRules,
+  checkLinks, checkOrphanPages, checkPlaceholderText, checkUnusedAssets,
+} from './lib/checks.mjs';
 
 // Source-only folders/files that are not copied to dist/.
 const SKIP_DIRS = new Set(['partials', 'data']);
@@ -118,6 +121,15 @@ async function build({ check = false } = {}) {
   // In --check mode nothing was written, so resolve links against wwwroot/.
   const base = check ? SRC : DIST;
   for (const [rel, html] of pages) await checkLinks(rel, html, base);
+
+  checkOrphanPages(pages, byId);
+  await checkUnusedAssets(pages);
+  checkPlaceholderText(pages);
+  checkAnchors(pages);
+  for (const [rel, html] of pages) {
+    checkHtmlRules(rel, html);
+    checkFlasherScript(rel, html);
+  }
 
   if (site.url && !check) {
     await writeFile(path.join(DIST, 'sitemap.xml'), renderSitemap(pages, site.url, byId));
