@@ -5,7 +5,7 @@
   "description": "Personal project website. Static pages are built from wwwroot/ into dist/ with zero runtime dependencies.",
   "type": "module",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "scripts": {
     "build": "node scripts/build.mjs",

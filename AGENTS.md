@@ -15,7 +15,7 @@ This repository contains a personal project website built with **pure HTML, CSS 
 ## Hard Constraints
 
 - Use only HTML5, CSS3 and vanilla JavaScript (ES2020+).
-- The project is an npm project (Node.js ≥ 18) with a dependency-free build script. Do not add npm dependencies, frameworks, libraries, bundlers or other build tools without explicit user approval. Runtime code in the browser stays vanilla.
+- The project is an npm project (Node.js ≥ 22) with a dependency-free build script. Do not add npm dependencies, frameworks, libraries, bundlers or other build tools without explicit user approval. Runtime code in the browser stays vanilla.
 - Do not set cookies, and do not use `localStorage`, `sessionStorage`, or `IndexedDB` for user tracking.
 - Do not add third-party scripts, trackers, analytics, fonts, or CDN assets. The site must render with no external requests. **Only exception:** the vendored, self-hosted ESP Web Tools in `js/vendor/esp-web-tools/` (approved, see Protected Files).
 - Content Security Policy: never write a CSP by hand. Every page gets it from `{{csp}}` in `partials/head.html`. Pages containing `<esp-web-install-button>` automatically get `style-src 'self' 'unsafe-inline'` (required by ESP Web Tools); never add `'unsafe-inline'` anywhere else.

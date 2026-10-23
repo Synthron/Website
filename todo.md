@@ -273,7 +273,7 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 - [ ] **S07** Add `.gitattributes` (`* text=auto eol=lf`, `*.bin`/`*.jpg`/`*.png`/`*.webp` as `binary`).
       **Ask before running** `git add --renormalize .` — it can produce a large line-ending diff. Commit it separately.
       Files: `.gitattributes` · Refs: §4.2
-- [ ] **S08** Raise `engines.node` to `>=22` and add `.nvmrc` with `22` (D8). Update "Requires Node.js ≥ …" in README and AGENTS.md.
+- [x] **S08** Raise `engines.node` to `>=22` and add `.nvmrc` with `22` (D8). Update "Requires Node.js ≥ …" in README and AGENTS.md.
       Files: `package.json`, `.nvmrc`, `README.md`, `AGENTS.md` · Refs: §4.1
 
 **Tooling bugs**

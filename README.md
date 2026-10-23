@@ -21,6 +21,7 @@ Website/
 ├── AGENTS.md              # Instructions for AI agents / contributors (AGENTS.md)
 ├── .gitignore             # Ignore OS/editor junk, node_modules/, dist/
 ├── .editorconfig          # Indentation and encoding rules
+├── .nvmrc                # Pins the local Node.js version to 22 (nvm)
 ├── package.json           # npm scripts (no dependencies)
 ├── scripts/
 │   ├── build.mjs          # Build CLI: wwwroot/ -> dist/ (orchestration only)
@@ -85,7 +86,7 @@ Website/
 
 ### Build and Preview
 
-Requires Node.js ≥ 18. There are no dependencies, so no `npm install` is needed.
+Requires Node.js ≥ 22. There are no dependencies, so no `npm install` is needed.
 
 | Command | Effect |
 | --- | --- |
