@@ -8,12 +8,25 @@ Options -Indexes
 # Standarddatei für Verzeichnisaufrufe
 DirectoryIndex index.html
 
-# Caching für die Entwicklung deaktivieren
+# HTML lacks a charset header; send UTF-8 explicitly.
+AddDefaultCharset UTF-8
+
+# Production caching. The build appends ?v=<sha256 hash> to every local
+# .css/.js/image URL (see README -> Caching and Cache Busting), so versioned
+# assets can be cached for one year; the version changes with the file.
+# HTML, firmware manifests (.json) and binaries (.bin) are not versioned and
+# are revalidated on every request. No Cloudflare cache to purge (DNS only).
 <IfModule mod_headers.c>
-    <FilesMatch "\.(html|htm|css|js|json|svg|png|jpg|jpeg|bin)$">
-        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
-        Header set Pragma "no-cache"
-        Header set Expires "0"
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+
+    <FilesMatch "\.(css|js|svg|webp|png|jpg|jpeg|gif|ico)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    <FilesMatch "\.(json|bin)$">
+        Header set Cache-Control "no-cache"
     </FilesMatch>
 </IfModule>
 
