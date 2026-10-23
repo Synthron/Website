@@ -9,7 +9,7 @@ import { DIST, ROOT, SRC, errors, posix, walk } from './lib/util.mjs';
 import { loadNav, loadProjects, loadSite } from './lib/data.mjs';
 import { renderSitemap } from './lib/render.mjs';
 import { applyDirectives, applyIncludes, applyTokens, isFlasherPage, protectRaw, restoreRaw } from './lib/pipeline.mjs';
-import { checkLinks } from './lib/checks.mjs';
+import { checkFirmwareManifests, checkLinks } from './lib/checks.mjs';
 
 // Source-only folders/files that are not copied to dist/.
 const SKIP_DIRS = new Set(['partials', 'data']);
@@ -22,6 +22,7 @@ async function build() {
   const nav = await loadNav('nav.json');
   const footerNav = await loadNav('footer-nav.json');
   const projects = await loadProjects();
+  await checkFirmwareManifests();
   const byId = new Map(projects.map((project) => [project.id, project]));
 
   const partials = {};

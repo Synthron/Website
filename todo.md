@@ -278,13 +278,13 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **Tooling bugs**
 
-- [ ] **S09** Add missing MIME types to the preview server: `.png`, `.jpg`, `.jpeg`, `.ico`, `.bin`, `.webmanifest`.
+- [x] **S09** Add missing MIME types to the preview server: `.png`, `.jpg`, `.jpeg`, `.ico`, `.bin`, `.webmanifest`.
       Files: `scripts/serve.mjs` · Refs: §3 serve
       Done when: images load with the correct `Content-Type` in DevTools.
-- [ ] **S10** Extend the build link check to `manifest="…"`, `srcset="…"` and `poster="…"`.
+- [x] **S10** Extend the build link check to `manifest="…"`, `srcset="…"` and `poster="…"`.
       Files: `scripts/build.mjs` · Refs: §2
       Done when: renaming `assets/firmware/nixie-clock/manifest.json` makes the build fail (rename it back afterwards).
-- [ ] **S11** Validate firmware manifests: valid JSON, `builds[].parts[].path` files exist, offsets are integers. Binaries are committed (D3), so the check always has its inputs.
+- [x] **S11** Validate firmware manifests: valid JSON, `builds[].parts[].path` files exist, offsets are integers. Binaries are committed (D3), so the check always has its inputs.
       Files: `scripts/build.mjs`, `README.md` · Refs: §2
 - [ ] **S12** Validate `projects.json` field types: `title`/`summary` non-empty strings, `status` in the D10 enum (`in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`), `featured` boolean, `links` shape, tag format, no duplicate tags. Also list the enum in the AGENTS.md "Data" section.
       Same commit: migrate existing data (`active` → `in Arbeit`, `finished` → `fertig`), change the default status in `create.mjs` to `in Arbeit`, update the README Data Model example and document the enum. If a status is ever used as a CSS hook, slugify it (values contain spaces and capitals).
