@@ -23,7 +23,13 @@ Website/
 ├── .editorconfig          # Indentation and encoding rules
 ├── package.json           # npm scripts (no dependencies)
 ├── scripts/
-│   ├── build.mjs          # Build: wwwroot/ -> dist/
+│   ├── build.mjs          # Build CLI: wwwroot/ -> dist/ (orchestration only)
+│   ├── lib/               # Build modules (importable, unit-testable)
+│   │   ├── util.mjs       # Paths, error collection, escaping, small helpers
+│   │   ├── data.mjs       # Load and validate data/*.json
+│   │   ├── render.mjs     # HTML/XML renderers for directives and sitemap
+│   │   ├── pipeline.mjs   # @raw, includes, tokens, directives
+│   │   └── checks.mjs     # Checks on the rendered output (links)
 │   ├── create.mjs         # Scaffold a new project page + projects.json entry
 │   └── serve.mjs          # Local preview server for dist/
 ├── dist/                  # Build output (generated, git-ignored, deploy this)
@@ -33,6 +39,7 @@ Website/
     ├── favicon.svg        # Monogram favicon (template; initial comes from site.json)
     ├── robots.txt         # Crawler rules
     ├── partials/          # Build-time includes (not copied to dist/)
+    │   ├── head.html      # Shared <head> content (charset, CSP, favicon, CSS, main.js)
     │   ├── header.html    # Shared skip link, header and nav
     │   └── footer.html    # Shared footer (copyright, footer nav)
     ├── html/              # Additional page templates
@@ -81,7 +88,7 @@ Requires Node.js ≥ 18. There are no dependencies, so no `npm install` is neede
 | `npm start` | Build, then serve. |
 | `npm run clean` | Removes `dist/`. |
 
-The build copies `wwwroot/` to `dist/` except `partials/`, `data/` and `html/proj/project-template.html`. HTML files, `favicon.svg` and `robots.txt` are processed in three passes: includes, tokens, directives. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
+The build copies `wwwroot/` to `dist/` except `partials/`, `data/` and `html/proj/project-template.html`. HTML files, `favicon.svg` and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then the `@raw` blocks are put back unchanged. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
 
 The build also generates `dist/sitemap.xml` from every built page (excluding `404.html`; `index.html` becomes the root URL, project pages carry a `lastmod` from their `date`) and fills the `Sitemap:` line in `dist/robots.txt`. Both use the canonical `url` in `data/site.json`. Keep `data/site.json`'s `url` current when the site moves domains.
 
@@ -91,7 +98,8 @@ Content is never hard-coded where it can be generated. Source pages use these co
 
 | Construct | Result |
 | --- | --- |
-| `<!-- @include header -->` / `<!-- @include footer -->` | Inserts `partials/header.html` / `partials/footer.html` (any file in `partials/` works by its name). |
+| `<!-- @include head -->` / `<!-- @include header -->` / `<!-- @include footer -->` | Inserts `partials/head.html` / `partials/header.html` / `partials/footer.html` (any file in `partials/` works by its name). |
+| `{{csp}}` | Content Security Policy for the page. Pages containing `<esp-web-install-button>` automatically get `style-src 'self' 'unsafe-inline'` added. Used in `partials/head.html`. |
 | `{{name}}`, `{{year}}`, `{{footerNote}}`, `{{email}}`, `{{monogram}}` | Values from `data/site.json` (`monogram` = first letter of `name`). |
 | `{{url}}`, `{{sitemapUrl}}` | Canonical base URL and `https://…/sitemap.xml` from `data/site.json` (`url`). Used by `robots.txt`. |
 | `{{root}}` | Relative path to the web root (`""` for root pages, `"../"` for pages in `html/`). |
@@ -101,12 +109,23 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `<!-- @project-header -->` | Project page header (h1, summary, status/date, tags, links) from `data/projects.json`. |
 | `<!-- @projects all\|featured level=2\|3 id=list-id -->` | Pre-rendered project card grid, newest first. |
 | `<!-- @tag-filter list-id -->` | Tag filter buttons and status line for the list with that `id` (hidden until `js/projects.js` runs). |
+| `<!-- @raw -->` … `<!-- @endraw -->` | Everything in between is output verbatim: no includes, tokens or directives. Use it for code samples that show `{{…}}` or `<!-- @… -->`. The markers are removed; HTML-escape the content yourself (e.g. `&lt;` inside `<pre><code>`). Unmatched markers fail the build. |
 
 All inserted values are HTML-escaped. Use `{{name}}` (not a hard-coded name) in every `<title>` and `meta[name="description"]`. Source files in `wwwroot/` are templates and are not meant to be opened directly in a browser; open the built files in `dist/`.
 
 The build validates `data/projects.json` (required fields, unique lowercase ids, `YYYY-MM` dates, existing image and `html/proj/{id}.html` page) and checks every internal `href`/`src` in the output.
 
-### Shared Header/Footer
+### Shared Head, Header and Footer
+
+The common `<head>` content (charset, viewport, CSP, colour scheme, favicon, stylesheets, `js/main.js`) lives in `wwwroot/partials/head.html`. Every page keeps only its page-specific head entries:
+
+```html
+<head>
+  <!-- @include head -->
+  <meta name="description" content="… {{name}} …">
+  <title>… — {{name}}</title>
+</head>
+```
 
 The header (skip link, brand, nav) and footer live once in `wwwroot/partials/`. Edit them there; every page picks them up on the next build. The nav toggle starts `hidden` so that without JavaScript the nav is always visible. Required header structure (used by `css/layout.css` and `js/nav.js`):
 
@@ -199,7 +218,7 @@ Some projects ship firmware that visitors can flash to an ESP32 directly from th
 - Firmware suites live in `assets/firmware/<suite>/` (copied to `dist/` like any other asset). Each suite is a folder holding its own `manifest.json` and the binaries it references, e.g. `assets/firmware/nixie-clock/{bootloader.bin, partitions.bin, firmware.bin, manifest.json}`. Different projects or variants live in separate folders, so each can use the same file names without collisions.
 - Each `manifest.json` references the binaries in its own folder (paths are relative to the manifest). For a plain app image (typical Arduino/PlatformIO build) flash **all three** parts with the correct offsets: `bootloader.bin` at `0x1000`, `partitions.bin` at `0x8000`, and the app at `0x10000`. Flashing a plain app at offset `0` overwrites the bootloader and partition table ("invalid header" boot-loop). If you instead use a combined/factory image, offset `0` is correct. The `.bin` files are provided separately and are not committed.
 - To flash, add one `<esp-web-install-button manifest="{{root}}assets/firmware/<suite>/manifest.json"></esp-web-install-button>` per firmware variant — you can add several buttons on one page, each targeting a different manifest. See section 10 ("Firmware / web flasher") in `project-template.html` for a working example with two buttons. Include the vendored script before `</body>`.
-- The page CSP must allow the component's injected styles: add `style-src 'self' 'unsafe-inline'` to the `Content-Security-Policy` meta tag. The flasher needs a secure context (HTTPS or `localhost`) for the WebSerial API — serving over a LAN IP like `http://192.168.x.x` will not expose WebSerial.
+- The page CSP must allow the component's injected styles (`style-src 'self' 'unsafe-inline'`). The build adds this automatically via `{{csp}}` on every page that contains `<esp-web-install-button>`; other pages keep the strict policy. The flasher needs a secure context (HTTPS or `localhost`) for the WebSerial API — serving over a LAN IP like `http://192.168.x.x` will not expose WebSerial.
 - On **Linux**, Chrome/Chromium hides the Web Serial API by default; launch with `google-chrome --enable-features=WebSerialPorts` (fully quit Chrome first, or the flag is ignored). On macOS/Windows WebSerial works out of the box in current Chrome/Edge.
 
 ### Placeholders
@@ -278,6 +297,9 @@ Adding a project means adding an entry to this file and creating `html/proj/{id}
 - [x] Shared header/footer as partials; site.json content generated at build time
 - [x] Project lists, project headers and tag filter pre-rendered; runtime `fetch` removed
 - [x] `npm run create`: scaffold a new project page from the template and register it in `projects.json`
+- [x] Build logic split into `scripts/lib/` modules; `build.mjs` is a thin CLI
+- [x] `@raw` … `@endraw` escape block for literal `{{…}}` / `<!-- @… -->` in code samples
+- [x] Shared `<head>` partial with `{{csp}}` (flasher pages get the inline-style exception automatically)
 
 ### Phase 4 — Quality
 - [ ] Test layout at 320px, 768px, 1280px widths

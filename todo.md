@@ -68,12 +68,12 @@ Priority: **P1** = fixes inconsistencies / prevents bugs, **P2** = clear workflo
 - [ ] **P2** Error messages with line numbers (`wwwroot/html/x.html:42: unknown token {{foo}}`) so a VS Code problem matcher can link them (see 4.3).
 - [ ] **P2** `--check` flag: run all validation without writing `dist/` (fast pre-commit check).
 - [ ] **P2** `draft: true` (optional field) in `projects.json`: page is built but excluded from lists, tag filter and `sitemap.xml` (or not built at all). Useful for unfinished projects later (D6 keeps the placeholder as is for now).
-- [ ] **P3** Escape mechanism for literal `{{…}}` and `<!-- @… -->` (e.g. `{{{{` or a `<!-- @raw -->…<!-- @endraw -->` block). Currently a code sample containing `{{name}}` would be replaced or fail the build — relevant for write-ups that show template or firmware code.
-- [ ] **P3** Reduce head boilerplate: every page repeats charset, viewport, CSP, color-scheme, favicon, four stylesheets and `main.js`. Options: `partials/head.html` plus a `{{csp}}` token, or a `<!-- @head title="…" flasher -->` directive. Approved (D9).
+- [x] **P3** Escape mechanism for literal `{{…}}` and `<!-- @… -->` (e.g. `{{{{` or a `<!-- @raw -->…<!-- @endraw -->` block). Currently a code sample containing `{{name}}` would be replaced or fail the build — relevant for write-ups that show template or firmware code.
+- [x] **P3** Reduce head boilerplate: every page repeats charset, viewport, CSP, color-scheme, favicon, four stylesheets and `main.js`. Options: `partials/head.html` plus a `{{csp}}` token, or a `<!-- @head title="…" flasher -->` directive. Approved (D9).
 - [ ] **P3** `sitemap.xml` `lastmod` for non-project pages: last git commit date of the source file, determined automatically on every build (D24).
 - [ ] **P3** Open Graph / canonical tags generated from `site.json` + project data (Phase 5 item); default share image 1200×630 PNG (D25).
 - [ ] **P1** Cache busting (D19): append `?v=<version>` to local asset URLs automatically; the version changes whenever the file changes. Enables long caching in `.htaccess`.
-- [ ] **P3** Split `build.mjs` into an importable module (`scripts/lib/*.mjs`) and a thin CLI, so helpers can be unit-tested (see 3).
+- [x] **P3** Split `build.mjs` into an importable module (`scripts/lib/*.mjs`) and a thin CLI, so helpers can be unit-tested (see 3).
 
 ---
 
@@ -178,33 +178,33 @@ Live response headers of `https://dm7wb.de/` (2026-10-23): `Server: Apache`, `Ca
 
 ### Outdated or contradictory
 
-- [ ] **P1** Directory table lists only `build.mjs`, `serve.mjs` under `scripts/` — add `create.mjs` and state: _"Add projects with `npm run create`, not by copying files by hand."_
-- [ ] **P1** "Do not add third-party scripts" conflicts with the vendored ESP Web Tools in `js/vendor/`. Add an explicit exception: vendored, self-hosted, approved; **never edit files in `js/vendor/`**; document the update procedure (version, source URL, replace whole folder).
-- [ ] **P1** Same for the CSP: document that `style-src 'self' 'unsafe-inline'` is allowed **only** on pages with the web flasher.
-- [ ] **P1** Missing paths in the table: `assets/firmware/<suite>/`, `assets/icons/`, `js/vendor/`, `.htaccess`, `favicon.svg`, `robots.txt`, legal pages.
-- [ ] **P2** "Note: `wwwroot/js/` and `wwwroot/assets/` exist but may be sparse" is outdated — remove.
-- [ ] **P2** Workflow step 2 ("work on the earliest unchecked item") collides with "do not invent project data": the earliest open item is "Replace placeholder content". Add: _"Skip items that need real content from the user; ask instead."_
-- [ ] **P2** Workflow step 5 ("do not create files outside the outline") is hard to follow while the outline is stale (see 1). Keep the outline current or relax the rule to "update the outline in the same change".
+- [x] **P1** Directory table lists only `build.mjs`, `serve.mjs` under `scripts/` — add `create.mjs` and state: _"Add projects with `npm run create`, not by copying files by hand."_
+- [x] **P1** "Do not add third-party scripts" conflicts with the vendored ESP Web Tools in `js/vendor/`. Add an explicit exception: vendored, self-hosted, approved; **never edit files in `js/vendor/`**; document the update procedure (version, source URL, replace whole folder).
+- [x] **P1** Same for the CSP: document that `style-src 'self' 'unsafe-inline'` is allowed **only** on pages with the web flasher.
+- [x] **P1** Missing paths in the table: `assets/firmware/<suite>/`, `assets/icons/`, `js/vendor/`, `.htaccess`, `favicon.svg`, `robots.txt`, legal pages.
+- [x] **P2** "Note: `wwwroot/js/` and `wwwroot/assets/` exist but may be sparse" is outdated — remove.
+- [x] **P2** Workflow step 2 ("work on the earliest unchecked item") collides with "do not invent project data": the earliest open item is "Replace placeholder content". Add: _"Skip items that need real content from the user; ask instead."_
+- [x] **P2** Workflow step 5 ("do not create files outside the outline") is hard to follow while the outline is stale (see 1). Keep the outline current or relax the rule to "update the outline in the same change".
 
 ### Missing guidance
 
-- [ ] **P1** **Language rule** (D1, D2): site content and UI are German; code, comments, docs and commit messages are English; commits use Conventional Commits. Without this, agents will write English page text.
-- [ ] **P1** **Legal pages** (`impressum.html`, `privacy.html`, `rechtliches.html`): do not change legal wording without explicit user approval.
-- [ ] **P1** **Binary assets**: never modify or regenerate `.bin` firmware files (they are committed, D3); prefer WebP for raster images, no hard size limit (D11).
-- [ ] **P2** **Windows / PowerShell notes** for agents running terminal commands:
+- [x] **P1** **Language rule** (D1, D2): site content and UI are German; code, comments, docs and commit messages are English; commits use Conventional Commits. Without this, agents will write English page text.
+- [x] **P1** **Legal pages** (`impressum.html`, `privacy.html`, `rechtliches.html`): do not change legal wording without explicit user approval.
+- [x] **P1** **Binary assets**: never modify or regenerate `.bin` firmware files (they are committed, D3); prefer WebP for raster images, no hard size limit (D11).
+- [x] **P2** **Windows / PowerShell notes** for agents running terminal commands:
   - PowerShell 5.1 has no `&&` in the shell (npm scripts are fine); chain with `;`.
   - `Get-Content` without `-Encoding UTF8` shows UTF-8 umlauts as mojibake (`Ã¼`); this is a display issue, not a file issue — do not "fix" files based on it.
   - Never write files via `>`/`Out-File` (UTF-16/BOM); use the editor tools.
 - [ ] **P2** **Status enum** and optional fields (`draft`, if added) for `projects.json`.
-- [ ] **P2** **Verification recipe**: `npm run build` → `npm run serve` → open `http://localhost:8000/`, check 320/768/1280 px, check DevTools console and Network tab (no external requests). Once `npm run check` / `npm test` exist, list them as mandatory steps.
-- [ ] **P2** **Definition of Done** demands W3C validation but gives no way to do it locally. Either name the method (manual upload to validator.w3.org/nu, or the Nu validator jar if Java is acceptable) or replace with the automated checks from section 2.
-- [ ] **P3** **Commit message format** in workflow step 8: specify language and convention (see 4.2).
-- [ ] **P3** **Branching**: mention the current model (`main` + feature branches such as `npm-test`) and that agents never switch, merge or push branches without being asked.
+- [x] **P2** **Verification recipe**: `npm run build` → `npm run serve` → open `http://localhost:8000/`, check 320/768/1280 px, check DevTools console and Network tab (no external requests). Once `npm run check` / `npm test` exist, list them as mandatory steps.
+- [x] **P2** **Definition of Done** demands W3C validation but gives no way to do it locally. Either name the method (manual upload to validator.w3.org/nu, or the Nu validator jar if Java is acceptable) or replace with the automated checks from section 2.
+- [x] **P3** **Commit message format** in workflow step 8: specify language and convention (see 4.2).
+- [x] **P3** **Branching**: mention the current model (`main` + feature branches such as `npm-test`) and that agents never switch, merge or push branches without being asked.
 
 ### Structure
 
-- [ ] **P2** The "Project Write-up Template" and "Build and Templating" sections duplicate `README.md` almost verbatim → drift risk. Keep only the rules in AGENTS.md and link to the README sections for details.
-- [ ] **P3** Add a short "Common tasks" cheat sheet: add a project, add a page + nav entry, add a firmware suite, add a layout pattern, add a token/directive (each as 2–4 steps with the files involved).
+- [x] **P2** The "Project Write-up Template" and "Build and Templating" sections duplicate `README.md` almost verbatim → drift risk. Keep only the rules in AGENTS.md and link to the README sections for details.
+- [x] **P3** Add a short "Common tasks" cheat sheet: add a project, add a page + nav entry, add a firmware suite, add a layout pattern, add a token/directive (each as 2–4 steps with the files involved).
 
 ---
 
@@ -286,7 +286,7 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
       Done when: renaming `assets/firmware/nixie-clock/manifest.json` makes the build fail (rename it back afterwards).
 - [ ] **S11** Validate firmware manifests: valid JSON, `builds[].parts[].path` files exist, offsets are integers. Binaries are committed (D3), so the check always has its inputs.
       Files: `scripts/build.mjs`, `README.md` · Refs: §2
-- [ ] **S12** Validate `projects.json` field types: `title`/`summary` non-empty strings, `status` in the D10 enum (`in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`), `featured` boolean, `links` shape, tag format, no duplicate tags.
+- [ ] **S12** Validate `projects.json` field types: `title`/`summary` non-empty strings, `status` in the D10 enum (`in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`), `featured` boolean, `links` shape, tag format, no duplicate tags. Also list the enum in the AGENTS.md "Data" section.
       Same commit: migrate existing data (`active` → `in Arbeit`, `finished` → `fertig`), change the default status in `create.mjs` to `in Arbeit`, update the README Data Model example and document the enum. If a status is ever used as a CSS hook, slugify it (values contain spaces and capitals).
       Files: `scripts/build.mjs`, `scripts/create.mjs`, `wwwroot/data/projects.json`, `README.md` · Refs: §2
 - [ ] **S13** Reject `image` paths that leave `wwwroot/` (`../`) and fail on non-null `links` values that are not valid http(s) URLs (they are silently dropped today).
@@ -301,15 +301,15 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **AGENTS.md (rules agents need right now)**
 
-- [ ] **S16** Add `create.mjs` to the `scripts/` row and the rule "add projects with `npm run create`".
+- [x] **S16** Add `create.mjs` to the `scripts/` row and the rule "add projects with `npm run create`".
       Files: `AGENTS.md` · Refs: §6
-- [ ] **S17** Add the exceptions for `js/vendor/esp-web-tools/` ("approved, self-hosted, never edit; update by replacing the whole folder") and the flasher-only CSP `style-src 'unsafe-inline'`.
+- [x] **S17** Add the exceptions for `js/vendor/esp-web-tools/` ("approved, self-hosted, never edit; update by replacing the whole folder") and the flasher-only CSP `style-src 'unsafe-inline'`.
       Files: `AGENTS.md` · Refs: §6
-- [ ] **S18** Add the missing paths to the directory table: `assets/firmware/<suite>/`, `assets/icons/`, `js/vendor/`, `.htaccess`, `favicon.svg`, `robots.txt`, legal pages.
+- [x] **S18** Add the missing paths to the directory table: `assets/firmware/<suite>/`, `assets/icons/`, `js/vendor/`, `.htaccess`, `favicon.svg`, `robots.txt`, legal pages.
       Files: `AGENTS.md` · Refs: §6
-- [ ] **S19** Add a "Language" section (D1, D2): site content and UI German; code, comments, docs and commit messages English; Conventional Commits (`feat:`, `fix:`, `docs:`, `perf:`, `chore:`). Update workflow step 8 (commit message) accordingly.
+- [x] **S19** Add a "Language" section (D1, D2): site content and UI German; code, comments, docs and commit messages English; Conventional Commits (`feat:`, `fix:`, `docs:`, `perf:`, `chore:`). Update workflow step 8 (commit message) accordingly.
       Files: `AGENTS.md` · Refs: §6
-- [ ] **S20** Add rules: legal pages are only changed with explicit approval; never modify `.bin` files (committed, D3); raster images preferably WebP, no hard size limit (D11).
+- [x] **S20** Add rules: legal pages are only changed with explicit approval; never modify `.bin` files (committed, D3); raster images preferably WebP, no hard size limit (D11).
       Files: `AGENTS.md` · Refs: §6
 
 ### 7.3 P2 — Workflow gains
@@ -351,7 +351,7 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 - [ ] **S32** Warning: unused files in `assets/img/`, leftover "Placeholder paragraph" text in built pages (expected for `placeholder-project-two`, D6). No size warning (D11).
 - [ ] **S33** Check same-page and cross-page anchors (`#id`) and duplicate `id`s per page.
 - [ ] **S34** HTML rule lint, **fails the build** (D13): exactly one `h1`, `alt` on every `img`, no `style="…"`, no inline `<script>`, `lang` on `<html>`. Fix existing violations in the same commit.
-- [ ] **S35** Flasher pages: if a page contains `<esp-web-install-button>`, require the CSP `style-src` exception and the vendored script tag.
+- [ ] **S35** Flasher pages: if a page contains `<esp-web-install-button>`, require the vendored `install-button.js` script tag (the CSP exception is automatic since S62).
 - [ ] **S36** Optional `draft: true` in `projects.json` (D9): page is built but excluded from lists, tag filter and sitemap. Document in README Data Model.
 
 **Dev loop**
@@ -382,7 +382,7 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **Tests**
 
-- [ ] **S45** Split `build.mjs` into `scripts/lib/*.mjs` (pure helpers + render functions) and a thin CLI. No behaviour change; `dist/` must be byte-identical before/after.
+- [x] **S45** Split `build.mjs` into `scripts/lib/*.mjs` (pure helpers + render functions) and a thin CLI. No behaviour change; `dist/` must be byte-identical before/after. Done: `util`, `data`, `render`, `pipeline`, `checks`; output verified byte-identical.
       Files: `scripts/build.mjs`, `scripts/lib/` · Refs: §2
 - [ ] **S46** `npm test` with `node --test`: `esc`, `slugify`, `safeExternalUrl`, `renderNav` (`aria-current`), link check, sitemap.
       Files: `scripts/lib/*.test.mjs`, `package.json` · Refs: §3
@@ -406,11 +406,11 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **AGENTS.md (remaining)**
 
-- [ ] **S53** Remove the outdated "may be sparse" note; reword workflow step 2 ("skip items that need real content; ask instead") and step 5 ("update the outline in the same change").
-- [ ] **S54** Add the Windows/PowerShell notes (`;` instead of `&&`, `Get-Content -Encoding UTF8`, never write files via `>`/`Out-File`).
-- [ ] **S55** Add the verification recipe (build → serve → 320/768/1280 px → console + network tab) and list `npm run check` / `npm test` once they exist.
-- [ ] **S56** Update the Definition of Done (D23): HTML rules are enforced by the build lint (S34); a manual check at validator.w3.org/nu is done occasionally (e.g. before a release), not per change.
-- [ ] **S57** Replace the duplicated README sections (Project Write-up Template, Build and Templating) with short rules + links to README.
+- [x] **S53** Remove the outdated "may be sparse" note; reword workflow step 2 ("skip items that need real content; ask instead") and step 5 ("update the outline in the same change").
+- [x] **S54** Add the Windows/PowerShell notes (`;` instead of `&&`, `Get-Content -Encoding UTF8`, never write files via `>`/`Out-File`).
+- [x] **S55** Add the verification recipe (build → serve → 320/768/1280 px → console + network tab) and list `npm run check` / `npm test` once they exist.
+- [x] **S56** Update the Definition of Done (D23): HTML rules are enforced by the build lint (S34); a manual check at validator.w3.org/nu is done occasionally (e.g. before a release), not per change.
+- [x] **S57** Replace the duplicated README sections (Project Write-up Template, Build and Templating) with short rules + links to README.
 
 **README housekeeping**
 
@@ -420,8 +420,8 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 - [ ] **S59** Preview server: `HOST` env var for LAN testing (document: no WebSerial without secure context).
 - [ ] **S60** Preview server: send the same security headers as `.htaccess`.
-- [ ] **S61** Escape block for literal `{{…}}` / `<!-- @… -->` in code samples (D9).
-- [ ] **S62** Shared `<head>` via partial + `{{csp}}` token or a `@head` directive (D9); migrate pages one by one.
+- [x] **S61** Escape block for literal `{{…}}` / `<!-- @… -->` in code samples (D9). Done: `<!-- @raw -->` … `<!-- @endraw -->`, unmatched markers fail the build.
+- [x] **S62** Shared `<head>` via partial + `{{csp}}` token or a `@head` directive (D9); migrate pages one by one. Done: `partials/head.html` + `{{csp}}`; flasher pages are detected automatically, so S35's CSP part is covered.
 - [ ] **S63** `sitemap.xml` `lastmod` for non-project pages (D24), computed on every `npm run build`: `git log -1 --format=%cs -- <source file>` via `node:child_process` (built-in). If the file has uncommitted changes (`git status --porcelain -- <file>`), use today's date. If git is unavailable or the file is untracked, omit `lastmod` instead of failing.
 - [ ] **S64** Open Graph + canonical tags from `site.json` and project data (D9). Manual sub-step (D25): create `assets/img/og-default.png` (1200×630, logo on a plain background) in GIMP; project pages use their project image when it is a raster image. Ticks the remaining Phase 5 item.
 - [ ] **S65** `npm run report`: `dist/` size, largest files, non-WebP images, unused assets.
@@ -430,5 +430,5 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 - ~~**S68** `npm run package`.~~ Dropped (D7: manual SFTP upload of the folder needs no archive).
 - [ ] **S69** HTTPS redirect in `.htaccess` (safe with Cloudflare DNS only, D18) and point `ErrorDocument 403` to a styled page.
 - [ ] **S70** `.vscode/launch.json` (debug `build.mjs` / `create.mjs`) and `.vscode/extensions.json` (`EditorConfig.EditorConfig`) (D15).
-- [ ] **S71** AGENTS.md: branching rules and a "Common tasks" cheat sheet (commit format is covered by S19).
+- [x] **S71** AGENTS.md: branching rules and a "Common tasks" cheat sheet (commit format is covered by S19).
 - ~~**S72** Merge `todo.md` into README or add it to the outline.~~ Dropped (D17: kept outside the outline, deleted by the user).
