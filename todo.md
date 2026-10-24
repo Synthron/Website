@@ -10,7 +10,6 @@ Priority: **P1** = fixes inconsistencies / prevents bugs, **P2** = clear workflo
 
 ### Remaining open work
 
-- **P2**: README "Open Decisions" cleanup (S58).
 - **P3**: preview server — `HOST` env var (S59), mirrored security headers (S60); build — sitemap `lastmod` from git (S63), Open Graph/canonical tags (S64), `npm run report` (S65), `npm run remove` (S66), `npm run check:external` (S67); `.htaccess` HTTPS redirect + 403 page (S69); `.vscode/launch.json` + `extensions.json` (S70).
 - **User**: nixie placeholder content (S22); `placeholder-project-two` kept as-is (D6).
 - Dropped: GitHub Actions (S50), `npm run package` (S68), merging `todo.md` (S72); deferred: removing the placeholder project (S23).
@@ -454,7 +453,8 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **README housekeeping**
 
-- [ ] **S58** Update "Open Decisions" in README: hosting = Apache at `dm7wb.de`, SFTP upload (D7, D18); language = German (D1); dark mode = follow the system preference, no toggle (D26). Remove the answered items from the list.
+- [x] **S58** Update "Open Decisions" in README: hosting = Apache at `dm7wb.de`, SFTP upload (D7, D18); language = German (D1); dark mode = follow the system preference, no toggle (D26). Remove the answered items from the list.
+      Done: replaced the "Open Decisions" list with a "Decisions" section recording the three resolved items (hosting, language, dark mode) and pointing to `todo.md` D1–D26.
 
 ### 7.4 P3 — Nice to have
 

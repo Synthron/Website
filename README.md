@@ -388,7 +388,10 @@ Adding a project means adding an entry to this file and creating `html/proj/{id}
 - [ ] Add meta descriptions / Open Graph tags
 - [x] Write a short deployment note in this README (deploy the contents of `dist/`)
 
-## Open Decisions
-- Hosting target
-- Whether a dark mode toggle is wanted (default: follow system preference only)
-- Language of the site (default: English)
+## Decisions
+
+All previously open decisions are resolved and recorded in `todo.md` (D1–D26):
+
+- **Hosting**: Apache at `dm7wb.de`, manual SFTP upload of `dist/` (D7, D18) — see [Deployment](#deployment).
+- **Language**: German content and UI (D1).
+- **Dark mode**: follow the system preference, no toggle (D26).
