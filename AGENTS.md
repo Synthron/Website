@@ -40,8 +40,10 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | --- | --- | --- |
 | `scripts/build.mjs` | Build CLI | Orchestration only. Put logic into `scripts/lib/`. |
 | `scripts/lib/` | Build modules: `util` (paths, `fail()`, escaping), `data` (load/validate JSON), `render` (HTML renderers), `pipeline` (`@raw`, includes, tokens, directives), `checks` (output checks) | Node built-ins only. Keep the build deterministic and failing loudly on bad data. New checks go into `checks.mjs`, new renderers into `render.mjs`. |
-| `scripts/create.mjs` | `npm run create` | Scaffolds a project page from the template and registers it in `projects.json`. |
+| `scripts/create.mjs` | `npm run create` | Scaffolds a project page from the template and registers it in `projects.json` (flags: `--tags`, `--featured`, `--status`, `--repo`, `--dry-run`). |
 | `scripts/dev.mjs` | `npm run dev` | Build once, then rebuild on changes in `wwwroot/`/`scripts/`; serves `dist/` with SSE live reload (dev-only). |
+| `scripts/firmware.mjs` | `npm run firmware` | Scaffolds `assets/firmware/<suite>/manifest.json` for the given `--chip` families and prints the flasher button snippet. |
+| `scripts/page.mjs` | `npm run page` | Scaffolds a minimal secondary page in `html/` (optionally `--nav` / `--footer`). |
 | `scripts/serve.mjs` | `npm run serve` | Local preview of `dist/` only. |
 | `wwwroot/index.html` | Home page | Only page-level layout and section structure. No inline styles or scripts. |
 | `wwwroot/404.html` | Not-found page | Served at any path, so the build uses root-relative links (`{{root}}` = `/`). |

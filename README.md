@@ -34,6 +34,8 @@ Website/
 │   │   └── checks.mjs     # Checks on the rendered output (links)
 │   ├── create.mjs         # Scaffold a new project page + projects.json entry
 │   ├── dev.mjs            # Dev server: build, serve, watch, live reload
+│   ├── firmware.mjs       # Scaffold an assets/firmware/<suite>/manifest.json
+│   ├── page.mjs           # Scaffold a minimal secondary page in html/
 │   └── serve.mjs          # Local preview server for dist/
 ├── dist/                  # Build output (generated, git-ignored, deploy this)
 └── wwwroot/               # Source (build input)
@@ -95,7 +97,9 @@ Requires Node.js ≥ 22. There are no dependencies, so no `npm install` is neede
 | --- | --- |
 | `npm run build` | Deletes `dist/` and rebuilds it from `wwwroot/`. Exits non-zero on invalid data, unknown tokens/includes or broken internal links. |
 | `npm run check` | Validation only: runs every build check (data, firmware manifests, tokens/includes/directives, links) and **writes nothing**. Fast pre-commit check; used by the git hook. |
-| `npm run create -- "Name" "Brief"` | Scaffolds a new project: copies `project-template.html` to `html/proj/{id}.html` and registers the project in `data/projects.json`. |
+| `npm run create -- "Name" "Brief" [flags]` | Scaffolds a new project: copies `project-template.html` to `html/proj/{id}.html` and registers the project in `data/projects.json`. Flags: `--tags a,b`, `--featured`, `--status <value>` (D10 enum), `--repo <url>`, `--dry-run` (validate only). |
+| `npm run page -- "Title" [--nav\|--footer]` | Scaffolds a minimal secondary page from the D21 template (shared head with CSP/`{{name}}` title/description, header, `h1`, one prose section, footer) at `html/{slug}.html`; refuses to overwrite; optionally appends a nav entry to `data/nav.json` / `data/footer-nav.json`. |
+| `npm run firmware -- <suite> --chip <family> [--chip …]` | Creates `assets/firmware/<suite>/manifest.json` with a `builds` entry per `--chip` and prints the `<esp-web-install-button>` snippet. Supported chips: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 (see Firmware section for offsets). |
 | `npm run dev` | Build once, serve `dist/`, then rebuild automatically on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`). Live reload via Server-Sent Events: the dev server injects a same-origin `<script src="/__reload.js">` into served HTML and broadcasts a reload after each successful build — never written into `dist/`, and the CSP (`'self'`) still holds. Build errors print to the terminal; the server keeps running so a fix triggers the next rebuild. |
 | `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` env var overrides) with `Cache-Control: no-store`; redirects directory requests to add the trailing slash. |
 | `npm start` | Build, then serve. |
@@ -235,13 +239,30 @@ The command:
 
 After scaffolding, replace the placeholder body on the new page and set `tags`, `links` and `image` in `data/projects.json`, then run `npm run build`.
 
+### Scaffolding a Secondary Page (`npm run page`)
+
+`npm run page -- "Title"` creates a minimal page for secondary content (D21) so you do not have to copy an existing page by hand.
+
+```sh
+npm run page -- "Petikette" --nav
+```
+
+The command:
+
+- Derives a lowercase, hyphenated `slug` from the title (`ü`/`ä`/`ö`/`ß` are transliterated, e.g. `Über mich` → `ueber-mich`) and refuses to overwrite an existing `html/{slug}.html`.
+- Writes a minimal template: shared `<!-- @include head -->` (CSP, title and `meta description` with `{{name}}`, stylesheets, `main.js`), `<!-- @include header -->`, an `h1`, one `prose` section, `<!-- @include footer -->`.
+- With `--nav` / `--footer` it appends an entry `{ "label": "<Title>", "href": "html/{slug}.html" }` to `data/nav.json` / `data/footer-nav.json` (skips duplicates). `--description "…"` overrides the placeholder `meta description`.
+
+After scaffolding, replace the placeholder body text and add the page to the README outline, then run `npm run build`.
+
 ### Firmware / Web Flasher
 
 Some projects ship firmware that visitors can flash to an ESP32 directly from the browser over USB-serial. This uses [ESP Web Tools](https://esphome.github.io/esp-web-tools/) (vendored locally — no CDN, no external requests).
 
 - The library lives in `js/vendor/esp-web-tools/` (all modules of the `dist/web/` build, kept as-is so relative imports resolve). Reference it with `<script type="module" src="{{root}}js/vendor/esp-web-tools/install-button.js"></script>`.
 - Firmware suites live in `assets/firmware/<suite>/` (copied to `dist/` like any other asset). Each suite is a folder holding its own `manifest.json` and the binaries it references, e.g. `assets/firmware/nixie-clock/{bootloader.bin, partitions.bin, firmware.bin, manifest.json}`. Different projects or variants live in separate folders, so each can use the same file names without collisions.
-- Each `manifest.json` references the binaries in its own folder (paths are relative to the manifest). For a plain app image (typical Arduino/PlatformIO build) flash **all three** parts with the correct offsets: `bootloader.bin` at `0x1000`, `partitions.bin` at `0x8000`, and the app at `0x10000`. Flashing a plain app at offset `0` overwrites the bootloader and partition table ("invalid header" boot-loop). If you instead use a combined/factory image, offset `0` is correct. The binaries are committed in git per suite in `assets/firmware/<suite>/`; they are not provided separately, so a checkout always contains everything the build and deployment need. The build validates every manifest: it must parse as JSON, `builds[].parts[].path` must point to a real file next to the manifest, and every `offset` must be an integer.
+- Each `manifest.json` references the binaries in its own folder (paths are relative to the manifest). For a plain app image (typical Arduino/PlatformIO build) flash **all three** parts per chip with the correct offsets: partitions at `0x8000` and the app at `0x10000` for every family; the bootloader offset depends on the chip — `0x1000` for ESP32 and ESP32-S2, `0x0` for ESP32-S3 and ESP32-C3. Flashing a plain app at offset `0` overwrites the bootloader and partition table ("invalid header" boot-loop). If you instead use a combined/factory image, offset `0` is correct. The binaries are committed in git per suite in `assets/firmware/<suite>/`; they are not provided separately, so a checkout always contains everything the build and deployment need. The build validates every manifest: it must parse as JSON, `builds[].parts[].path` must point to a real file next to the manifest, every `offset` must be an integer, and offsets of known files (`bootloader.bin`/`partitions.bin`/`firmware.bin`) are checked against the `chipFamily` (a mismatch warns).
+- Scaffold a suite with `npm run firmware -- <suite> --chip ESP32` (repeat `--chip ESP32-S3` etc. for several builds in one manifest). Each build expects its binaries under `<chip>/` (e.g. `esp32s3/bootloader.bin`). The command prints the button snippet for the project page.
 - To flash, add one `<esp-web-install-button manifest="{{root}}assets/firmware/<suite>/manifest.json"></esp-web-install-button>` per firmware variant — you can add several buttons on one page, each targeting a different manifest. See section 10 ("Firmware / web flasher") in `project-template.html` for a working example with two buttons. Include the vendored script before `</body>`.
 - The page CSP must allow the component's injected styles (`style-src 'self' 'unsafe-inline'`). The build adds this automatically via `{{csp}}` on every page that contains `<esp-web-install-button>`; other pages keep the strict policy. The flasher needs a secure context (HTTPS or `localhost`) for the WebSerial API — serving over a LAN IP like `http://192.168.x.x` will not expose WebSerial.
 - On **Linux**, Chrome/Chromium hides the Web Serial API by default; launch with `google-chrome --enable-features=WebSerialPorts` (fully quit Chrome first, or the flag is ignored). On macOS/Windows WebSerial works out of the box in current Chrome/Edge.

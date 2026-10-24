@@ -394,13 +394,16 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **Scaffolding scripts**
 
-- [ ] **S42** `npm run create` flags: `--tags a,b`, `--featured`, `--status` (D10 enum), `--repo <url>`, `--dry-run`. Depends on S12.
+- [x] **S42** `npm run create` flags: `--tags a,b`, `--featured`, `--status` (D10 enum), `--repo <url>`, `--dry-run`. Depends on S12.
       Files: `scripts/create.mjs`, `README.md` · Refs: §3
-- [ ] **S43** `npm run page -- "Title" [--nav|--footer]` with a minimal built-in template (D21): head (CSP, title/description with `{{name}}`, stylesheets, `main.js`), `<!-- @include header -->`, `h1`, one `prose` section, `<!-- @include footer -->`. Creates `html/{slug}.html`, refuses to overwrite, optionally appends to `nav.json` / `footer-nav.json`.
+      Done: flag parser in `scripts/create.mjs` (validation for the D10 `STATUS_VALUES`, slugged tags, duplicate tags, http(s) `--repo`, `--dry-run` prints the entry without writing); README commands table + AGENTS.md row updated. Verified: `--status bogus` rejected; dry run printed the full entry.
+- [x] **S43** `npm run page -- "Title" [--nav|--footer]` with a minimal built-in template (D21): head (CSP, title/description with `{{name}}`, stylesheets, `main.js`), `<!-- @include header -->`, `h1`, one `prose` section, `<!-- @include footer -->`. Creates `html/{slug}.html`, refuses to overwrite, optionally appends to `nav.json` / `footer-nav.json`.
       Files: `scripts/page.mjs`, `package.json`, `README.md` · Refs: §3
-- [ ] **S44** `npm run firmware -- <suite> [--chip <family>]` (D22): creates `assets/firmware/<suite>/manifest.json` and prints the button snippet. Supported `chipFamily` values and bootloader offsets for a plain Arduino/PlatformIO app build: - `ESP32`, `ESP32-S2`: bootloader `0x1000` - `ESP32-S3`, `ESP32-C3`: bootloader `0x0` - all: partitions `0x8000`, app `0x10000`
+      Done: new `scripts/page.mjs` (slugify with umlaut transliteration, caller's title for h1/title/nav label, `--nav`/`--footer` append with duplicate skip, `--description`, `--dry-run`, refuses to overwrite); `"page"` script in `package.json`; README commands table + outline + new "Scaffolding a Secondary Page" section + AGENTS.md row. Verified: created `petikette.html`, added the nav entry, refuses overwrite; artefacts cleaned up.
+- [x] **S44** `npm run firmware -- <suite> [--chip <family>]` (D22): creates `assets/firmware/<suite>/manifest.json` and prints the button snippet. Supported `chipFamily` values and bootloader offsets for a plain Arduino/PlatformIO app build: - `ESP32`, `ESP32-S2`: bootloader `0x1000` - `ESP32-S3`, `ESP32-C3`: bootloader `0x0` - all: partitions `0x8000`, app `0x10000`
       `--chip` can be repeated to emit several `builds` entries in one manifest (each needs its own binaries, e.g. `esp32s3/firmware.bin`). Update the README firmware section (currently documents only the ESP32 offsets) and let S11 warn when offsets do not match the `chipFamily`.
       Files: `scripts/firmware.mjs`, `package.json`, `README.md` · Refs: §3
+      Done: new `scripts/firmware.mjs` (per-chip `builds` with `<chip>/bootloader.bin` bins, `--dry-run`, refuses to overwrite, prints button snippet + hex-check CSS note); `"firmware"` script in `package.json`; README Firmware section now documents the per-chip bootloader offsets and the scaffold command, AGENTS.md row added; `checkFirmwareManifests` in `scripts/lib/checks.mjs` warns when `bootloader.bin`/`partitions.bin`/`firmware.bin` offsets don't match the `chipFamily`. Verified: multi-chip manifest (ESP32 bootloader 0x1000, ESP32-S3 0x0), wrong-offset warning fired, build passed with the generated manifest; artefacts cleaned up.
 
 **Tests**
 

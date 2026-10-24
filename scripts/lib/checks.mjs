@@ -29,6 +29,19 @@ export async function checkLinks(rel, html, base = DIST) {
   }
 }
 
+// D22: the bootloader offset for a plain Arduino/PlatformIO app build differs
+// by chip family; partitions and app offsets are the same for all supported
+// chips. Used to warn about mismatching manifest offsets.
+const CHIP_BOOTLOADER_OFFSETS = {
+  ESP32: 0x1000,
+  'ESP32-S2': 0x1000,
+  'ESP32-S3': 0x0,
+  'ESP32-C3': 0x0,
+};
+const PARTITIONS_OFFSET = 0x8000;
+const APP_OFFSET = 0x10000;
+const FILE_OFFSETS = { 'bootloader.bin': CHIP_BOOTLOADER_OFFSETS, 'partitions.bin': PARTITIONS_OFFSET, 'firmware.bin': APP_OFFSET };
+
 // Every assets/firmware/<suite>/manifest.json must be valid JSON that references
 // real binaries next to it; offsets must be integers.
 export async function checkFirmwareManifests() {
@@ -62,6 +75,13 @@ export async function checkFirmwareManifests() {
         }
         if (!Number.isInteger(part.offset)) {
           fail(`${label}.offset must be an integer (is ${JSON.stringify(part.offset)})`);
+        }
+        // S44/S11: warn when a known offset does not match its chip family.
+        const fileName = path.posix.basename(part.path);
+        const expected = FILE_OFFSETS[fileName];
+        const chipExpected = expected && typeof expected === 'object' ? expected[build.chipFamily] : undefined;
+        if (expected !== undefined && chipExpected !== undefined && part.offset !== chipExpected) {
+          warn(`${label}: "${fileName}" offset 0x${part.offset.toString(16)} does not match chipFamily "${build.chipFamily}" (expected 0x${chipExpected.toString(16)})`);
         }
         const file = path.join(path.dirname(manifestFile), part.path);
         if (!await exists(file)) fail(`${label}: file not found: ${part.path}`);
