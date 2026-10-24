@@ -1,0 +1,5 @@
+#!/bin/sh
+# Pre-commit hook: run the build validation (writes nothing).
+# Activated with `npm run setup` (sets core.hooksPath to .githooks).
+set -e
+npm run check

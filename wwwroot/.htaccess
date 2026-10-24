@@ -35,4 +35,20 @@ AddDefaultCharset UTF-8
     Header always set X-Content-Type-Options "nosniff"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set X-Frame-Options "SAMEORIGIN"
+    # CSP als HTTP-Header, damit frame-ancestors 'none' greift (ein <meta>-CSP
+    # ignoriert frame-ancestors). Entspricht dem {{csp}}-Token in partials/head.html.
+    Header always set Content-Security-Policy "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+    # Kamera/Mikrofon/Standort deaktivieren; serial für die Web-Flasher-Seiten erlauben.
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), serial=(self)"
+    # HTTPS läuft auf dm7wb.de und Cloudflare ist nur DNS (D18). Kurzes max-age
+    # zuerst; später erhöhen, sobald der Header live bestätigt ist.
+    Header always set Strict-Transport-Security "max-age=86400"
+
+    # Der Web-Flasher (ESP Web Tools) injiziert Inline-Styles, daher braucht die
+    # Flasher-Seite style-src 'self' 'unsafe-inline' in ihrer CSP. Neue Flasher-
+    # Seiten hier ergänzen; das <meta>-CSP in partials/head.html trägt dieselbe
+    # Ausnahme bereits.
+    <Files "nixie-clock.html">
+        Header always set Content-Security-Policy "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+    </Files>
 </IfModule>

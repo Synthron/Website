@@ -10,8 +10,7 @@ Priority: **P1** = fixes inconsistencies / prevents bugs, **P2** = clear workflo
 
 ### Remaining open work
 
-- **P2**: Git/VS Code/deployment — pre-commit hook + `npm run setup` (S47), `.vscode/` whitelist + `tasks.json` (S48/S49), deployment note in README (S51), README "Open Decisions" cleanup (S58).
-- **P2**: Security headers — CSP as HTTP header + HSTS + `Permissions-Policy` (S52).
+- **P2**: Git/VS Code/deployment — deployment note in README (S51), README "Open Decisions" cleanup (S58).
 - **P3**: preview server — `HOST` env var (S59), mirrored security headers (S60); build — sitemap `lastmod` from git (S63), Open Graph/canonical tags (S64), `npm run report` (S65), `npm run remove` (S66), `npm run check:external` (S67); `.htaccess` HTTPS redirect + 403 page (S69); `.vscode/launch.json` + `extensions.json` (S70).
 - **User**: nixie placeholder content (S22); `placeholder-project-two` kept as-is (D6).
 - Dropped: GitHub Actions (S50), `npm run package` (S68), merging `todo.md` (S72); deferred: removing the placeholder project (S23).
@@ -120,7 +119,7 @@ All implementable with Node built-ins. Proposed `package.json` `scripts` block:
 | `npm run remove -- <id>`                     | Remove a project entry and its page (with confirmation / `--yes`).                                                                                                                                                                                                                                           | P3   | open (S66) |
 | `npm run check:external`                     | Optional HEAD requests (Node `fetch`) against external links (`links.repo`, nav). Manual only, never part of `build`.                                                                                                                                                                                        | P3   | open (S67) |
 | `npm run package`                            | Dropped: manual SFTP upload of the `dist/` folder needs no archive (D7).                                                                                                                                                                                                                                     | P3   | dropped (S68) |
-| `npm run setup`                              | Activate the versioned git hooks (see 4.2).                                                                                                                                                                                                                                                                  | P2   | open (S47) |
+| `npm run setup`                              | Activate the versioned git hooks (see 4.2).                                                                                                                                                                                                                                                                  | P2   | done (S47) |
 
 ### `scripts/serve.mjs`
 
@@ -141,19 +140,19 @@ All implementable with Node built-ins. Proposed `package.json` `scripts` block:
 ### 4.2 Git
 
 - [x] **P1** Add `.gitattributes`: `* text=auto eol=lf` (matches `.editorconfig`, avoids CRLF churn on Windows), `*.bin binary`, `*.jpg binary`, `*.png binary`, `*.webp binary`. — done (S07)
-- [ ] **P2** Versioned hooks in `.githooks/` (no Husky needed): `pre-commit` runs `npm run check`. Activated via `npm run setup`. — open (S47)
+- [x] **P2** Versioned hooks in `.githooks/` (no Husky needed): `pre-commit` runs `npm run check`. Activated via `npm run setup`. — done (S47)
 - [x] **P3** Agree on a commit message convention. Decided (D2): English + Conventional Commits (`fix:`, `feat:`, `docs:` …). Still to document in AGENTS.md (S19).
 
 ### 4.3 VS Code
 
-- [ ] **P2** `.vscode/` is fully git-ignored. Decided (D15): share config. Whitelist shared files in `.gitignore`: — open (S48)
+- [x] **P2** `.vscode/` is fully git-ignored. Decided (D15): share config. Whitelist shared files in `.gitignore`: — done (S48)
   ```gitignore
   .vscode/*
   !.vscode/tasks.json
   !.vscode/extensions.json
   !.vscode/launch.json
   ```
-- [ ] **P2** `.vscode/tasks.json`: — open (S49)
+- [x] **P2** `.vscode/tasks.json`: — done (S49)
   - `build` as default build task (`Ctrl+Shift+B`) with a problem matcher for the build's error lines (needs file:line output, see 2)
   - `serve` / `dev` as background tasks
   - `create project` using `${input:name}` / `${input:brief}` prompts
@@ -178,7 +177,7 @@ All implementable with Node built-ins. Proposed `package.json` `scripts` block:
 Live response headers of `https://dm7wb.de/` (2026-10-23): `Server: Apache`, `Cache-Control: no-store, no-cache, must-revalidate, max-age=0` (also for CSS), `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Content-Type: text/html` **without charset**, no HSTS, no `cf-ray`. The HTTP → HTTPS redirect could not be checked (corporate proxy intercepts plain HTTP).
 
 - [x] **P1** Replace the dev "no-store" caching with production rules: revalidate `.html`, long cache for versioned CSS/JS/images (D19, cache busting via `?v=`), revalidate unversioned files (firmware manifests and `.bin`). Add `AddDefaultCharset UTF-8`. — done (S14, depends on S73)
-- [ ] **P2** Send the CSP as an HTTP header (allows `frame-ancestors 'none'`, which `<meta>` CSP ignores) and add `Strict-Transport-Security`, `Permissions-Policy` (e.g. disable camera/mic/geolocation; keep `serial` for the flasher pages). — open (S52)
+- [x] **P2** Send the CSP as an HTTP header (allows `frame-ancestors 'none'`, which `<meta>` CSP ignores) and add `Strict-Transport-Security`, `Permissions-Policy` (e.g. disable camera/mic/geolocation; keep `serial` for the flasher pages). — done (S52)
 - [ ] **P3** Force HTTPS redirect in `.htaccess` (WebSerial needs a secure context anyway). Safe because Cloudflare is DNS only (D18); if the proxy is ever enabled with SSL mode "Flexible", this redirect would loop. — open (S69)
 - [ ] **P3** `ErrorDocument 403` returns a bare German string; consider pointing it to `404.html` or a styled page. — open (S69)
 
@@ -425,20 +424,24 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 **Git, VS Code, deployment**
 
-- [ ] **S47** Versioned pre-commit hook in `.githooks/` running `npm run check`, plus `npm run setup`. Depends on S30.
+- [x] **S47** Versioned pre-commit hook in `.githooks/` running `npm run check`, plus `npm run setup`. Depends on S30.
       Files: `.githooks/pre-commit`, `package.json`, `README.md` · Refs: §4.2
-- [ ] **S48** Whitelist `.vscode/tasks.json`, `extensions.json` and `launch.json` in `.gitignore` (D15).
+      Done: `.githooks/pre-commit` (executable, `set -e; npm run check`), `"setup": "git config core.hooksPath .githooks"` in `package.json`, README commands table + outline + Supporting Files updated.
+- [x] **S48** Whitelist `.vscode/tasks.json`, `extensions.json` and `launch.json` in `.gitignore` (D15).
       Files: `.gitignore` · Refs: §4.3
-- [ ] **S49** `.vscode/tasks.json` (D15): default build task with problem matcher (depends on S28), `dev`/`serve` background tasks, `create project` with input prompts, `clean`.
+      Done: replaced the `vscode/` typo with `.vscode/*` plus the three `!.vscode/…` exceptions; `settings.json` stays tracked.
+- [x] **S49** `.vscode/tasks.json` (D15): default build task with problem matcher (depends on S28), `dev`/`serve` background tasks, `create project` with input prompts, `clean`.
       Files: `.vscode/tasks.json` · Refs: §4.3
+      Done: `build` (default, problem matcher for `file:line:col:`), `dev`/`serve` (background, `beginsPattern` on the server-ready line), `create project` (`${input:name}`/`${input:brief}`), `clean`.
 - ~~**S50** GitHub Actions workflow.~~ Dropped (D16: no CI). The pre-commit hook (S47) is the safety net.
 - [ ] **S51** Write the deployment note in README (D7): run `npm run build`, upload the **contents** of `dist/` via SFTP to the web root of `dm7wb.de`. Mention that SFTP clients often hide dotfiles — `.htaccess` must be uploaded too; delete files on the server that no longer exist in `dist/`. No Cloudflare cache purge needed (D18: DNS only). Ticks the Phase 5 item.
       Files: `README.md` · Refs: §4.5
 
 **Security headers**
 
-- [ ] **S52** Send CSP as an HTTP header in `.htaccess` (with `frame-ancestors 'none'`) and add `Permissions-Policy` (keep `serial` allowed). HTTPS works on `dm7wb.de` and Cloudflare is DNS only (D18), so add `Strict-Transport-Security` in `.htaccess`, starting with a short `max-age` (e.g. 1 day) and raising it later.
+- [x] **S52** Send CSP as an HTTP header in `.htaccess` (with `frame-ancestors 'none'`) and add `Permissions-Policy` (keep `serial` allowed). HTTPS works on `dm7wb.de` and Cloudflare is DNS only (D18), so add `Strict-Transport-Security` in `.htaccess`, starting with a short `max-age` (e.g. 1 day) and raising it later.
       Files: `wwwroot/.htaccess` · Refs: §5
+      Done: `Content-Security-Policy` header mirrors the `{{csp}}` token plus `frame-ancestors 'none'`; `Permissions-Policy` disables camera/mic/geolocation and keeps `serial=(self)`; `Strict-Transport-Security "max-age=86400"`. The flasher page `nixie-clock.html` gets the `style-src 'self' 'unsafe-inline'` exception via a `<Files>` block (new flasher pages must be added there). README Supporting Files updated.
 
 **AGENTS.md (remaining)**
 
