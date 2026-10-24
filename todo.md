@@ -10,7 +10,7 @@ Priority: **P1** = fixes inconsistencies / prevents bugs, **P2** = clear workflo
 
 ### Remaining open work
 
-- **P2**: Git/VS Code/deployment — deployment note in README (S51), README "Open Decisions" cleanup (S58).
+- **P2**: README "Open Decisions" cleanup (S58).
 - **P3**: preview server — `HOST` env var (S59), mirrored security headers (S60); build — sitemap `lastmod` from git (S63), Open Graph/canonical tags (S64), `npm run report` (S65), `npm run remove` (S66), `npm run check:external` (S67); `.htaccess` HTTPS redirect + 403 page (S69); `.vscode/launch.json` + `extensions.json` (S70).
 - **User**: nixie placeholder content (S22); `placeholder-project-two` kept as-is (D6).
 - Dropped: GitHub Actions (S50), `npm run package` (S68), merging `todo.md` (S72); deferred: removing the placeholder project (S23).
@@ -168,7 +168,7 @@ All implementable with Node built-ins. Proposed `package.json` `scripts` block:
 ### 4.5 CI / Deployment
 
 - ~~**P2** GitHub Actions workflow~~ — dropped (D16: no CI).
-- [ ] **P2** Hosting decided (D7, D18): Apache webserver at `dm7wb.de`, manual upload via SFTP. Live check on 2026-10-23: `Server: Apache`, `.htaccess` headers active, no `cf-ray` header. Document the upload process (deploy contents of `dist/`). — open (S51)
+- [x] **P2** Hosting decided (D7, D18): Apache webserver at `dm7wb.de`, manual upload via SFTP. Live check on 2026-10-23: `Server: Apache`, `.htaccess` headers active, no `cf-ray` header. Document the upload process (deploy contents of `dist/`). — done (S51)
 
 ---
 
@@ -434,8 +434,9 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
       Files: `.vscode/tasks.json` · Refs: §4.3
       Done: `build` (default, problem matcher for `file:line:col:`), `dev`/`serve` (background, `beginsPattern` on the server-ready line), `create project` (`${input:name}`/`${input:brief}`), `clean`.
 - ~~**S50** GitHub Actions workflow.~~ Dropped (D16: no CI). The pre-commit hook (S47) is the safety net.
-- [ ] **S51** Write the deployment note in README (D7): run `npm run build`, upload the **contents** of `dist/` via SFTP to the web root of `dm7wb.de`. Mention that SFTP clients often hide dotfiles — `.htaccess` must be uploaded too; delete files on the server that no longer exist in `dist/`. No Cloudflare cache purge needed (D18: DNS only). Ticks the Phase 5 item.
+- [x] **S51** Write the deployment note in README (D7): run `npm run build`, upload the **contents** of `dist/` via SFTP to the web root of `dm7wb.de`. Mention that SFTP clients often hide dotfiles — `.htaccess` must be uploaded too; delete files on the server that no longer exist in `dist/`. No Cloudflare cache purge needed (D18: DNS only). Ticks the Phase 5 item.
       Files: `README.md` · Refs: §4.5
+      Done: new "Deployment" section after "Build and Preview" (build, upload `dist/` contents, `.htaccess` dotfile warning, delete stale files, no Cloudflare purge, verify headers on Apache); Phase 5 "Choose hosting" and "deployment note" items ticked.
 
 **Security headers**
 
