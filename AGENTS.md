@@ -136,7 +136,7 @@ Commands: `npm run build` (wwwroot → dist), `npm run serve`, `npm start` (both
 ## Verification
 
 1. `npm run build` must exit 0. Fix every reported error.
-2. Once they exist, also run `npm run check` and `npm test`.
+2. Run `npm run check` and `npm test` (both exist).
 3. For page or style changes: `npm run serve` (port 8000, `PORT` overrides), open the affected pages at 320px, 768px and 1280px width.
 4. Browser DevTools: no console errors, no external requests in the Network tab, no cookies or storage entries.
 5. For build refactors: compare `dist/` before and after (see Common Tasks).

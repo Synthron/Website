@@ -12,6 +12,7 @@ import { access, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { STATUS_VALUES } from './lib/data.mjs';
+import { slugify } from './lib/util.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PROJ_DIR = path.join(ROOT, 'wwwroot', 'html', 'proj');
@@ -23,14 +24,6 @@ const ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const URL_RE = /^https?:\/\//i;
 
 const exists = (file) => access(file).then(() => true, () => false);
-
-// "My Cool Project!" -> "my-cool-project"
-function slugify(name) {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 function currentMonth() {
   const now = new Date();

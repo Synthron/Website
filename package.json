@@ -16,6 +16,7 @@
     "firmware": "node scripts/firmware.mjs",
     "page": "node scripts/page.mjs",
     "serve": "node scripts/serve.mjs",
-    "start": "npm run build && npm run serve"
+    "start": "npm run build && npm run serve",
+    "test": "node --test scripts/"
   }
 }

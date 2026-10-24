@@ -60,6 +60,16 @@ export async function walk(dir, base = '') {
 export const sha256Hex = (data) => createHash('sha256').update(data).digest('hex');
 export const shortHash = (data) => sha256Hex(data).slice(0, 8);
 
+// "My Cool Project!" / "Über mich" -> "my-cool-project" / "ueber-mich".
+// Umlauts are transliterated so German titles yield valid lowercase-hyphenated ids.
+export function slugify(value) {
+  return String(value)
+    .toLowerCase()
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export function safeExternalUrl(value) {
   if (typeof value !== 'string' || value === '') return null;
   try {

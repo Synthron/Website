@@ -31,7 +31,8 @@ Website/
 │   │   ├── data.mjs       # Load and validate data/*.json
 │   │   ├── render.mjs     # HTML/XML renderers for directives and sitemap
 │   │   ├── pipeline.mjs   # @raw, includes, tokens, directives, cache busting (assets/JS/CSS)
-│   │   └── checks.mjs     # Checks on the rendered output (links)
+│   │   ├── checks.mjs     # Checks on the rendered output (links)
+│   │   └── *.test.mjs     # Unit tests (node --test): util, render, checks
 │   ├── create.mjs         # Scaffold a new project page + projects.json entry
 │   ├── dev.mjs            # Dev server: build, serve, watch, live reload
 │   ├── firmware.mjs       # Scaffold an assets/firmware/<suite>/manifest.json
@@ -101,6 +102,7 @@ Requires Node.js ≥ 22. There are no dependencies, so no `npm install` is neede
 | `npm run page -- "Title" [--nav\|--footer]` | Scaffolds a minimal secondary page from the D21 template (shared head with CSP/`{{name}}` title/description, header, `h1`, one prose section, footer) at `html/{slug}.html`; refuses to overwrite; optionally appends a nav entry to `data/nav.json` / `data/footer-nav.json`. |
 | `npm run firmware -- <suite> --chip <family> [--chip …]` | Creates `assets/firmware/<suite>/manifest.json` with a `builds` entry per `--chip` and prints the `<esp-web-install-button>` snippet. Supported chips: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 (see Firmware section for offsets). |
 | `npm run dev` | Build once, serve `dist/`, then rebuild automatically on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`). Live reload via Server-Sent Events: the dev server injects a same-origin `<script src="/__reload.js">` into served HTML and broadcasts a reload after each successful build — never written into `dist/`, and the CSP (`'self'`) still holds. Build errors print to the terminal; the server keeps running so a fix triggers the next rebuild. |
+| `npm test` | Runs the unit tests (`node --test scripts/`): `esc`, `slugify`, `safeExternalUrl`, `formatDate`, `renderNav` (`aria-current`), sitemap rendering and the link check. |
 | `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` env var overrides) with `Cache-Control: no-store`; redirects directory requests to add the trailing slash. |
 | `npm start` | Build, then serve. |
 | `npm run clean` | Removes `dist/`. |

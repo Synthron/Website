@@ -409,8 +409,9 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 - [x] **S45** Split `build.mjs` into `scripts/lib/*.mjs` (pure helpers + render functions) and a thin CLI. No behaviour change; `dist/` must be byte-identical before/after. Done: `util`, `data`, `render`, `pipeline`, `checks`; output verified byte-identical.
       Files: `scripts/build.mjs`, `scripts/lib/` · Refs: §2
-- [ ] **S46** `npm test` with `node --test`: `esc`, `slugify`, `safeExternalUrl`, `renderNav` (`aria-current`), link check, sitemap.
+- [x] **S46** `npm test` with `node --test`: `esc`, `slugify`, `safeExternalUrl`, `renderNav` (`aria-current`), link check, sitemap.
       Files: `scripts/lib/*.test.mjs`, `package.json` · Refs: §3
+      Done: `"test": "node --test scripts/"` in `package.json`; new `scripts/lib/util.test.mjs`, `render.test.mjs`, `checks.test.mjs` (13 tests: esc/slugify/safeExternalUrl/formatDate, renderNav aria-current + external + footer variant, renderSitemap incl. draft/404 skip, checkLinks with temp dir incl. `?v=` stripping, srcset candidates and scheme skipping). `slugify` moved to `scripts/lib/util.mjs` (with umlaut transliteration) and shared by `create.mjs`/`page.mjs`. README commands table + outline + AGENTS.md verification updated (check/test are mandatory now).
 
 **Git, VS Code, deployment**
 

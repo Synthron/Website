@@ -7,6 +7,7 @@
 import { access, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { slugify } from './lib/util.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HTML_DIR = path.join(ROOT, 'wwwroot', 'html');
@@ -15,15 +16,6 @@ const FOOTER_NAV_FILE = path.join(ROOT, 'wwwroot', 'data', 'footer-nav.json');
 
 const URL_RE = /^https?:\/\//i;
 const exists = (file) => access(file).then(() => true, () => false);
-
-// "Über uns!" -> "ueber-uns" (transliterated, lowercase, hyphenated).
-function slugify(title) {
-  return title
-    .toLowerCase()
-    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 // D21 minimal template: shared head (CSP, title/description with {{name}},
 // stylesheets, main.js), header, one h1, one prose section, footer.
