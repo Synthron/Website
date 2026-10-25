@@ -44,6 +44,9 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | `scripts/dev.mjs` | `npm run dev` | Build once, then rebuild on changes in `wwwroot/`/`scripts/`; serves `dist/` with SSE live reload and the production security headers (dev-only). |
 | `scripts/firmware.mjs` | `npm run firmware` | Scaffolds `assets/firmware/<suite>/manifest.json` for the given `--chip` families and prints the flasher button snippet. |
 | `scripts/page.mjs` | `npm run page` | Scaffolds a minimal secondary page in `html/` (optionally `--nav` / `--footer`). |
+| `scripts/remove.mjs` | `npm run remove` | Deletes a project entry and its page (with confirmation / `--yes`). |
+| `scripts/report.mjs` | `npm run report` | Prints a `dist/` size report: total, largest files, non-WebP raster images, unused assets. |
+| `scripts/check-external.mjs` | `npm run check:external` | Manual HEAD checks of external links (never part of `build`). |
 | `scripts/serve.mjs` | `npm run serve` | Local preview of `dist/` only (`PORT`/`HOST` overrides; mirrors the production security headers and `Cache-Control: no-store`). |
 | `wwwroot/index.html` | Home page | Only page-level layout and section structure. No inline styles or scripts. |
 | `wwwroot/404.html` | Not-found page | Served at any path, so the build uses root-relative links (`{{root}}` = `/`). |
@@ -78,6 +81,7 @@ Commands: `npm run build` (wwwroot → dist), `npm run serve`, `npm start` (both
 | Task | Steps |
 | --- | --- |
 | Add a project | `npm run create -- "Name" "Brief"` → set `tags`, `links`, `image` in `data/projects.json` → replace the placeholder body in `html/proj/{id}.html` (German text from the user, never invented) → `npm run build`. |
+| Remove a project | `npm run remove -- <id>` → `npm run build` → delete the now-stale files on the server. |
 | Add a page | Copy the head/include structure of an existing page in `html/` → add an entry to `data/nav.json` or `data/footer-nav.json` if it should be linked → add it to the README outline → `npm run build`. |
 | Add a firmware suite | Create `assets/firmware/<suite>/` with `manifest.json` and the binaries from the user (see README → Firmware / Web Flasher for offsets) → add `<esp-web-install-button manifest="{{root}}assets/firmware/<suite>/manifest.json">` and the vendored script tag to the project page. The CSP exception is added automatically. |
 | Add a layout pattern | Append a numbered section to `project-template.html` → styles in `css/components.css` (breakpoints in `css/responsive.css`) → note it in README → Project Write-up Template. |

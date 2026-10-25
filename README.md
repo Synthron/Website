@@ -39,6 +39,9 @@ Website/
 │   ├── dev.mjs            # Dev server: build, serve, watch, live reload
 │   ├── firmware.mjs       # Scaffold an assets/firmware/<suite>/manifest.json
 │   ├── page.mjs           # Scaffold a minimal secondary page in html/
+│   ├── remove.mjs         # Delete a project entry and its page (npm run remove)
+│   ├── report.mjs         # Report dist/ size, largest files, unused assets
+│   ├── check-external.mjs # Manual HEAD checks of external links
 │   └── serve.mjs          # Local preview server for dist/
 ├── dist/                  # Build output (generated, git-ignored, deploy this)
 └── wwwroot/               # Source (build input)
@@ -102,6 +105,9 @@ Requires Node.js ≥ 22. There are no dependencies, so no `npm install` is neede
 | `npm run check` | Validation only: runs every build check (data, firmware manifests, tokens/includes/directives, links) and **writes nothing**. Fast pre-commit check; used by the git hook. |
 | `npm run create -- "Name" "Brief" [flags]` | Scaffolds a new project: copies `project-template.html` to `html/proj/{id}.html` and registers the project in `data/projects.json`. Flags: `--tags a,b`, `--featured`, `--status <value>`, `--repo <url>`, `--dry-run` (validate only). |
 | `npm run page -- "Title" [--nav\|--footer]` | Scaffolds a minimal secondary page (shared head with CSP/`{{name}}` title/description, header, `h1`, one prose section, footer) at `html/{slug}.html`; refuses to overwrite; optionally appends a nav entry to `data/nav.json` / `data/footer-nav.json`. |
+| `npm run remove -- <id>` | Deletes a project from `data/projects.json` and its page `html/proj/{id}.html`; asks for confirmation (`--yes` skips the prompt). The image file is left in place. |
+| `npm run report` | Prints a size report of `dist/` (run `npm run build` first): total size, largest files, per-page sizes, raster images not converted to WebP, unused images. |
+| `npm run check:external` | Sends a HEAD request to every external link found in `wwwroot/` (pages, partials, template, `data/*.json`) and reports the status. Manual only — never part of `build` or `check`. |
 | `npm run firmware -- <suite> --chip <family> [--chip …]` | Creates `assets/firmware/<suite>/manifest.json` with a `builds` entry per `--chip` and prints the `<esp-web-install-button>` snippet. Supported chips: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 (see Firmware section for offsets). |
 | `npm run dev` | Build once, serve `dist/`, then rebuild automatically on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`). Live reload via Server-Sent Events: the dev server injects a same-origin `<script src="/__reload.js">` into served HTML and broadcasts a reload after each successful build — never written into `dist/`, and the CSP (`'self'`) still holds. Build errors print to the terminal; the server keeps running so a fix triggers the next rebuild. Serves on `localhost:8000` (`PORT`/`HOST` overrides apply as with `serve`). |
 | `npm test` | Runs the unit tests (`node --test scripts/`): `esc`, `slugify`, `safeExternalUrl`, `formatDate`, `renderNav` (`aria-current`), sitemap rendering and the link check. |
@@ -279,6 +285,15 @@ The command:
 - With `--nav` / `--footer` it appends an entry `{ "label": "<Title>", "href": "html/{slug}.html" }` to `data/nav.json` / `data/footer-nav.json` (skips duplicates). `--description "…"` overrides the placeholder `meta description`.
 
 After scaffolding, replace the placeholder body text and add the page to the README outline, then run `npm run build`.
+
+### Removing a Project (`npm run remove`)
+
+`npm run remove -- <id>` removes a project you no longer want to publish:
+
+- Validates `<id>` (lowercase, hyphenated) and looks it up in `data/projects.json`.
+- Asks for a confirmation prompt and deletes the entry plus its page `html/proj/{id}.html`; pass `--yes` to skip the prompt.
+- The project's image file is left in place — images can be shared between projects. Delete it manually if nothing references it anymore (`npm run report` lists unused images).
+- Run `npm run build` afterwards and remove the now-stale files from the server on the next deploy.
 
 ### Firmware / Web Flasher
 
