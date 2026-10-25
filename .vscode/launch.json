@@ -1,0 +1,43 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug build",
+      "program": "${workspaceFolder}/scripts/build.mjs",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug build --check",
+      "program": "${workspaceFolder}/scripts/build.mjs",
+      "args": ["--check"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug create",
+      "program": "${workspaceFolder}/scripts/create.mjs",
+      "args": ["${input:name}", "${input:brief}"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "name",
+      "type": "promptString",
+      "description": "Project name (used for the title and the page id)"
+    },
+    {
+      "id": "brief",
+      "type": "promptString",
+      "description": "One-line project brief (used for the summary)"
+    }
+  ]
+}

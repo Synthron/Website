@@ -8,7 +8,6 @@ Priority: **P1** = fixes inconsistencies / prevents bugs, **P2** = clear workflo
 
 ### Remaining open work
 
-- **P3**: `.htaccess` HTTPS redirect + 403 page (S69); `.vscode/launch.json` + `extensions.json` (S70).
 - **User**: nixie placeholder content (S22); OG default image `assets/img/og-default.png` (S64, D25); `placeholder-project-two` kept as-is (D6).
 - Dropped: GitHub Actions (S50), `npm run package` (S68), merging `todo.md` (S72); deferred: removing the placeholder project (S23).
 
@@ -56,14 +55,6 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 - [ ] **S22** **User** (D20: work in progress, filled by the user). `nixie-clock.html` still contains the template's "Placeholder paragraph" overview section and an empty "2. Hardware" comment; its card uses `placeholder.svg`. Replace the placeholder overview, fill or remove the empty Hardware section, and set `image` in `projects.json`. Agents do not write this content.
       Files: `nixie-clock.html`, `projects.json`, `assets/img/`
 - ~~**S23** Delete `placeholder-project-two` or mark it as `draft`.~~ Deferred (D6: keep as is for now) — it stays a live project on the projects page and in `sitemap.xml`. The `draft` field (S36) is implemented, so downgrading it to a draft is possible whenever desired.
-
-### P3 — Production / `.htaccess`
-
-- [ ] **S69** Force HTTPS redirect in `.htaccess` (WebSerial needs a secure context anyway; safe because Cloudflare is DNS only, D18 — if the proxy is ever enabled with SSL mode "Flexible", this redirect would loop). Point `ErrorDocument 403` at `404.html` or a styled page (currently a bare German string).
-
-### P3 — VS Code
-
-- [ ] **S70** `.vscode/launch.json` (debug `scripts/build.mjs` and `scripts/create.mjs`) and `.vscode/extensions.json` (recommend `EditorConfig.EditorConfig`).
 
 ### Dropped
 

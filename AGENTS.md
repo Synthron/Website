@@ -52,7 +52,7 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | `wwwroot/404.html` | Not-found page | Served at any path, so the build uses root-relative links (`{{root}}` = `/`). |
 | `wwwroot/favicon.svg` | Logo favicon, also used as header brand icon | Keep it small (simplified trace). |
 | `wwwroot/robots.txt` | Crawler rules | `Sitemap:` line comes from `{{sitemapUrl}}`. |
-| `wwwroot/.htaccess` | Apache config for `dm7wb.de` (error page, headers, caching) | Applies only on the production server, not in `npm run serve`. |
+| `wwwroot/.htaccess` | Apache config for `dm7wb.de` (error pages, HTTPS redirect, headers, caching) | Applies only on the production server, not in `npm run serve`. |
 | `wwwroot/partials/` | `head.html`, `header.html`, `footer.html` | Single copy of the shared markup. Not copied to `dist/`. |
 | `wwwroot/html/` | Secondary pages (incl. legal pages) | One page per file. Use the `head`, `header` and `footer` includes. |
 | `wwwroot/html/proj/` | Project pages | One page per project, `{id}.html` matching the `id` in `data/projects.json` (e.g. `sy317.html`). |
