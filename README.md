@@ -100,8 +100,8 @@ Requires Node.js ≥ 22. There are no dependencies, so no `npm install` is neede
 | --- | --- |
 | `npm run build` | Deletes `dist/` and rebuilds it from `wwwroot/`. Exits non-zero on invalid data, unknown tokens/includes or broken internal links. |
 | `npm run check` | Validation only: runs every build check (data, firmware manifests, tokens/includes/directives, links) and **writes nothing**. Fast pre-commit check; used by the git hook. |
-| `npm run create -- "Name" "Brief" [flags]` | Scaffolds a new project: copies `project-template.html` to `html/proj/{id}.html` and registers the project in `data/projects.json`. Flags: `--tags a,b`, `--featured`, `--status <value>` (D10 enum), `--repo <url>`, `--dry-run` (validate only). |
-| `npm run page -- "Title" [--nav\|--footer]` | Scaffolds a minimal secondary page from the D21 template (shared head with CSP/`{{name}}` title/description, header, `h1`, one prose section, footer) at `html/{slug}.html`; refuses to overwrite; optionally appends a nav entry to `data/nav.json` / `data/footer-nav.json`. |
+| `npm run create -- "Name" "Brief" [flags]` | Scaffolds a new project: copies `project-template.html` to `html/proj/{id}.html` and registers the project in `data/projects.json`. Flags: `--tags a,b`, `--featured`, `--status <value>`, `--repo <url>`, `--dry-run` (validate only). |
+| `npm run page -- "Title" [--nav\|--footer]` | Scaffolds a minimal secondary page (shared head with CSP/`{{name}}` title/description, header, `h1`, one prose section, footer) at `html/{slug}.html`; refuses to overwrite; optionally appends a nav entry to `data/nav.json` / `data/footer-nav.json`. |
 | `npm run firmware -- <suite> --chip <family> [--chip …]` | Creates `assets/firmware/<suite>/manifest.json` with a `builds` entry per `--chip` and prints the `<esp-web-install-button>` snippet. Supported chips: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 (see Firmware section for offsets). |
 | `npm run dev` | Build once, serve `dist/`, then rebuild automatically on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`). Live reload via Server-Sent Events: the dev server injects a same-origin `<script src="/__reload.js">` into served HTML and broadcasts a reload after each successful build — never written into `dist/`, and the CSP (`'self'`) still holds. Build errors print to the terminal; the server keeps running so a fix triggers the next rebuild. |
 | `npm test` | Runs the unit tests (`node --test scripts/`): `esc`, `slugify`, `safeExternalUrl`, `formatDate`, `renderNav` (`aria-current`), sitemap rendering and the link check. |
@@ -116,13 +116,13 @@ The build also generates `dist/sitemap.xml` from every built page (excluding `40
 
 ### Deployment
 
-The site is hosted on an Apache webserver at `dm7wb.de` (Cloudflare is DNS only, D18) and deployed by uploading the **contents** of `dist/` via SFTP to the web root. There is no CI and no scripted upload — this is a manual step.
+The site is hosted on an Apache webserver at `dm7wb.de` (Cloudflare is DNS only) and deployed by uploading the **contents** of `dist/` via SFTP to the web root. There is no CI and no scripted upload — this is a manual step.
 
 1. Run `npm run build` (or `npm start`). The output is fully static and self-contained in `dist/`.
 2. Upload the **contents** of `dist/` (not the `dist/` folder itself) to the web root of `dm7wb.de`, overwriting existing files.
 3. SFTP clients often hide dotfiles — make sure `.htaccess` is uploaded too (it carries the caching and security headers, see [Supporting Files](#supporting-files)).
 4. Delete files on the server that no longer exist in `dist/` (e.g. removed pages or renamed assets), so stale content is not served.
-5. No Cloudflare cache purge is needed (D18: DNS only, no proxy).
+5. No Cloudflare cache purge is needed (DNS only, no proxy).
 
 The `.htaccess` rules apply only on Apache; `npm run serve` ignores them, so always verify the production headers after a deploy.
 
@@ -258,7 +258,7 @@ After scaffolding, replace the placeholder body on the new page and set `tags`, 
 
 ### Scaffolding a Secondary Page (`npm run page`)
 
-`npm run page -- "Title"` creates a minimal page for secondary content (D21) so you do not have to copy an existing page by hand.
+`npm run page -- "Title"` creates a minimal page for secondary content so you do not have to copy an existing page by hand.
 
 ```sh
 npm run page -- "Petikette" --nav
@@ -390,8 +390,8 @@ Adding a project means adding an entry to this file and creating `html/proj/{id}
 
 ## Decisions
 
-All previously open decisions are resolved and recorded in `todo.md` (D1–D26):
+All previously open decisions are resolved and recorded in [`todo.md`](todo.md):
 
-- **Hosting**: Apache at `dm7wb.de`, manual SFTP upload of `dist/` (D7, D18) — see [Deployment](#deployment).
-- **Language**: German content and UI (D1).
-- **Dark mode**: follow the system preference, no toggle (D26).
+- **Hosting**: Apache at `dm7wb.de`, manual SFTP upload of `dist/` — see [Deployment](#deployment).
+- **Language**: German content and UI.
+- **Dark mode**: follow the system preference, no toggle.

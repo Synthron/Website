@@ -4,7 +4,7 @@ Instructions for AI agents and contributors working in this repository.
 
 ## Project Summary
 
-This repository contains a personal project website built with **pure HTML, CSS and vanilla JavaScript**. See [`README.md`](README.md) for the full outline, data model, templating reference and todo list. Treat the core directives in the README as binding. If [`todo.md`](todo.md) exists, its section 7 is the detailed step-by-step plan, including all decisions already made with the user.
+This repository contains a personal project website built with **pure HTML, CSS and vanilla JavaScript**. See [`README.md`](README.md) for the full outline, data model, templating reference and todo list. Treat the core directives in the README as binding. If [`todo.md`](todo.md) exists, it tracks the remaining open work and records the decisions already made with the user.
 
 ## Language
 
@@ -125,7 +125,7 @@ Commands: `npm run build` (wwwroot → dist), `npm run serve`, `npm start` (both
 ## Workflow for Agents
 
 1. Read `README.md` and this file before making changes.
-2. Pick the work: do what the user asks. Otherwise take the next unchecked step in `todo.md` section 7 (or, if there is no `todo.md`, the README todo list). Skip steps marked **User** and anything that needs real content from the user (texts, images, project data); ask instead.
+2. Pick the work: do what the user asks. Otherwise take the next unchecked step in [`todo.md`](todo.md) (or, if there is no `todo.md`, the README todo list). Skip steps marked **User** and anything that needs real content from the user (texts, images, project data); ask instead.
 3. When a step is completed, tick its checkbox in `todo.md` and, where one exists, the matching item in the README todo list.
 4. Keep changes scoped: one step or concern per change. Do not refactor unrelated files.
 5. When you create a file, add it to the README outline in the same change.
