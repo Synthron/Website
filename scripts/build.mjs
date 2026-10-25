@@ -5,9 +5,9 @@
 
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { DIST, ROOT, SRC, errors, posix, shortHash, walk, warnings } from './lib/util.mjs';
+import { DIST, ROOT, SRC, errors, exists, gitLastModified, posix, shortHash, walk, warn, warnings } from './lib/util.mjs';
 import { loadNav, loadProjects, loadSite, loadStrings } from './lib/data.mjs';
-import { renderSitemap } from './lib/render.mjs';
+import { ogImageRel, renderOpenGraph, renderSitemap } from './lib/render.mjs';
 import {
   applyCacheBusting, applyDirectives, applyIncludes, applyTokens, isFlasherPage,
   protectRaw, restoreRaw, versionCssUrls, versionJsImports,
@@ -22,6 +22,9 @@ const SKIP_DIRS = new Set(['partials', 'data']);
 const SKIP_FILES = new Set(['project-template.html', '.gitkeep']);
 // Whole sub-trees that are not copied to dist/ (checked by path prefix).
 const SKIP_PATHS = ['assets/firmware/dummy'];
+// S64: warn once per missing Open Graph image (the default PNG is a manual
+// GIMP step, D25).
+const warnedOgImages = new Set();
 // Non-HTML files that also go through the token pass.
 const TEMPLATE_FILES = new Set(['robots.txt']);
 
@@ -113,6 +116,21 @@ async function build({ check = false } = {}) {
     // Cache busting before raw blocks are restored, so code samples stay as-is.
     output = applyCacheBusting(output, rel, versions);
     output = restoreRaw(output, raw);
+    // S64: canonical + Open Graph tags go into every built page except 404.html
+    // (never indexed). The default OG image is a manual GIMP step (D25); until
+    // it exists the image tag is omitted and the build warns once.
+    if (isHtml && rel !== '404.html') {
+      const imageRel = ogImageRel(ctx.project);
+      let imageUrl = '';
+      if (await exists(path.join(SRC, imageRel))) {
+        const hash = versions.get(imageRel);
+        imageUrl = `${site.url}/${imageRel}${hash ? `?v=${hash}` : ''}`;
+      } else if (!warnedOgImages.has(imageRel)) {
+        warnedOgImages.add(imageRel);
+        warn(`S64: Open Graph image missing: wwwroot/${imageRel} (create the 1200×630 default PNG with the logo in GIMP — D25)`);
+      }
+      output = output.replace('</head>', renderOpenGraph(rel, output, site, imageUrl) + '</head>');
+    }
     if (!check) {
       await mkdir(path.dirname(to), { recursive: true });
       await writeFile(to, output);
@@ -134,7 +152,15 @@ async function build({ check = false } = {}) {
   }
 
   if (site.url && !check) {
-    await writeFile(path.join(DIST, 'sitemap.xml'), renderSitemap(pages, site.url, byId));
+    // S63: lastmod for non-project pages = last git commit date of the source
+    // file (D24); omitted when git is unavailable or the file is untracked.
+    const lastmodByRel = new Map();
+    for (const [rel] of pages) {
+      if (rel === '404.html' || rel.startsWith('html/proj/')) continue;
+      const lastmod = await gitLastModified(rel);
+      if (lastmod) lastmodByRel.set(rel, lastmod);
+    }
+    await writeFile(path.join(DIST, 'sitemap.xml'), renderSitemap(pages, site.url, byId, lastmodByRel));
   }
   return pages.length;
 }

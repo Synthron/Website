@@ -3,7 +3,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { renderNav, renderSitemap } from './render.mjs';
+import { ogImageRel, renderNav, renderOpenGraph, renderSitemap } from './render.mjs';
 
 // --- renderNav --------------------------------------------------------------
 
@@ -52,12 +52,45 @@ const pages = [
   ['404.html', '<html>'],
 ];
 
-test('renderSitemap maps pages, lastmod for projects, skips 404 and drafts', () => {
-  const xml = renderSitemap(pages, 'https://dm7wb.de', byId);
+test('renderSitemap maps pages, lastmod for projects and git pages, skips 404 and drafts', () => {
+  const lastmodByRel = new Map([['html/projects.html', '2026-09-01'], ['index.html', '2026-09-02']]);
+  const xml = renderSitemap(pages, 'https://dm7wb.de', byId, lastmodByRel);
   assert.match(xml, /<loc>https:\/\/dm7wb.de\/<\/loc>/);
   assert.match(xml, /<loc>https:\/\/dm7wb.de\/html\/projects\.html<\/loc>/);
   assert.match(xml, /<loc>https:\/\/dm7wb.de\/html\/proj\/sy317\.html<\/loc>/);
-  assert.match(xml, /<lastmod>2026-05-01<\/lastmod>/);
+  assert.match(xml, /<lastmod>2026-05-01<\/lastmod>/); // project pages from their date
+  assert.match(xml, /<lastmod>2026-09-01<\/lastmod>/); // non-project pages from git
+  assert.match(xml, /<lastmod>2026-09-02<\/lastmod>/); // index.html from git
   assert.doesNotMatch(xml, /draft-proj/);
   assert.doesNotMatch(xml, /404\.html/);
+});
+
+// --- Open Graph / canonical (S64) --------------------------------------------
+
+const SITE = { url: 'https://dm7wb.de', name: 'DM7WB', lang: 'de' };
+
+test('ogImageRel picks raster project images and falls back to the default PNG', () => {
+  assert.equal(ogImageRel({ image: 'assets/img/sy317_pic.webp' }), 'assets/img/sy317_pic.webp');
+  assert.equal(ogImageRel({ image: 'assets/img/placeholder.svg' }), 'assets/img/og-default.png');
+  assert.equal(ogImageRel(undefined), 'assets/img/og-default.png');
+});
+
+test('renderOpenGraph emits canonical + og tags with a versioned image URL', () => {
+  const html = '<title>Über mich — DM7WB</title><meta name="description" content="Über DM7WB und Kontakt.">';
+  const og = renderOpenGraph('html/about.html', html, SITE, 'https://dm7wb.de/assets/img/og-default.png?v=abc12345');
+  assert.match(og, /<link rel="canonical" href="https:\/\/dm7wb\.de\/html\/about\.html">/);
+  assert.match(og, /<meta property="og:type" content="website">/);
+  assert.match(og, /<meta property="og:locale" content="de_DE">/);
+  assert.match(og, /<meta property="og:site_name" content="DM7WB">/);
+  assert.match(og, /<meta property="og:title" content="Über mich — DM7WB">/);
+  assert.match(og, /<meta property="og:description" content="Über DM7WB und Kontakt\.">/);
+  assert.match(og, /<meta property="og:url" content="https:\/\/dm7wb\.de\/html\/about\.html">/);
+  assert.match(og, /<meta property="og:image" content="https:\/\/dm7wb\.de\/assets\/img\/og-default\.png\?v=abc12345">/);
+});
+
+test('renderOpenGraph falls back to the site name and omits og:image when empty', () => {
+  const og = renderOpenGraph('index.html', '<title></title>', SITE, '');
+  assert.match(og, /<meta property="og:title" content="DM7WB">/);
+  assert.match(og, /<link rel="canonical" href="https:\/\/dm7wb\.de\/">/);
+  assert.doesNotMatch(og, /og:image/);
 });

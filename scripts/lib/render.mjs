@@ -102,7 +102,34 @@ ${buttons.join('\n')}
 <p class="filter-status" role="status" data-filter-status="${esc(listId)}" data-count-singular="${esc(strings.countSingular)}" data-count-plural="${esc(strings.countPlural)}" data-with-tag="${esc(strings.withTag)}" data-lang="${esc(lang)}">${esc(format(visible.length))}</p>`;
 }
 
-export function renderSitemap(pages, baseUrl, byId) {
+// S64: project pages use their raster project image for Open Graph; everything
+// else (and projects whose image is an SVG) falls back to the OG default PNG
+// (D25). The build warns until that file exists.
+export const ogImageRel = (project) => (project && /\.(png|jpe?g|webp)$/i.test(project.image) ? project.image : 'assets/img/og-default.png');
+
+// S64: canonical + Open Graph tags. Title and description are read back from
+// the rendered page so they match what the page shows; og:image (added by the
+// build once the file exists) is cache-busted like any local asset.
+export function renderOpenGraph(rel, html, site, imageUrl) {
+  const pageUrl = `${site.url}/${rel === 'index.html' ? '' : rel}`;
+  const text = (value) => (value ?? '')
+    .replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"');
+  const title = text(/<title>([^<]*)<\/title>/i.exec(html)?.[1]) || site.name;
+  const description = text(/<meta[^>]+name="description"[^>]*content="([^"]*)"/i.exec(html)?.[1]);
+  const tags = [
+    `<link rel="canonical" href="${esc(pageUrl)}">`,
+    '<meta property="og:type" content="website">',
+    `<meta property="og:locale" content="${esc(site.lang === 'de' ? 'de_DE' : site.lang)}">`,
+    `<meta property="og:site_name" content="${esc(site.name)}">`,
+    `<meta property="og:title" content="${esc(title)}">`,
+  ];
+  if (description) tags.push(`<meta property="og:description" content="${esc(description)}">`);
+  tags.push(`<meta property="og:url" content="${esc(pageUrl)}">`);
+  if (imageUrl) tags.push(`<meta property="og:image" content="${esc(imageUrl)}">`);
+  return `  ${tags.join('\n  ')}\n`;
+}
+
+export function renderSitemap(pages, baseUrl, byId, lastmodByRel = new Map()) {
   const entries = [];
   for (const [rel] of pages) {
     if (rel === '404.html') continue;
@@ -110,7 +137,11 @@ export function renderSitemap(pages, baseUrl, byId) {
     if (project?.draft) continue;
     const loc = rel === 'index.html' ? `${baseUrl}/` : `${baseUrl}/${rel}`;
     const lines = [`    <loc>${loc}</loc>`];
-    if (project?.date) lines.push(`    <lastmod>${project.date}-01</lastmod>`);
+    // S63/D24: project pages use their date; other pages use the last git
+    // commit date of the source file (computed by the build, omitted when git
+    // is unavailable or the file is untracked).
+    const lastmod = project?.date ? `${project.date}-01` : lastmodByRel.get(rel);
+    if (lastmod) lines.push(`    <lastmod>${lastmod}</lastmod>`);
     entries.push(`  <url>\n${lines.join('\n')}\n  </url>`);
   }
   return [

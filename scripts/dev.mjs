@@ -14,6 +14,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'wwwroot');
 const DIST = path.join(ROOT, 'dist');
 const PORT = Number(process.env.PORT) || 8000;
+const HOST = process.env.HOST || '127.0.0.1';
 const DEBOUNCE_MS = 150;
 
 const TYPES = {
@@ -34,6 +35,19 @@ const TYPES = {
 };
 
 const NO_STORE = 'no-store';
+// Security headers mirrored from wwwroot/.htaccess (S60): the local preview
+// should behave like production. The flasher page (nixie-clock.html) gets the
+// style-src 'self' 'unsafe-inline' CSP exception, as in .htaccess.
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'Content-Security-Policy': "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'",
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), serial=(self)',
+  'Strict-Transport-Security': 'max-age=86400',
+};
+const FLASHER_CSP = "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'";
+const isFlasherPage = (pathname) => path.posix.basename(pathname) === 'nixie-clock.html';
 // Serves only while `npm run dev` runs; never part of dist/.
 const RELOAD_SCRIPT = '<script src="/__reload.js"></script>';
 const RELOAD_JS = `const source = new EventSource('/__reload');\nsource.addEventListener('reload', () => location.reload());\n`;
@@ -79,22 +93,26 @@ async function isDirectory(file) {
   }
 }
 
-async function send(res, status, file) {
+async function send(res, status, file, flasher = false) {
   let body = await readFile(file);
   if (path.extname(file) === '.html') {
     // Inject the dev-only reload script, never written to disk.
     body = Buffer.from(body.toString('utf8').replace('</body>', `${RELOAD_SCRIPT}\n  </body>`));
   }
-  res.writeHead(status, {
+  const headers = {
     'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream',
     'Cache-Control': NO_STORE,
-  });
+    ...SECURITY_HEADERS,
+  };
+  if (flasher) headers['Content-Security-Policy'] = FLASHER_CSP;
+  res.writeHead(status, headers);
   res.end(body);
 }
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const pathname = decodeURIComponent(url.pathname);
+  const flasher = isFlasherPage(pathname);
 
   // SSE stream for live reload.
   if (pathname === '/__reload') {
@@ -102,6 +120,7 @@ const server = createServer(async (req, res) => {
       'Content-Type': 'text/event-stream',
       'Cache-Control': NO_STORE,
       Connection: 'keep-alive',
+      ...SECURITY_HEADERS,
     });
     res.write('retry: 1000\n\n');
     clients.add(res);
@@ -111,7 +130,7 @@ const server = createServer(async (req, res) => {
 
   // Dev-only reload client (same origin, so the CSP 'self' still holds).
   if (pathname === '/__reload.js') {
-    res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': NO_STORE });
+    res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': NO_STORE, ...SECURITY_HEADERS });
     res.end(RELOAD_JS);
     return;
   }
@@ -124,6 +143,7 @@ const server = createServer(async (req, res) => {
         res.writeHead(301, {
           Location: `${url.pathname}/${url.search}`,
           'Cache-Control': NO_STORE,
+          ...SECURITY_HEADERS,
         });
         res.end();
         return;
@@ -132,12 +152,12 @@ const server = createServer(async (req, res) => {
     if (filePath.endsWith('/')) filePath += 'index.html';
     const file = path.join(DIST, path.normalize(filePath));
     if (!file.startsWith(DIST + path.sep)) throw new Error('outside root');
-    await send(res, 200, file);
+    await send(res, 200, file, flasher);
   } catch {
     try {
       await send(res, 404, path.join(DIST, '404.html'));
     } catch {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': NO_STORE });
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': NO_STORE, ...SECURITY_HEADERS });
       res.end('Not found');
     }
   }
@@ -157,6 +177,11 @@ for (const dir of [SRC, path.join(ROOT, 'scripts')]) {
 const ok = await runBuild();
 if (!ok) console.error('Initial build failed; starting the dev server anyway.');
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Dev server: http://localhost:${PORT}/ (live reload)`);
+server.listen(PORT, HOST, () => {
+  console.log(`Dev server: http://${HOST}:${PORT}/ (live reload)`);
+  // S59: WebSerial needs a secure context; a LAN preview (non-loopback host)
+  // is fine for layout testing, but not for the web flasher.
+  if (HOST !== '127.0.0.1' && HOST !== '::1' && HOST !== 'localhost') {
+    console.log('Note: non-loopback HOST — WebSerial needs a secure context, so the flasher will not work here.');
+  }
 });

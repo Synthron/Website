@@ -103,16 +103,24 @@ Requires Node.js ≥ 22. There are no dependencies, so no `npm install` is neede
 | `npm run create -- "Name" "Brief" [flags]` | Scaffolds a new project: copies `project-template.html` to `html/proj/{id}.html` and registers the project in `data/projects.json`. Flags: `--tags a,b`, `--featured`, `--status <value>`, `--repo <url>`, `--dry-run` (validate only). |
 | `npm run page -- "Title" [--nav\|--footer]` | Scaffolds a minimal secondary page (shared head with CSP/`{{name}}` title/description, header, `h1`, one prose section, footer) at `html/{slug}.html`; refuses to overwrite; optionally appends a nav entry to `data/nav.json` / `data/footer-nav.json`. |
 | `npm run firmware -- <suite> --chip <family> [--chip …]` | Creates `assets/firmware/<suite>/manifest.json` with a `builds` entry per `--chip` and prints the `<esp-web-install-button>` snippet. Supported chips: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 (see Firmware section for offsets). |
-| `npm run dev` | Build once, serve `dist/`, then rebuild automatically on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`). Live reload via Server-Sent Events: the dev server injects a same-origin `<script src="/__reload.js">` into served HTML and broadcasts a reload after each successful build — never written into `dist/`, and the CSP (`'self'`) still holds. Build errors print to the terminal; the server keeps running so a fix triggers the next rebuild. |
+| `npm run dev` | Build once, serve `dist/`, then rebuild automatically on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`). Live reload via Server-Sent Events: the dev server injects a same-origin `<script src="/__reload.js">` into served HTML and broadcasts a reload after each successful build — never written into `dist/`, and the CSP (`'self'`) still holds. Build errors print to the terminal; the server keeps running so a fix triggers the next rebuild. Serves on `localhost:8000` (`PORT`/`HOST` overrides apply as with `serve`). |
 | `npm test` | Runs the unit tests (`node --test scripts/`): `esc`, `slugify`, `safeExternalUrl`, `formatDate`, `renderNav` (`aria-current`), sitemap rendering and the link check. |
-| `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` env var overrides) with `Cache-Control: no-store`; redirects directory requests to add the trailing slash. |
+| `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` and `HOST` env vars override) with `Cache-Control: no-store` and the same security headers as production (mirrors `.htaccess`); redirects directory requests to add the trailing slash. `HOST=0.0.0.0` works for phone testing on the LAN, but WebSerial needs a secure context, so the web flasher will not work there. |
 | `npm start` | Build, then serve. |
 | `npm run clean` | Removes `dist/`. |
 | `npm run setup` | Activates the versioned git hooks: sets `core.hooksPath` to `.githooks` (the `pre-commit` hook runs `npm run check`). Run once after cloning. |
 
 The build copies `wwwroot/` to `dist/` except `partials/`, `data/`, `html/proj/project-template.html` and `assets/firmware/dummy/` (the template's example suite is not a real product, so it is not deployed). HTML files and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then local asset URLs are cache-busted and finally the `@raw` blocks are put back unchanged. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
 
-The build also generates `dist/sitemap.xml` from every built page (excluding `404.html`; `index.html` becomes the root URL, project pages carry a `lastmod` from their `date`) and fills the `Sitemap:` line in `dist/robots.txt`. Both use the canonical `url` in `data/site.json`. Keep `data/site.json`'s `url` current when the site moves domains.
+The build also generates `dist/sitemap.xml` from every built page (excluding `404.html`; `index.html` becomes the root URL). Project pages carry a `lastmod` from their `date`; all other pages take it from the last git commit date of their source file — today when the file has uncommitted changes, omitted when git is unavailable or the file is untracked. The build also fills the `Sitemap:` line in `dist/robots.txt`. Both use the canonical `url` in `data/site.json`. Keep `data/site.json`'s `url` current when the site moves domains.
+
+### Open Graph and Canonical Tags
+
+Every built page except `404.html` automatically gets a canonical link and Open Graph tags injected into its `<head>` by the build:
+
+- `canonical`, `og:url`, `og:type="website"`, `og:locale`, `og:site_name`, `og:title` and `og:description` come from `data/site.json` plus the page's own `<title>` and `meta name="description"` (parsed from the rendered page, so they always match).
+- `og:image` uses the project's raster image (`.png`/`.jpg`/`.webp`) on project pages; every other page (and projects whose image is an SVG) uses `assets/img/og-default.png`. Create that file once — 1200×630, logo on a plain background, manual GIMP step; until it exists the build warns and the image tag is omitted. The image URL is cache-busted like any local asset.
+- No page edits needed: the tags are added at build time. Keep `url` in `data/site.json` current (it is the canonical base).
 
 ### Deployment
 
@@ -385,7 +393,7 @@ Adding a project means adding an entry to this file and creating `html/proj/{id}
 ### Phase 5 — Release
 - [x] Choose hosting (done: Apache at `dm7wb.de`, manual SFTP upload — see [Deployment](#deployment))
 - [x] Add `sitemap.xml` (done: generated by the build)
-- [ ] Add meta descriptions / Open Graph tags
+- [x] Add meta descriptions / Open Graph tags (generated by the build — see [Open Graph and Canonical Tags](#open-graph-and-canonical-tags))
 - [x] Write a short deployment note in this README (deploy the contents of `dist/`)
 
 ## Decisions

@@ -8,8 +8,8 @@ Priority: **P1** = fixes inconsistencies / prevents bugs, **P2** = clear workflo
 
 ### Remaining open work
 
-- **P3**: preview server — `HOST` env var (S59), mirrored security headers (S60); build — sitemap `lastmod` from git (S63), Open Graph/canonical tags (S64), `npm run report` (S65), `npm run remove` (S66), `npm run check:external` (S67); `.htaccess` HTTPS redirect + 403 page (S69); `.vscode/launch.json` + `extensions.json` (S70).
-- **User**: nixie placeholder content (S22); `placeholder-project-two` kept as-is (D6).
+- **P3**: `npm run report` (S65), `npm run remove` (S66), `npm run check:external` (S67); `.htaccess` HTTPS redirect + 403 page (S69); `.vscode/launch.json` + `extensions.json` (S70).
+- **User**: nixie placeholder content (S22); OG default image `assets/img/og-default.png` (S64, D25); `placeholder-project-two` kept as-is (D6).
 - Dropped: GitHub Actions (S50), `npm run package` (S68), merging `todo.md` (S72); deferred: removing the placeholder project (S23).
 
 ---
@@ -56,16 +56,6 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 - [ ] **S22** **User** (D20: work in progress, filled by the user). `nixie-clock.html` still contains the template's "Placeholder paragraph" overview section and an empty "2. Hardware" comment; its card uses `placeholder.svg`. Replace the placeholder overview, fill or remove the empty Hardware section, and set `image` in `projects.json`. Agents do not write this content.
       Files: `nixie-clock.html`, `projects.json`, `assets/img/`
 - ~~**S23** Delete `placeholder-project-two` or mark it as `draft`.~~ Deferred (D6: keep as is for now) — it stays a live project on the projects page and in `sitemap.xml`. The `draft` field (S36) is implemented, so downgrading it to a draft is possible whenever desired.
-
-### P3 — Preview server
-
-- [ ] **S59** `HOST` env var (default `127.0.0.1`) for phone testing on the LAN — document that WebSerial then does not work (no secure context).
-- [ ] **S60** Mirror the `.htaccess` security headers so local preview matches production.
-
-### P3 — Build
-
-- [ ] **S63** `sitemap.xml` `lastmod` for non-project pages (D24), computed on every `npm run build`: `git log -1 --format=%cs -- <source file>` via `node:child_process` (built-in). If the file has uncommitted changes (`git status --porcelain -- <file>`), use today's date. If git is unavailable or the file is untracked, omit `lastmod` instead of failing.
-- [ ] **S64** Open Graph + canonical tags from `site.json` and project data (D9). Manual sub-step (D25): create `assets/img/og-default.png` (1200×630, logo on a plain background) in GIMP; project pages use their project image when it is a raster image. Ticks the remaining Phase 5 item.
 
 ### P3 — npm scripts
 

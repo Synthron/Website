@@ -1,9 +1,11 @@
 // Shared paths, error collection and small helpers for the build.
 
+import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { access, readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const SRC = path.join(ROOT, 'wwwroot');
@@ -84,5 +86,29 @@ export function formatDate(value, locale = 'en') {
   const match = /^(\d{4})-(\d{2})$/.exec(value);
   const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1));
   return date.toLocaleDateString(locale, { year: 'numeric', month: 'short', timeZone: 'UTC' });
+}
+
+const execFileAsync = promisify(execFile);
+const isoDate = (date) => date.toISOString().slice(0, 10);
+
+// S63/D24: last git commit date (YYYY-MM-DD) of a wwwroot-relative source
+// file, used for the sitemap lastmod of non-project pages. Uncommitted changes
+// -> today; untracked files or an unavailable git -> null (lastmod omitted).
+export async function gitLastModified(rel) {
+  const file = posix(`wwwroot/${rel}`);
+  let status;
+  try {
+    ({ stdout: status } = await execFileAsync('git', ['status', '--porcelain', '--', file], { cwd: ROOT }));
+  } catch {
+    return null;
+  }
+  if (status.trim().startsWith('??')) return null; // untracked: no git history
+  if (status.trim() !== '') return isoDate(new Date());
+  try {
+    const { stdout } = await execFileAsync('git', ['log', '-1', '--format=%cs', '--', file], { cwd: ROOT });
+    return /^\d{4}-\d{2}-\d{2}$/.test(stdout.trim()) ? stdout.trim() : null;
+  } catch {
+    return null;
+  }
 }
 
