@@ -91,11 +91,95 @@ export async function checkFirmwareManifests() {
 }
 
 // --- Page-level diagnostics (S31-S35) ---------------------------------------
-// S31: warn about html/proj/*.html without a projects.json entry.
-export function checkOrphanPages(pages, byId) {
-  for (const [rel] of pages) {
-    if (rel.startsWith('html/proj/') && !byId.has(path.posix.basename(rel, '.html'))) {
-      warn(`wwwroot/${rel}: project page without a data/projects.json entry`);
+// S31/M40: warn about project pages without project data in their language.
+// `infoByRel` maps built page paths to { lang, pagePath, isCommon } (see build.mjs).
+export function checkOrphanPages(infoByRel, pageIndex, byId) {
+  for (const [rel, info] of infoByRel) {
+    if (!info.pagePath?.startsWith('proj/')) continue;
+    const project = byId.get(pageIndex.projectId(info.lang, info.pagePath));
+    if (!project) warn(`wwwroot/${rel}: project page without a data/projects.json entry`);
+    else if (!Object.hasOwn(project.title, info.lang)) warn(`wwwroot/${rel}: project "${project.id}" has no "${info.lang}" data`);
+  }
+}
+
+// M41: <html lang> of a language page must be its language. Common pages are
+// validated against the configured languages when they are classified.
+export function checkHtmlLang(rel, html, info) {
+  if (info.isCommon) return;
+  const found = /<html\b[^>]*\blang="([^"]*)"/i.exec(html)?.[1];
+  if (found !== undefined && found !== info.lang) {
+    fail(`wwwroot/${rel}: <html lang="${found}"> must be "${info.lang}" (language of its folder)`);
+  }
+}
+
+// M42: every page of a non-default language needs a default-language
+// counterpart (fail); default-language pages without a counterpart are
+// reported (warn). Project pages are covered by the project data warnings.
+export function checkTranslationCoverage(site, pageIndex) {
+  const { defaultLang, languages } = site;
+  if (languages.length < 2) return;
+  const seen = new Set();
+  for (const { code } of languages) {
+    for (const file of pageIndex.files(code)) {
+      const counterparts = pageIndex.counterparts(code, file);
+      const key = [...counterparts].map(([other, target]) => `${other}:${target}`).sort().join('|');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (!counterparts.has(defaultLang)) {
+        fail(`wwwroot/${pageIndex.dir(code)}/${file}: page has no "${defaultLang}" counterpart (required)`);
+      } else if (!file.startsWith('proj/') && counterparts.size < languages.length) {
+        const missing = languages.filter(({ code: other }) => !counterparts.has(other)).map(({ code: other }) => other);
+        warn(`wwwroot/${pageIndex.dir(defaultLang)}/${counterparts.get(defaultLang)}: no counterpart in ${missing.map((other) => `"${other}"`).join(', ')}`);
+      }
+    }
+  }
+}
+
+// M43: links must stay inside the page's language folder. Exempt: the language
+// selector and declared cross-language entries (both carry hreflang) and
+// common pages. Links into a removed html/ folder fail once no language
+// lives there any more.
+export function checkLanguageLinks(pages, infoByRel, site, pageDir) {
+  const dirs = site.languages.map(({ code }) => [code, pageDir(code)]);
+  const htmlRemoved = !dirs.some(([, dir]) => dir === 'html');
+  for (const [rel, html] of pages) {
+    const info = infoByRel.get(rel);
+    if (!info) continue;
+    for (const match of html.matchAll(/<a\b[^>]*>/gi)) {
+      const href = /\bhref="([^"]*)"/.exec(match[0])?.[1];
+      const pathname = href?.split(/[?#]/)[0];
+      if (!pathname || SCHEME.test(href)) continue;
+      const target = pathname.startsWith('/')
+        ? path.posix.normalize(pathname.slice(1))
+        : path.posix.normalize(path.posix.join(path.posix.dirname(rel), pathname));
+      if (htmlRemoved && target.startsWith('html/')) {
+        fail(`${ref(rel, html, match.index)}: link into the removed html/ folder "${href}"`);
+        continue;
+      }
+      if (info.isCommon || /\bhreflang=/.test(match[0])) continue;
+      const owner = dirs.find(([, dir]) => target === dir || target.startsWith(`${dir}/`))?.[0];
+      if (owner !== undefined && owner !== info.lang) {
+        warn(`${ref(rel, html, match.index)}: link into the "${owner}" folder "${href}" (use the language selector or a declared cross-language entry)`);
+      }
+    }
+  }
+}
+
+// M46: flasher pages need the CSP exception in .htaccess (a <Files> or
+// <FilesMatch> block that sets 'unsafe-inline'); the server matches by file name.
+export function checkFlasherHtaccess(pages, htaccess) {
+  if (!htaccess) return;
+  const matchers = [];
+  for (const [, kind, pattern, body] of htaccess.matchAll(/<(Files|FilesMatch)\s+"([^"]+)">([\s\S]*?)<\/\1>/g)) {
+    if (!body.includes('unsafe-inline')) continue;
+    const source = kind === 'FilesMatch' ? pattern : `^${pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.')}$`;
+    matchers.push(new RegExp(source));
+  }
+  for (const [rel, html] of pages) {
+    if (!/<esp-web-install-button\b/.test(html)) continue;
+    const name = path.posix.basename(rel);
+    if (!matchers.some((matcher) => matcher.test(name))) {
+      warn(`wwwroot/${rel}: flasher page "${name}" is not covered by the CSP exception in wwwroot/.htaccess`);
     }
   }
 }

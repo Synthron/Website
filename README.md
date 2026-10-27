@@ -193,6 +193,22 @@ The build appends a `?v=<hash>` query string to URLs of local cacheable assets (
 - A build pass is deterministic: running twice yields identical hashes, and touching one file only changes the hashes of that file and of the files that reference it.
 - Never hard-code a `?v=` suffix in `wwwroot/` sources; it is added at build time only.
 
+### Language Checks
+
+Beyond the link, anchor and HTML-rule checks, the build verifies the language setup (`scripts/lib/checks.mjs`):
+
+| Check | Result |
+| --- | --- |
+| `<html lang>` of a language page differs from its language | fail |
+| Page of a non-default language without a default-language counterpart | fail |
+| Default-language page without a counterpart in another language (project pages are covered by the project data warnings) | warn |
+| Project page without project data in its language | warn |
+| Link from a language page into another language's folder (the language selector and entries with `hreflang`/`lang` are exempt; common pages are not checked) | warn |
+| Link into the removed `html/` folder (active once no language lives there) | fail |
+| Flasher page (`<esp-web-install-button>`) whose file name is not covered by a `<Files>`/`<FilesMatch>` block with `'unsafe-inline'` in `wwwroot/.htaccess` | warn |
+
+`TODO` placeholders and missing translations in `data/projects.json` are reported when the data is loaded (one warning per project and language).
+
 ### Build-time Templating
 
 Content is never hard-coded where it can be generated. Source pages use these constructs:

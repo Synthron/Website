@@ -284,13 +284,13 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 
 ### Phase M4 — Checks (`scripts/lib/checks.mjs`)
 
-- [ ] **M40** `checkOrphanPages`: `<lang>/proj/*.html` (resolved via the page index) without project data in that language (warn).
-- [ ] **M41** New: `<html lang>` of a language page must equal its folder; on common pages it must be a configured code.
-- [ ] **M42** New: translation coverage via the page index (M17): a page in another language without a `de` counterpart → fail (L11: required in `de`); a `de` page without a counterpart → warn.
-- [ ] **M43** New: links between language folders (e.g. `de/…` → `en/…`) outside the language selector and declared cross-language footer entries → warn; leftover `html/` links → fail.
-- [ ] **M44** New: warn for every `TODO` placeholder left in `projects.json` (L20), listing project and language.
-- [ ] **M45** `checkLinks`, `checkAnchors`: no change expected; verify with the new tree.
-- [ ] **M46** New: a page containing `<esp-web-install-button>` whose file name is not covered by the flasher CSP exception in `.htaccess` → warn (mapped names can differ per language, L31).
+- [x] **M40** `checkOrphanPages`: `<lang>/proj/*.html` (resolved via the page index) without project data in that language (warn).
+- [x] **M41** (common pages are validated when they are classified, `classifyPage`) New: `<html lang>` of a language page must equal its folder; on common pages it must be a configured code.
+- [x] **M42** New: translation coverage via the page index (M17): a page in another language without a `de` counterpart → fail (L11: required in `de`); a `de` page without a counterpart → warn.
+- [x] **M43** (the `html/` rule only becomes active after M50) New: links between language folders (e.g. `de/…` → `en/…`) outside the language selector and declared cross-language footer entries → warn; leftover `html/` links → fail.
+- [x] **M44** (covered by the `loadProjects()` warning, one per project and language) New: warn for every `TODO` placeholder left in `projects.json` (L20), listing project and language.
+- [x] **M45** (tests with language folders added) `checkLinks`, `checkAnchors`: no change expected; verify with the new tree.
+- [x] **M46** New: a page containing `<esp-web-install-button>` whose file name is not covered by the flasher CSP exception in `.htaccess` → warn (mapped names can differ per language, L31).
 
 ### Phase M5 — Content migration (`wwwroot/`)
 

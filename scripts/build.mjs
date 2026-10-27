@@ -13,8 +13,9 @@ import {
   protectRaw, restoreRaw, versionCssUrls, versionJsImports,
 } from './lib/pipeline.mjs';
 import {
-  checkAnchors, checkFirmwareManifests, checkFlasherScript, checkHtmlRules,
-  checkLinks, checkOrphanPages, checkPlaceholderText, checkUnusedAssets,
+  checkAnchors, checkFirmwareManifests, checkFlasherHtaccess, checkFlasherScript, checkHtmlLang,
+  checkHtmlRules, checkLanguageLinks, checkLinks, checkOrphanPages, checkPlaceholderText,
+  checkTranslationCoverage, checkUnusedAssets,
 } from './lib/checks.mjs';
 
 // Source-only folders/files that are not copied to dist/.
@@ -88,6 +89,7 @@ async function build({ check = false } = {}) {
   await checkFirmwareManifests();
   const byId = new Map(allProjects.map((project) => [project.id, project]));
   const projectByRel = new Map(); // page path -> localized project
+  const infoByRel = new Map(); // page path -> { lang, pagePath, isCommon }
 
   const partials = {};
   for (const file of await walk(path.join(SRC, 'partials'))) {
@@ -178,20 +180,26 @@ async function build({ check = false } = {}) {
       await writeFile(to, output);
     }
     if (isHtml) pages.push([rel, output]);
+    if (isHtml) infoByRel.set(rel, { lang, pagePath: page.pagePath, isCommon: page.isCommon });
   }
 
   // In --check mode nothing was written, so resolve links against wwwroot/.
   const base = check ? SRC : DIST;
   for (const [rel, html] of pages) await checkLinks(rel, html, base);
 
-  checkOrphanPages(pages, byId);
+  checkOrphanPages(infoByRel, pageIndex, byId);
+  checkTranslationCoverage(site, pageIndex);
+  checkLanguageLinks(pages, infoByRel, site, pageDir);
   await checkUnusedAssets(pages);
   checkPlaceholderText(pages);
   checkAnchors(pages);
   for (const [rel, html] of pages) {
     checkHtmlRules(rel, html);
+    checkHtmlLang(rel, html, infoByRel.get(rel));
     checkFlasherScript(rel, html);
   }
+  const htaccessFile = path.join(SRC, '.htaccess');
+  checkFlasherHtaccess(pages, await exists(htaccessFile) ? await readFile(htaccessFile, 'utf8') : '');
 
   if (site.url && !check) {
     // S63: lastmod for non-project pages = last git commit date of the source
