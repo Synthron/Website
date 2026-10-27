@@ -64,9 +64,10 @@ function validate(name, rel, data, depth = 1) {
   return invalid;
 }
 
-export async function loadSite() {
+// Loaders read from `src` (default: wwwroot/); tests pass a temporary tree.
+export async function loadSite({ src = SRC } = {}) {
   const rel = 'data/site.json';
-  const site = await readJson(path.join(SRC, rel));
+  const site = await readJson(path.join(src, rel));
   validate('site', rel, site);
 
   // Canonical base URL for sitemap.xml and the robots.txt Sitemap line.
@@ -87,7 +88,7 @@ export async function loadSite() {
       fail(`${label}: duplicate language code "${language.code}"`);
       continue;
     }
-    if (typeof language.flag === 'string' && !await exists(path.join(SRC, language.flag))) {
+    if (typeof language.flag === 'string' && !await exists(path.join(src, language.flag))) {
       fail(`${label}.flag: file not found: ${language.flag}`);
     }
     languages.push({ code: language.code, name: language.name, locale: language.locale, flag: language.flag });
@@ -114,9 +115,9 @@ export async function loadSite() {
 const codesOf = (site) => site.languages.map((language) => language.code);
 
 // Returns { <code>: { ...UI strings } } for every configured language.
-export async function loadStrings(site) {
+export async function loadStrings(site, { src = SRC } = {}) {
   const rel = 'data/strings.json';
-  const data = await readJson(path.join(SRC, rel));
+  const data = await readJson(path.join(src, rel));
   if (!isObject(data)) throw new Error(`${rel}: expected an object with one block per language`);
   validate('strings', rel, data);
   const codes = codesOf(site);
@@ -141,9 +142,9 @@ export async function loadStrings(site) {
 
 // Returns { <code>: [{ label, href, external, lang? }] } for every configured
 // language. `lang` is set when the target page is in another language.
-export async function loadNav(file, site) {
+export async function loadNav(file, site, { src = SRC } = {}) {
   const rel = `data/${file}`;
-  const data = await readJson(path.join(SRC, rel));
+  const data = await readJson(path.join(src, rel));
   if (!isObject(data)) throw new Error(`${rel}: expected an object with one array per language`);
   const invalid = validate('nav', rel, data, 2);
   const codes = codesOf(site);
@@ -173,9 +174,9 @@ export async function loadNav(file, site) {
 // Index of the language pages: which files exist per language, which pages
 // are the same page under different names (data/pages.json) and which pages
 // pair by identical path. Paths are relative to the language folder.
-export async function loadPages(site, { pageDir = langDir, langBase = (code) => `${code}/` } = {}) {
+export async function loadPages(site, { pageDir = langDir, langBase = (code) => `${code}/`, src = SRC } = {}) {
   const rel = 'data/pages.json';
-  const data = await readJson(path.join(SRC, rel));
+  const data = await readJson(path.join(src, rel));
   if (!Array.isArray(data)) throw new Error(`${rel}: expected an array`);
   const invalid = validate('pages', rel, data);
   const codes = codesOf(site);
@@ -183,7 +184,7 @@ export async function loadPages(site, { pageDir = langDir, langBase = (code) => 
 
   const files = new Map();
   for (const code of codes) {
-    const dir = path.join(SRC, pageDir(code));
+    const dir = path.join(src, pageDir(code));
     files.set(code, new Set(await exists(dir) ? (await walk(dir)).filter((file) => file.endsWith('.html')) : []));
   }
 
@@ -259,9 +260,9 @@ export async function loadPages(site, { pageDir = langDir, langBase = (code) => 
 // Loads data/projects.json. `title`, `summary` and `tags` of the result are
 // objects holding only the languages in which the project is available (data
 // complete, no TODO, page exists); use localize() for a flat per-language view.
-export async function loadProjects(site, pages) {
+export async function loadProjects(site, pages, { src = SRC } = {}) {
   const rel = 'data/projects.json';
-  const data = await readJson(path.join(SRC, rel));
+  const data = await readJson(path.join(src, rel));
   if (!Array.isArray(data)) throw new Error(`${rel}: expected an array`);
   const invalid = validate('projects', rel, data);
   const codes = codesOf(site);
@@ -280,7 +281,7 @@ export async function loadProjects(site, pages) {
         fail(`${label}.links.${key}: must be null or a valid http(s) URL`);
       }
     }
-    if (!await exists(path.join(SRC, project.image))) fail(`${label}: image not found: ${project.image}`);
+    if (!await exists(path.join(src, project.image))) fail(`${label}: image not found: ${project.image}`);
     checkLangKeys(`${label}.title`, project.title, codes, [defaultLang]);
     checkLangKeys(`${label}.summary`, project.summary, codes, [defaultLang]);
     checkLangKeys(`${label}.tags`, project.tags, codes, [defaultLang]);

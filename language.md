@@ -330,10 +330,10 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 
 ### Phase M9 — Tests (`scripts/lib/*.test.mjs`)
 
-- [ ] **M90** `util.test.mjs`: `formatDate` for `de` and `en`.
-- [ ] **M91** `render.test.mjs`: `renderNav` with language prefix and `aria-current`; `renderLangSwitch` (current language, paired page via `pages.json`, fallback to home, escaping); `renderCard` link and localized fields; status label mapping; sitemap with language folders and hidden projects; OG locale.
-- [ ] **M92** `checks.test.mjs`: orphan pages per language, `lang` mismatch, translation coverage, leftover `html/` links, `TODO` warnings.
-- [ ] **M93** Data validation tests (missing default language, unknown language key, `TODO` handling, tag rules per language, `pages.json` rules) if `data.mjs` gets tests.
+- [x] **M90** `util.test.mjs`: `formatDate` for `de` and `en`.
+- [x] **M91** `render.test.mjs`: `renderNav` with language prefix and `aria-current`; `renderLangSwitch` (current language, paired page via `pages.json`, fallback to home, escaping); `renderCard` link and localized fields; status label mapping; sitemap with language folders and hidden projects; OG locale.
+- [x] **M92** (the `TODO` warnings are tested with the loader in `data.test.mjs`, M93) `checks.test.mjs`: orphan pages per language, `lang` mismatch, translation coverage, leftover `html/` links, `TODO` warnings.
+- [x] **M93** (the loaders take an optional `{ src }` root, so the tests run against temporary trees) Data validation tests (missing default language, unknown language key, `TODO` handling, tag rules per language, `pages.json` rules) if `data.mjs` gets tests.
 
 ### Phase M10 — Documentation
 

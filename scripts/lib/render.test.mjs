@@ -177,3 +177,38 @@ test('renderOpenGraph emits hreflang alternates, x-default and the page locale',
   assert.match(og, /<meta property="og:locale" content="en_GB">/);
   assert.match(og, /<meta property="og:locale:alternate" content="de_DE">/);
 });
+
+// --- multi-language renderers (M91) ------------------------------------------
+
+test('renderLangSwitch links differently named pages via ctx.versions and keeps the other languages at their home', () => {
+  const versions = [{ lang: 'de', rel: 'de/ueber-mich.html' }, { lang: 'en', rel: 'en/about.html' }];
+  const html = renderLangSwitch({ ...ctxFor('en/about.html', '../', { lang: 'en', versions }), pages: { base: (code) => `${code}/` } }, MULTI, UI);
+  assert.match(html, /href="\.\.\/de\/ueber-mich\.html" lang="de"/);
+  assert.match(html, /href="\.\.\/en\/about\.html" lang="en" hreflang="en" aria-label="English" aria-current="true"/);
+  const hidden = renderLangSwitch({ ...ctxFor('de/proj/a.html', '../../', { versions: [{ lang: 'de', rel: 'de/proj/a.html' }] }), pages: { base: (code) => `${code}/` } }, MULTI, UI);
+  assert.match(hidden, /href="\.\.\/\.\.\/en\/index\.html" lang="en"/);
+});
+
+test('renderLangSwitch escapes language names and the label', () => {
+  const site = { languages: [{ code: 'de', name: 'D"<b>', flag: 'a.svg' }, { code: 'en', name: 'E', flag: 'b.svg' }] };
+  const html = renderLangSwitch(ctxFor('index.html', '', { isCommon: true }), site, { languageLabel: '<x>' });
+  assert.match(html, /aria-label="D\x26quot;\x26lt;b\x26gt;"/);
+  assert.match(html, /aria-label="\x26lt;x\x26gt;"/);
+  assert.doesNotMatch(html, /<b>/);
+});
+
+test('renderSitemap lists every language folder, skips drafts and uses project dates in any language', () => {
+  const map = new Map([
+    ['de/proj/a.html', { id: 'a', date: '2026-05' }],
+    ['en/proj/a.html', { id: 'a', date: '2026-05' }],
+    ['en/proj/draft.html', { id: 'draft', date: '2026-06', draft: true }],
+  ]);
+  const built = ['index.html', '404.html', 'de/index.html', 'en/index.html', 'de/proj/a.html', 'en/proj/a.html', 'en/proj/draft.html'].map((rel) => [rel, '<html>']);
+  const xml = renderSitemap(built, 'https://dm7wb.de', map, new Map([['en/index.html', '2026-10-01']]));
+  for (const loc of ['/', '/de/index.html', '/en/index.html', '/de/proj/a.html', '/en/proj/a.html']) {
+    assert.ok(xml.includes(`<loc>https://dm7wb.de${loc}</loc>`), loc);
+  }
+  assert.doesNotMatch(xml, /draft|404/);
+  assert.equal(xml.match(/<lastmod>2026-05-01<\/lastmod>/g).length, 2);
+  assert.match(xml, /<lastmod>2026-10-01<\/lastmod>/);
+});

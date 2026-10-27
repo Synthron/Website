@@ -32,3 +32,9 @@ test('formatDate renders the locale and keeps the month', () => {
   assert.equal(formatDate('2026-05', 'de'), 'Mai 2026');
   assert.equal(formatDate('2026-05'), 'May 2026');
 });
+
+test('formatDate formats the same month per language and ignores the local time zone', () => {
+  assert.equal(formatDate('2026-05', 'en'), 'May 2026');
+  assert.equal(formatDate('2026-01', 'en'), 'Jan 2026');
+  assert.equal(formatDate('2026-12', 'en-GB'), 'Dec 2026');
+});
