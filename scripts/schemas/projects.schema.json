@@ -10,16 +10,24 @@
     "additionalProperties": false,
     "properties": {
       "id": {
-        "description": "Lowercase, hyphenated; equals the page name html/proj/{id}.html.",
+        "description": "Lowercase, hyphenated; equals the default-language page name proj/{id}.html.",
         "type": "string",
         "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
       },
-      "title": { "type": "string", "pattern": "\\S" },
-      "summary": { "type": "string", "pattern": "\\S" },
+      "title": { "$ref": "#/definitions/localizedText" },
+      "summary": { "$ref": "#/definitions/localizedText" },
       "tags": {
-        "type": "array",
-        "uniqueItems": true,
-        "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }
+        "description": "Tag list per language (independent lists, not translations).",
+        "type": "object",
+        "minProperties": 1,
+        "patternProperties": {
+          "^[a-z]{2,3}$": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }
+          }
+        },
+        "additionalProperties": false
       },
       "status": {
         "description": "D10: German status values; slugify before using one as a CSS hook.",
@@ -51,6 +59,13 @@
     }
   },
   "definitions": {
+    "localizedText": {
+      "description": "Text per language code. A value starting with TODO counts as missing.",
+      "type": "object",
+      "minProperties": 1,
+      "patternProperties": { "^[a-z]{2,3}$": { "type": "string", "pattern": "\\S" } },
+      "additionalProperties": false
+    },
     "link": {
       "description": "null or an http(s) URL.",
       "oneOf": [

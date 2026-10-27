@@ -1,15 +1,17 @@
 [
   {
     "id": "nixie-clock",
-    "title": "Nixie Uhr",
-    "summary": "Nixie-Uhr mit ESP32, Z5600M Nixie-Röhren und RTC.",
-    "tags": [
-      "hardware",
-      "electronics",
-      "software",
-      "tubes",
-      "esp32"
-    ],
+    "title": { "de": "Nixie Uhr" },
+    "summary": { "de": "Nixie-Uhr mit ESP32, Z5600M Nixie-Röhren und RTC." },
+    "tags": {
+      "de": [
+        "hardware",
+        "electronics",
+        "software",
+        "tubes",
+        "esp32"
+      ]
+    },
     "status": "in Arbeit",
     "date": "2026-09",
     "links": {
@@ -21,13 +23,15 @@
   },
   {
     "id": "sy317",
-    "title": "SY317 - 78xx Spannungsregler-Ersatz",
-    "summary": "Drop-In Schaltregler-Replacement für 78xx Spannungsregler, mit einstellbarer Ausgangsspannung und höherem Ausgangsstrom.",
-    "tags": [
-      "hardware",
-      "electronics",
-      "power-supply"
-    ],
+    "title": { "de": "SY317 - 78xx Spannungsregler-Ersatz" },
+    "summary": { "de": "Drop-In Schaltregler-Replacement für 78xx Spannungsregler, mit einstellbarer Ausgangsspannung und höherem Ausgangsstrom." },
+    "tags": {
+      "de": [
+        "hardware",
+        "electronics",
+        "power-supply"
+      ]
+    },
     "status": "fertig",
     "date": "2026-05",
     "links": {
@@ -39,12 +43,14 @@
   },
   {
     "id": "placeholder-project-two",
-    "title": "Placeholder Project Two",
-    "summary": "Placeholder entry — Test 2.",
-    "tags": [
-      "css",
-      "layout"
-    ],
+    "title": { "de": "Placeholder Project Two" },
+    "summary": { "de": "Placeholder entry — Test 2." },
+    "tags": {
+      "de": [
+        "css",
+        "layout"
+      ]
+    },
     "status": "in Arbeit",
     "date": "2026-09",
     "links": {

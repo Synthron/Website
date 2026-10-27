@@ -1,5 +1,7 @@
-[
-  { "label": "Impressum", "href": "html/impressum.html" },
-  { "label": "Datenschutz", "href": "html/privacy.html" },
-  { "label": "Rechtliche Hinweise", "href": "html/rechtliches.html" }
-]
+{
+  "de": [
+    { "label": "Impressum", "href": "html/impressum.html" },
+    { "label": "Datenschutz", "href": "html/privacy.html" },
+    { "label": "Rechtliche Hinweise", "href": "html/rechtliches.html" }
+  ]
+}

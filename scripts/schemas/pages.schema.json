@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pages.schema.json",
+  "title": "wwwroot/data/pages.json",
+  "description": "Groups of the same page under different file names per language. Pages not listed pair by identical path.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "minProperties": 2,
+    "patternProperties": {
+      "^[a-z]{2,3}$": {
+        "description": "HTML page path relative to the language folder (no ./ or ../ segments, no absolute path).",
+        "type": "string",
+        "pattern": "^(?![a-zA-Z]:|/)(?!(.*/)?\\.\\.?(/|$))[^\\\\]+\\.html$"
+      }
+    },
+    "additionalProperties": false
+  }
+}

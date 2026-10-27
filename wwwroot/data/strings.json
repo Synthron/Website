@@ -1,12 +1,31 @@
 {
   "$schema": "../../scripts/schemas/strings.schema.json",
-  "countSingular": "Projekt",
-  "countPlural": "Projekte",
-  "withTag": "mit Tag",
-  "tagFilterLabel": "Nach Tag filtern",
-  "tagsLabel": "Schlagwörter",
-  "all": "Alle",
-  "noProjects": "Noch keine Projekte",
-  "repo": "Quellcode",
-  "demo": "Demo"
+  "de": {
+    "countSingular": "Projekt",
+    "countPlural": "Projekte",
+    "withTag": "mit Tag",
+    "tagFilterLabel": "Nach Tag filtern",
+    "tagsLabel": "Schlagwörter",
+    "all": "Alle",
+    "noProjects": "Noch keine Projekte",
+    "repo": "Quellcode",
+    "demo": "Demo",
+    "skipLink": "Zum Inhalt springen",
+    "menu": "Menü",
+    "mainNavLabel": "Hauptnavigation",
+    "footerNavLabel": "Fußbereich",
+    "languageLabel": "Sprache",
+    "projectLinkFor": "für",
+    "backToProjects": "← Alle Projekte",
+    "quoteOpen": "“",
+    "quoteClose": "”",
+    "status": {
+      "in Arbeit": "in Arbeit",
+      "fertig": "fertig",
+      "pausiert": "pausiert",
+      "veraltet": "veraltet",
+      "Konzept": "Konzept",
+      "abgebrochen": "abgebrochen"
+    }
+  }
 }

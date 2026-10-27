@@ -4,15 +4,41 @@
   "title": "wwwroot/data/site.json",
   "description": "Shared site info. See README -> Site Config.",
   "type": "object",
-  "required": ["lang", "name", "url", "footerNote", "email"],
+  "required": ["languages", "defaultLang", "name", "url", "footerNote", "email"],
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string" },
-    "lang": { "type": "string", "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]+)*$" },
+    "languages": {
+      "description": "Configured languages; code is the folder name wwwroot/<code>/.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["code", "name", "locale", "flag"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string", "pattern": "^[a-z]{2,3}$" },
+          "name": { "description": "Language name in that language.", "type": "string", "pattern": "\\S" },
+          "locale": { "description": "Open Graph locale, e.g. de_DE.", "type": "string", "pattern": "^[a-z]{2,3}_[A-Z]{2}$" },
+          "flag": {
+            "description": "Relative path inside wwwroot/ (no ./ or ../ segments, no absolute path).",
+            "type": "string",
+            "pattern": "^(?![a-zA-Z]:|/)(?!(.*/)?\\.\\.?(/|$))[^\\\\]+$"
+          }
+        }
+      }
+    },
+    "defaultLang": { "description": "Fallback and x-default language; must be a configured code.", "type": "string", "pattern": "^[a-z]{2,3}$" },
     "name": { "type": "string", "minLength": 1 },
     "url": { "description": "Canonical base URL (http/https).", "type": "string", "pattern": "^https?://\\S+$" },
     "copyrightYear": { "type": "integer" },
-    "footerNote": { "type": "string", "minLength": 1 },
+    "footerNote": {
+      "description": "One text per configured language.",
+      "type": "object",
+      "minProperties": 1,
+      "patternProperties": { "^[a-z]{2,3}$": { "type": "string", "minLength": 1 } },
+      "additionalProperties": false
+    },
     "email": { "type": "string", "pattern": "^[^@\\s]+@[^@\\s]+$" }
   }
 }

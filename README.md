@@ -87,11 +87,12 @@ Website/
     │   └── vendor/        # Vendored third-party JS (no CDN)
     │       └── esp-web-tools/  # ESP Web Tools web flasher (self-contained)
     ├── data/              # Build input only (not copied to dist/)
-    │   ├── nav.json        # Header navigation entries (label + href)
-    │   ├── footer-nav.json # Footer navigation entries (label + href)
+    │   ├── nav.json        # Header navigation entries per language (label + href)
+    │   ├── footer-nav.json # Footer navigation entries per language (label + href)
+    │   ├── pages.json      # Pages with different file names per language (empty: pair by identical path)
     │   ├── projects.json   # Project entries (single source of truth)
-    │   ├── site.json       # Shared site info (lang, name, copyright, email)
-    │   └── strings.json    # German UI strings (count labels, buttons, aria)
+    │   ├── site.json       # Shared site info (languages, defaultLang, name, copyright, email, footerNote per language)
+    │   └── strings.json    # UI strings per language (count labels, buttons, aria, status labels)
     └── assets/
         ├── img/           # Optimised images (WebP/SVG preferred)
         │   ├── placeholder.svg  # Placeholder project image (wide)
@@ -102,7 +103,9 @@ Website/
         │   ├── nixie-clock/  # bootloader.bin, partitions.bin, firmware.bin, manifest.json
         │   └── dummy/        # Example suite referenced by project-template.html (not built)
         └── icons/         # SVG icons
-            └── GitHub_Invertocat_White.svg  # Github mark (leading icon in the Source button)
+            ├── GitHub_Invertocat_White.svg  # Github mark (leading icon in the Source button)
+            ├── flag-de.svg  # German flag (language selector)
+            └── flag-gb.svg  # UK flag (language selector)
 ```
 
 ### Build and Preview
@@ -158,7 +161,7 @@ Installed as `devDependencies` (D27); none of them ship to `dist/`. Use these pa
 - Generated reports (`test-results/`, `playwright-report/`, `.lighthouseci/`) are git-ignored.
 - `npm run build` and `npm run check` stay fast and offline: only `ajv` runs inside them. Lint runs via `npm run lint` (and the pre-commit hook); Playwright and Lighthouse run on demand.
 - `html-validate` and the build's `checkHtmlRules` overlap on purpose: the build check (one `h1`, `<html lang>`, `alt`, no inline scripts or `style` attributes) runs offline in every build and `npm run check`; `html-validate` adds full HTML5 content-model, ARIA and landmark rules on the built pages.
-- `data/site.json` and `data/strings.json` reference their schema via `$schema`; the array files (`projects.json`, `nav.json`, `footer-nav.json`) cannot carry a `$schema` key, so they are mapped via `json.schemas` in `.vscode/settings.json`.
+- `data/site.json` and `data/strings.json` reference their schema via `$schema`; the array files (`projects.json`, `pages.json`) and the nav files (`nav.json`, `footer-nav.json`) are mapped via `json.schemas` in `.vscode/settings.json`.
 - Add a package with `npm i -D <name>` and list it in this table in the same change. In PowerShell, quote scoped names: `npm i -D '@scope/name'` (a bare `@` starts splatting).
 
 ### Open Graph and Canonical Tags

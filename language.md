@@ -250,14 +250,14 @@ Order matters: data and pipeline first with only `de` configured, then the move,
 
 The structure of every data file is validated by the JSON Schemas in `scripts/schemas/` (`ajv`); update each schema together with its loader.
 
-- [ ] **M10** `loadSite()`: validate `languages` (non-empty array of `{ code, name, locale, flag }`, unique lowercase codes, `flag` an existing file inside `wwwroot/`), `defaultLang` (must be a configured code), `footerNote` as per-language object; keep `name`, `url`, `email`, `copyrightYear` shared. Remove `lang`.
-- [ ] **M11** `loadStrings()`: per-language layout (L15); every language has every key in `STRING_KEYS`; extend `STRING_KEYS` with the strings moved out of partials/renderers; validate the `status` map: exactly one label per value in `STATUS_VALUES` (L14).
-- [ ] **M12** `loadNav(file)`: per-language arrays; same validation per entry; hrefs relative to the language folder; optional `lang` for cross-language footer entries (L16), must be a configured code.
-- [ ] **M13** `loadProjects()`: `title`, `summary` as objects keyed by language; `tags` as object of arrays per language; the default language is required (fail); other languages optional; `"TODO"` (or a value starting with `TODO`) counts as missing (L20, L30) and warns; ASCII slug rule and no duplicates per language (L13).
-- [ ] **M14** `status`: German values stay the keys, `STATUS_VALUES` unchanged (L14); no migration of `projects.json` status values needed.
-- [ ] **M15** Page existence: `wwwroot/de/proj/{id}.html` required for every project (fail); for other languages the page is `<lang>/proj/{id}.html` or its mapped name from `pages.json` (L31): data without page or page without data → warn, project hidden in that language (L11, L12).
-- [ ] **M16** Helper: `localize(project, lang)` returning a flat view (`title`, `summary`, `tags`) so the renderers stay simple; `null` when the project is not available in that language.
-- [ ] **M17** New `loadPages()` for `data/pages.json` (L10): array of `{ <lang>: <path> }` groups; known language codes only; every path exists under `wwwroot/<lang>/`; no path in two groups; a group with a `proj/` path must contain `"de": "proj/{id}.html"` of an existing project and only `proj/` paths (L31). Builds a page index `(lang, rel) → counterparts` used by `@lang-switch`, head alternates and the coverage check; unlisted pages pair by identical path.
+- [x] **M10** `loadSite()`: validate `languages` (non-empty array of `{ code, name, locale, flag }`, unique lowercase codes, `flag` an existing file inside `wwwroot/`), `defaultLang` (must be a configured code), `footerNote` as per-language object; keep `name`, `url`, `email`, `copyrightYear` shared. Remove `lang`.
+- [x] **M11** `loadStrings()`: per-language layout (L15); every language has every key in `STRING_KEYS`; extend `STRING_KEYS` with the strings moved out of partials/renderers; validate the `status` map: exactly one label per value in `STATUS_VALUES` (L14).
+- [x] **M12** `loadNav(file)`: per-language arrays; same validation per entry; hrefs relative to the language folder; optional `lang` for cross-language footer entries (L16), must be a configured code.
+- [x] **M13** `loadProjects()`: `title`, `summary` as objects keyed by language; `tags` as object of arrays per language; the default language is required (fail); other languages optional; `"TODO"` (or a value starting with `TODO`) counts as missing (L20, L30) and warns; ASCII slug rule and no duplicates per language (L13).
+- [x] **M14** `status`: German values stay the keys, `STATUS_VALUES` unchanged (L14); no migration of `projects.json` status values needed.
+- [x] **M15** Page existence: `wwwroot/de/proj/{id}.html` required for every project (fail); for other languages the page is `<lang>/proj/{id}.html` or its mapped name from `pages.json` (L31): data without page or page without data → warn, project hidden in that language (L11, L12).
+- [x] **M16** Helper: `localize(project, lang)` returning a flat view (`title`, `summary`, `tags`) so the renderers stay simple; `null` when the project is not available in that language.
+- [x] **M17** New `loadPages()` for `data/pages.json` (L10): array of `{ <lang>: <path> }` groups; known language codes only; every path exists under `wwwroot/<lang>/`; no path in two groups; a group with a `proj/` path must contain `"de": "proj/{id}.html"` of an existing project and only `proj/` paths (L31). Builds a page index `(lang, rel) → counterparts` used by `@lang-switch`, head alternates and the coverage check; unlisted pages pair by identical path.
 
 ### Phase M2 — Build pipeline (`scripts/build.mjs`, `scripts/lib/pipeline.mjs`)
 
@@ -311,7 +311,7 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 - [ ] **M61** `js/nav.js`: the selector sits outside the collapsible nav and is never hidden by the toggle (L8).
 - [ ] **M62** `js/projects.js`: quote marks around the tag from `data-*` attributes (`quoteOpen`/`quoteClose`) instead of the hard-coded `“ ”`.
 - [ ] **M63** Bilingual blocks on the landing page: `lang="de"` / `lang="en"` on the respective elements (screen readers, hyphenation).
-- [ ] **M64** Flag icons `assets/icons/flag-de.svg` and `assets/icons/flag-gb.svg` (L26): small, self-hosted, geometric SVGs.
+- [x] **M64** Flag icons `assets/icons/flag-de.svg` and `assets/icons/flag-gb.svg` (L26): small, self-hosted, geometric SVGs.
 
 ### Phase M7 — Scripts (`scripts/`)
 

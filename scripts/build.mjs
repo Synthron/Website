@@ -6,7 +6,7 @@
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DIST, ROOT, SRC, errors, exists, gitLastModified, posix, shortHash, walk, warn, warnings } from './lib/util.mjs';
-import { loadNav, loadProjects, loadSite, loadStrings } from './lib/data.mjs';
+import { loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
 import { ogImageRel, renderOpenGraph, renderSitemap } from './lib/render.mjs';
 import {
   applyCacheBusting, applyDirectives, applyIncludes, applyTokens, isFlasherPage,
@@ -62,12 +62,17 @@ async function computeVersions(files) {
 }
 
 async function build({ check = false } = {}) {
-  const site = await loadSite();
-  const nav = await loadNav('nav.json');
-  const footerNav = await loadNav('footer-nav.json');
-  const projects = await loadProjects();
-  // The German UI labels (S40); `lang` is merged in for formatDate().
-  const strings = { ...await loadStrings(), lang: site.lang };
+  // Transitional (M2/M50 pending): the pipeline is still single-language and
+  // the pages still live in html/, so only the default language is used.
+  const loaded = await loadSite();
+  const lang = loaded.defaultLang;
+  const site = { ...loaded, lang, footerNote: loaded.footerNote[lang] ?? '' };
+  const pageIndex = await loadPages(loaded, { pageDir: () => 'html' });
+  const nav = (await loadNav('nav.json', loaded))[lang] ?? [];
+  const footerNav = (await loadNav('footer-nav.json', loaded))[lang] ?? [];
+  const projects = (await loadProjects(loaded, pageIndex)).map((project) => localize(project, lang)).filter(Boolean);
+  // The UI labels (S40); `lang` is merged in for formatDate().
+  const strings = { ...(await loadStrings(loaded))[lang], lang };
   await checkFirmwareManifests();
   const byId = new Map(projects.map((project) => [project.id, project]));
 

@@ -1,5 +1,7 @@
-[
-  { "label": "Start", "href": "index.html" },
-  { "label": "Über mich", "href": "html/about.html" },
-  { "label": "Projekte", "href": "html/projects.html" }
-]
+{
+  "de": [
+    { "label": "Start", "href": "index.html" },
+    { "label": "Über mich", "href": "html/about.html" },
+    { "label": "Projekte", "href": "html/projects.html" }
+  ]
+}
