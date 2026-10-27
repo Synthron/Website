@@ -1,4 +1,5 @@
 {
+  "$schema": "../../scripts/schemas/strings.schema.json",
   "countSingular": "Projekt",
   "countPlural": "Projekte",
   "withTag": "mit Tag",

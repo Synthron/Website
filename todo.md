@@ -65,4 +65,4 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 
 ### for npm
 
-- **User** install browser for playwright: `npx playwright install chromium`
+- **User** install browser for playwright: `npx playwright install chromium` (or run `npm run test:e2e` with `$env:PLAYWRIGHT_CHANNEL='msedge'` to use the installed Edge)

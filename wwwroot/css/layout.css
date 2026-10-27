@@ -157,8 +157,7 @@ body {
 .site-footer__list {
   display: flex;
   flex-wrap: wrap;
-  column-gap: var(--space-4);
-  row-gap: var(--space-1);
+  gap: var(--space-1) var(--space-4);
   padding: 0;
   list-style: none;
 }

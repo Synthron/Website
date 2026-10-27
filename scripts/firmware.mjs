@@ -6,7 +6,7 @@
 //   --chip can be repeated; each chip becomes one `builds` entry and expects
 //   its own binaries (e.g. esp32s3/bootloader.bin, esp32s3/firmware.bin).
 
-import { access, mkdir, readdir, writeFile } from 'node:fs/promises';
+import { access, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 

@@ -248,6 +248,8 @@ Order matters: data and pipeline first with only `de` configured, then the move,
 
 ### Phase M1 — Data model and validation (`scripts/lib/data.mjs`)
 
+The structure of every data file is validated by the JSON Schemas in `scripts/schemas/` (`ajv`); update each schema together with its loader.
+
 - [ ] **M10** `loadSite()`: validate `languages` (non-empty array of `{ code, name, locale, flag }`, unique lowercase codes, `flag` an existing file inside `wwwroot/`), `defaultLang` (must be a configured code), `footerNote` as per-language object; keep `name`, `url`, `email`, `copyrightYear` shared. Remove `lang`.
 - [ ] **M11** `loadStrings()`: per-language layout (L15); every language has every key in `STRING_KEYS`; extend `STRING_KEYS` with the strings moved out of partials/renderers; validate the `status` map: exactly one label per value in `STATUS_VALUES` (L14).
 - [ ] **M12** `loadNav(file)`: per-language arrays; same validation per entry; hrefs relative to the language folder; optional `lang` for cross-language footer entries (L16), must be a configured code.

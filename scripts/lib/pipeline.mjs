@@ -7,6 +7,7 @@ import { renderNav, renderProjectHeader, renderProjectList, renderTagFilter } fr
 const RAW_BLOCK = /<!--\s*@raw\s*-->([\s\S]*?)<!--\s*@endraw\s*-->/g;
 const RAW_MARKER = /<!--\s*@(?:raw|endraw)\s*-->/g;
 // NUL never occurs in source files, so no pass can match the placeholder.
+// eslint-disable-next-line no-control-regex
 const RAW_PLACEHOLDER = /\u0000raw(\d+)\u0000/g;
 
 export function protectRaw(text, store, rel) {

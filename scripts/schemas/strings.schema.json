@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "strings.schema.json",
+  "title": "wwwroot/data/strings.json",
+  "description": "German UI strings rendered into pages and exposed to js/projects.js.",
+  "type": "object",
+  "required": ["countSingular", "countPlural", "withTag", "tagFilterLabel", "tagsLabel", "all", "noProjects", "repo", "demo"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "countSingular": { "$ref": "#/definitions/text" },
+    "countPlural": { "$ref": "#/definitions/text" },
+    "withTag": { "$ref": "#/definitions/text" },
+    "tagFilterLabel": { "$ref": "#/definitions/text" },
+    "tagsLabel": { "$ref": "#/definitions/text" },
+    "all": { "$ref": "#/definitions/text" },
+    "noProjects": { "$ref": "#/definitions/text" },
+    "repo": { "$ref": "#/definitions/text" },
+    "demo": { "$ref": "#/definitions/text" }
+  },
+  "definitions": {
+    "text": { "type": "string", "minLength": 1 }
+  }
+}

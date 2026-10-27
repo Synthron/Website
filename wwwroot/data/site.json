@@ -1,4 +1,5 @@
 {
+  "$schema": "../../scripts/schemas/site.schema.json",
   "lang": "de",
   "name": "DM7WB",
   "url": "https://dm7wb.de",

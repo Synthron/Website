@@ -43,7 +43,7 @@ export async function readJson(file) {
   try {
     return JSON.parse(await readFile(file, 'utf8'));
   } catch (error) {
-    throw new Error(`${posix(path.relative(ROOT, file))}: ${error.message}`);
+    throw new Error(`${posix(path.relative(ROOT, file))}: ${error.message}`, { cause: error });
   }
 }
 

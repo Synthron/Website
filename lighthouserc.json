@@ -1,0 +1,35 @@
+{
+  "ci": {
+    "collect": {
+      "startServerCommand": "node -e \"process.env.PORT='8020'; import('./scripts/serve.mjs')\"",
+      "startServerReadyPattern": "Serving dist/",
+      "url": [
+        "http://127.0.0.1:8020/index.html",
+        "http://127.0.0.1:8020/html/projects.html",
+        "http://127.0.0.1:8020/html/about.html",
+        "http://127.0.0.1:8020/html/proj/sy317.html",
+        "http://127.0.0.1:8020/html/proj/nixie-clock.html",
+        "http://127.0.0.1:8020/html/proj/placeholder-project-two.html",
+        "http://127.0.0.1:8020/html/impressum.html",
+        "http://127.0.0.1:8020/html/privacy.html",
+        "http://127.0.0.1:8020/html/rechtliches.html",
+        "http://127.0.0.1:8020/404.html"
+      ],
+      "numberOfRuns": 1,
+      "settings": {
+        "onlyCategories": ["performance", "accessibility", "best-practices", "seo"],
+        "chromeFlags": "--headless=new"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:accessibility": ["error", { "minScore": 0.95 }],
+        "categories:performance": ["error", { "minScore": 0.95 }]
+      }
+    },
+    "upload": {
+      "target": "filesystem",
+      "outputDir": ".lighthouseci/reports"
+    }
+  }
+}

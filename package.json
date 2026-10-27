@@ -15,13 +15,20 @@
     "create": "node scripts/create.mjs",
     "dev": "node scripts/dev.mjs",
     "firmware": "node scripts/firmware.mjs",
+    "images": "node scripts/images.mjs",
+    "lighthouse": "node scripts/build.mjs && lhci autorun",
+    "lint": "npm run lint:js && npm run lint:css && npm run lint:html",
+    "lint:css": "stylelint \"wwwroot/css/**/*.css\"",
+    "lint:html": "node scripts/build.mjs && html-validate \"dist/**/*.html\"",
+    "lint:js": "eslint .",
     "page": "node scripts/page.mjs",
     "remove": "node scripts/remove.mjs",
     "report": "node scripts/report.mjs",
     "serve": "node scripts/serve.mjs",
     "setup": "git config core.hooksPath .githooks",
     "start": "npm run build && npm run serve",
-    "test": "node --test scripts/"
+    "test": "node --test \"scripts/**/*.test.mjs\"",
+    "test:e2e": "node scripts/build.mjs && playwright test"
   },
   "dependencies": {
   },

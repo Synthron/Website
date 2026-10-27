@@ -26,6 +26,10 @@
   text-decoration: none;
 }
 
+.nav-toggle {
+  font-size: var(--text-sm);
+}
+
 .button--secondary,
 .nav-toggle {
   color: var(--color-text);
@@ -38,10 +42,6 @@
   color: var(--color-text);
   background-color: var(--color-surface);
   border-color: var(--color-muted);
-}
-
-.nav-toggle {
-  font-size: var(--text-sm);
 }
 
 /* Tags */

@@ -48,10 +48,10 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | `scripts/report.mjs` | `npm run report` | Prints a `dist/` size report: total, largest files, non-WebP raster images, unused assets. |
 | `scripts/check-external.mjs` | `npm run check:external` | Manual HEAD checks of external links (never part of `build`). |
 | `scripts/serve.mjs` | `npm run serve` | Local preview of `dist/` only (`PORT`/`HOST` overrides; mirrors the production security headers and `Cache-Control: no-store`). |
-| `scripts/images.mjs` (planned) | `npm run images` | `sharp` / `svgo` image processing (see Tooling Packages). |
-| `scripts/schemas/` (planned) | JSON Schemas for `data/*.json` | Used by `scripts/lib/data.mjs` via `ajv`. |
-| `scripts/e2e/` (planned) | Playwright specs (`*.spec.mjs`) | Never name them `*.test.mjs` (`npm test` would run them). |
-| Root config files (planned) | `eslint.config.js`, `.stylelintrc.json`, `.htmlvalidate.json`, `svgo.config.mjs`, `playwright.config.mjs`, `lighthouserc.json` | One per tool; ignore protected and generated paths. |
+| `scripts/images.mjs` | `npm run images` | `sharp` / `svgo` image processing (see Tooling Packages); `--dry-run` reports only. |
+| `scripts/schemas/` | JSON Schemas for `data/*.json` | Used by `scripts/lib/data.mjs` via `ajv`. Change schema and loader together. |
+| `scripts/e2e/` | Playwright specs (`*.spec.mjs`) | Never name them `*.test.mjs` (`npm test` would run them). |
+| Root config files | `eslint.config.js`, `.stylelintrc.json`, `.htmlvalidate.json`, `svgo.config.mjs`, `playwright.config.mjs`, `lighthouserc.json` | One per tool; ignore protected and generated paths. |
 | `wwwroot/index.html` | Home page | Only page-level layout and section structure. No inline styles or scripts. |
 | `wwwroot/404.html` | Not-found page | Served at any path, so the build uses root-relative links (`{{root}}` = `/`). |
 | `wwwroot/favicon.svg` | Logo favicon, also used as header brand icon | Keep it small (simplified trace). |
@@ -102,7 +102,7 @@ The `devDependencies`, their jobs, planned scripts and config files are listed i
 | Add a page | Copy the head/include structure of an existing page in `html/` → add an entry to `data/nav.json` or `data/footer-nav.json` if it should be linked → add it to the README outline → `npm run build`. |
 | Add a firmware suite | Create `assets/firmware/<suite>/` with `manifest.json` and the binaries from the user (see README → Firmware / Web Flasher for offsets) → add `<esp-web-install-button manifest="{{root}}assets/firmware/<suite>/manifest.json">` and the vendored script tag to the project page. The CSP exception is added automatically. |
 | Add a layout pattern | Append a numbered section to `project-template.html` → styles in `css/components.css` (breakpoints in `css/responsive.css`) → note it in README → Project Write-up Template. |
-| Add an image | Put the original (from the user) into `assets/img/` → `npm run images` (WebP / optimised SVG, once the script exists) → reference it with German `alt` text → `npm run build`. |
+| Add an image | Put the original (from the user) into `assets/img/` → `npm run images` (WebP / optimised SVG) → reference it with German `alt` text → `npm run build`. |
 | Add a tooling package | `npm i -D <name>` → npm script + root config file → README → Tooling Packages table → run it once and report the findings. |
 | Add a token or directive | Token: `applyTokens` in `scripts/lib/pipeline.mjs`. Directive: `applyDirectives` there, rendering in `scripts/lib/render.mjs`. Escape all inserted data with `esc()`. Document it in the README templating table. |
 | Refactor the build | Save `dist/` before, rebuild after and compare all files; a pure refactor must produce byte-identical output. |
@@ -159,8 +159,8 @@ The `devDependencies`, their jobs, planned scripts and config files are listed i
 ## Verification
 
 1. `npm run build` must exit 0. Fix every reported error.
-2. Run `npm run check` and `npm test` (both exist), plus `npm run lint` once it exists.
-3. For page or style changes: `npm run test:e2e` once it exists. Until then: `npm run serve` (port 8000, `PORT` overrides), open the affected pages at 320px, 768px and 1280px width.
+2. Run `npm run check`, `npm test` and `npm run lint`.
+3. For page or style changes: `npm run test:e2e` (without the Playwright browser: `$env:PLAYWRIGHT_CHANNEL='msedge'`). Manual check if needed: `npm run serve` (port 8000, `PORT` overrides), open the affected pages at 320px, 768px and 1280px width.
 4. Browser DevTools (or `npm run test:e2e`): no console errors, no external requests in the Network tab, no cookies or storage entries.
 5. For build refactors: compare `dist/` before and after (see Common Tasks).
 6. Before a release: `npm run lighthouse` (accessibility and performance ≥ 95).
@@ -177,7 +177,7 @@ The main development machine runs Windows with PowerShell 5.1.
 
 ## Definition of Done
 
-- `npm run build` passes (plus `npm run check` / `npm test`, and `npm run lint` / `npm run test:e2e` once available).
+- `npm run build` passes (plus `npm run check`, `npm test`, `npm run lint` and `npm run test:e2e`).
 - HTML rules are enforced by the build checks and `npm run lint:html` (`html-validate`) where available; a manual check with the W3C validator (validator.w3.org/nu) is done occasionally, e.g. before a release, not for every change.
 - No console errors in the browser.
 - No external network requests and no cookies set.

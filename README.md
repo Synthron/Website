@@ -23,21 +23,31 @@ Website/
 ├── .gitattributes         # LF line endings for text; binary for .bin/.jpg/.png/.webp
 ├── .editorconfig          # Indentation and encoding rules
 ├── .nvmrc                # Pins the local Node.js version to 24 (nvm)
-├── .githooks/            # Versioned git hooks (pre-commit runs `npm run check`; activate with `npm run setup`)
+├── .githooks/            # Versioned git hooks (pre-commit runs `npm run check` and `npm run lint`; activate with `npm run setup`)
 ├── .vscode/              # Shared editor config (tasks.json, launch.json, extensions.json)
 ├── package.json           # npm scripts and tooling dependencies
+├── eslint.config.js       # ESLint flat config (npm run lint:js)
+├── .stylelintrc.json      # Stylelint config (npm run lint:css)
+├── .htmlvalidate.json     # html-validate config (npm run lint:html)
+├── svgo.config.mjs        # SVGO config (npm run images)
+├── playwright.config.mjs  # Playwright config (npm run test:e2e)
+├── lighthouserc.json      # Lighthouse CI config (npm run lighthouse)
 ├── scripts/
 │   ├── build.mjs          # Build CLI: wwwroot/ -> dist/ (orchestration only)
 │   ├── lib/               # Build modules (importable, unit-testable)
 │   │   ├── util.mjs       # Paths, error collection, escaping, small helpers
-│   │   ├── data.mjs       # Load and validate data/*.json
+│   │   ├── data.mjs       # Load and validate data/*.json (ajv + file checks)
 │   │   ├── render.mjs     # HTML/XML renderers for directives and sitemap
 │   │   ├── pipeline.mjs   # @raw, includes, tokens, directives, cache busting (assets/JS/CSS)
 │   │   ├── checks.mjs     # Checks on the rendered output (links)
 │   │   └── *.test.mjs     # Unit tests (node --test): util, render, checks
+│   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects)
+│   ├── e2e/               # Playwright specs (*.spec.mjs)
+│   │   └── pages.spec.mjs # Every built page: 320/768/1280 px, console, requests, storage, focus
 │   ├── create.mjs         # Scaffold a new project page + projects.json entry
 │   ├── dev.mjs            # Dev server: build, serve, watch, live reload
 │   ├── firmware.mjs       # Scaffold an assets/firmware/<suite>/manifest.json
+│   ├── images.mjs         # WebP conversion, OG default image, SVG optimisation
 │   ├── page.mjs           # Scaffold a minimal secondary page in html/
 │   ├── remove.mjs         # Delete a project entry and its page (npm run remove)
 │   ├── report.mjs         # Report dist/ size, largest files, unused assets
@@ -110,11 +120,18 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | `npm run check:external` | Sends a HEAD request to every external link found in `wwwroot/` (pages, partials, template, `data/*.json`) and reports the status. Manual only — never part of `build` or `check`. |
 | `npm run firmware -- <suite> --chip <family> [--chip …]` | Creates `assets/firmware/<suite>/manifest.json` with a `builds` entry per `--chip` and prints the `<esp-web-install-button>` snippet. Supported chips: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 (see Firmware section for offsets). |
 | `npm run dev` | Build once, serve `dist/`, then rebuild automatically on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`). Live reload via Server-Sent Events: the dev server injects a same-origin `<script src="/__reload.js">` into served HTML and broadcasts a reload after each successful build — never written into `dist/`, and the CSP (`'self'`) still holds. Build errors print to the terminal; the server keeps running so a fix triggers the next rebuild. Serves on `localhost:8000` (`PORT`/`HOST` overrides apply as with `serve`). |
-| `npm test` | Runs the unit tests (`node --test scripts/`): `esc`, `slugify`, `safeExternalUrl`, `formatDate`, `renderNav` (`aria-current`), sitemap rendering and the link check. |
+| `npm test` | Runs the unit tests (`node --test "scripts/**/*.test.mjs"`): `esc`, `slugify`, `safeExternalUrl`, `formatDate`, `renderNav` (`aria-current`), sitemap rendering and the link check. |
+| `npm run lint` | Runs `lint:js`, `lint:css` and `lint:html` (stops at the first failing linter). Also run by the pre-commit hook. |
+| `npm run lint:js` | ESLint over `wwwroot/js/` (browser) and `scripts/` + root configs (Node). |
+| `npm run lint:css` | Stylelint over `wwwroot/css/`. |
+| `npm run lint:html` | Builds, then runs html-validate over `dist/**/*.html`. |
+| `npm run images [-- --dry-run]` | WebP next to raster originals in `assets/img/` (skipped when not smaller), creates `assets/img/og-default.png` if missing, optimises SVGs in place. Never overwrites existing outputs or originals. |
+| `npm run test:e2e` | Builds, then runs the Playwright specs in `scripts/e2e/` against `scripts/serve.mjs` on port 8010. |
+| `npm run lighthouse` | Builds, then runs Lighthouse CI against `scripts/serve.mjs` on port 8020; reports go to `.lighthouseci/` (never uploaded). |
 | `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` and `HOST` env vars override) with `Cache-Control: no-store` and the same security headers as production (mirrors `.htaccess`); redirects directory requests to add the trailing slash. `HOST=0.0.0.0` works for phone testing on the LAN, but WebSerial needs a secure context, so the web flasher will not work there. |
 | `npm start` | Build, then serve. |
 | `npm run clean` | Removes `dist/`. |
-| `npm run setup` | Activates the versioned git hooks: sets `core.hooksPath` to `.githooks` (the `pre-commit` hook runs `npm run check`). Run once after cloning. |
+| `npm run setup` | Activates the versioned git hooks: sets `core.hooksPath` to `.githooks` (the `pre-commit` hook runs `npm run check`, then `npm run lint`). Run once after cloning. |
 
 The build copies `wwwroot/` to `dist/` except `partials/`, `data/`, `html/proj/project-template.html` and `assets/firmware/dummy/` (the template's example suite is not a real product, so it is not deployed). HTML files and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then local asset URLs are cache-busted and finally the `@raw` blocks are put back unchanged. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
 
@@ -122,24 +139,26 @@ The build also generates `dist/sitemap.xml` from every built page (excluding `40
 
 ### Tooling Packages
 
-Installed as `devDependencies` (D27); none of them ship to `dist/`. Use these packages for the listed jobs instead of hand-written code for the same purpose. Wiring them into npm scripts and config files is tracked in [Phase 6](#phase-6--tooling-integration); until a script exists, the command column shows its planned name.
+Installed as `devDependencies` (D27); none of them ship to `dist/`. Use these packages for the listed jobs instead of hand-written code for the same purpose.
 
-| Package | Job | Command / config (planned) | Runs on |
+| Package | Job | Command / config | Runs on |
 | --- | --- | --- | --- |
-| `eslint`, `@eslint/js`, `globals` | JS lint (`no-var`, `prefer-const`, no globals, …) | `npm run lint:js`, `eslint.config.js` | `wwwroot/js/` (browser globals), `scripts/` (Node globals); ignores `wwwroot/js/vendor/`, `dist/` |
-| `stylelint`, `stylelint-config-standard`, `stylelint-declaration-strict-value` | CSS lint; colours only via custom properties outside `css/base.css` | `npm run lint:css`, `.stylelintrc.json` | `wwwroot/css/` |
-| `html-validate` | HTML validation and accessibility rules | `npm run lint:html`, `.htmlvalidate.json` | built pages in `dist/` (sources contain `{{tokens}}`) |
+| `eslint`, `@eslint/js`, `globals` | JS lint (`no-var`, `prefer-const`, `eqeqeq`; browser code: no storage APIs, `document.cookie`, `fetch` or `innerHTML`) | `npm run lint:js`, `eslint.config.js` | `wwwroot/js/` (browser globals), `scripts/` and root configs (Node globals); ignores `wwwroot/js/vendor/`, `dist/` |
+| `stylelint`, `stylelint-config-standard`, `stylelint-declaration-strict-value` | CSS lint; BEM-light class names, `min-width` prefix media queries; colours only via custom properties outside `css/base.css` | `npm run lint:css`, `.stylelintrc.json` | `wwwroot/css/` |
+| `html-validate` | HTML validation and accessibility rules (lowercase `<!doctype html>`) | `npm run lint:html`, `.htmlvalidate.json` | built pages in `dist/` (sources contain `{{tokens}}`) |
 | `ajv` | JSON Schema validation of the data files | `scripts/schemas/*.schema.json`, used by `scripts/lib/data.mjs` | `wwwroot/data/*.json` |
-| `sharp` | Raster → WebP, resizing, OG default image 1200×630 (D25) | `npm run images`, `scripts/images.mjs` | `wwwroot/assets/img/`, `wwwroot/favicon.svg` |
+| `sharp` | Raster → WebP, OG default image 1200×630 from `favicon.svg` (D25) | `npm run images`, `scripts/images.mjs` | `wwwroot/assets/img/`, `wwwroot/favicon.svg` |
 | `svgo` | SVG optimisation | `npm run images`, `svgo.config.mjs` | `wwwroot/assets/img/`, `wwwroot/assets/icons/`, `wwwroot/favicon.svg` |
-| `@playwright/test` | Browser checks: 320/768/1280 px, console errors, external requests, cookies/storage, keyboard focus | `npm run test:e2e`, `playwright.config.mjs`, `scripts/e2e/*.spec.mjs` | `dist/` via `npm run serve` |
-| `@lhci/cli` | Lighthouse scores (accessibility and performance ≥ 95) | `npm run lighthouse`, `lighthouserc.json` | `dist/` via `npm run serve` |
+| `@playwright/test` | Browser checks: 320/768/1280 px (no horizontal overflow), console errors, external requests, cookies/storage, visible keyboard focus | `npm run test:e2e`, `playwright.config.mjs`, `scripts/e2e/*.spec.mjs` | `dist/` via `scripts/serve.mjs` (port 8010) |
+| `@lhci/cli` | Lighthouse scores (accessibility and performance ≥ 95) | `npm run lighthouse`, `lighthouserc.json` | `dist/` via `scripts/serve.mjs` (port 8020) |
 
-- Playwright needs a browser once: `npx playwright install chromium`. Lighthouse CI uses the installed Chrome or Edge.
-- Lighthouse CI uploads reports to a public server by default (`temporary-public-storage`); always set `upload.target` to `"filesystem"`.
-- Name Playwright files `*.spec.mjs`: `npm test` (`node --test scripts/`) runs every `*.test.mjs` it finds.
+- Playwright needs a browser once: `npx playwright install chromium`. Alternatively use an installed browser: `$env:PLAYWRIGHT_CHANNEL='msedge'` (or `chrome`) before `npm run test:e2e`. Lighthouse CI uses the installed Chrome (`CHROME_PATH` overrides).
+- Lighthouse CI uploads reports to a public server by default (`temporary-public-storage`); `lighthouserc.json` sets `upload.target` to `"filesystem"` — keep it that way.
+- Name Playwright files `*.spec.mjs`: `npm test` runs every `*.test.mjs` under `scripts/`.
 - Generated reports (`test-results/`, `playwright-report/`, `.lighthouseci/`) are git-ignored.
 - `npm run build` and `npm run check` stay fast and offline: only `ajv` runs inside them. Lint runs via `npm run lint` (and the pre-commit hook); Playwright and Lighthouse run on demand.
+- `html-validate` and the build's `checkHtmlRules` overlap on purpose: the build check (one `h1`, `<html lang>`, `alt`, no inline scripts or `style` attributes) runs offline in every build and `npm run check`; `html-validate` adds full HTML5 content-model, ARIA and landmark rules on the built pages.
+- `data/site.json` and `data/strings.json` reference their schema via `$schema`; the array files (`projects.json`, `nav.json`, `footer-nav.json`) cannot carry a `$schema` key, so they are mapped via `json.schemas` in `.vscode/settings.json`.
 - Add a package with `npm i -D <name>` and list it in this table in the same change. In PowerShell, quote scoped names: `npm i -D '@scope/name'` (a bare `@` starts splatting).
 
 ### Open Graph and Canonical Tags
@@ -147,7 +166,7 @@ Installed as `devDependencies` (D27); none of them ship to `dist/`. Use these pa
 Every built page except `404.html` automatically gets a canonical link and Open Graph tags injected into its `<head>` by the build:
 
 - `canonical`, `og:url`, `og:type="website"`, `og:locale`, `og:site_name`, `og:title` and `og:description` come from `data/site.json` plus the page's own `<title>` and `meta name="description"` (parsed from the rendered page, so they always match).
-- `og:image` uses the project's raster image (`.png`/`.jpg`/`.webp`) on project pages; every other page (and projects whose image is an SVG) uses `assets/img/og-default.png`. Create that file once — 1200×630, logo on a plain background, manual GIMP step; until it exists the build warns and the image tag is omitted. The image URL is cache-busted like any local asset.
+- `og:image` uses the project's raster image (`.png`/`.jpg`/`.webp`) on project pages; every other page (and projects whose image is an SVG) uses `assets/img/og-default.png`. Create that file once — 1200×630, logo on a plain background: `npm run images` generates it from `favicon.svg` (or make it by hand in GIMP); until it exists the build warns and the image tag is omitted. The image URL is cache-busted like any local asset.
 - No page edits needed: the tags are added at build time. Keep `url` in `data/site.json` current (it is the canonical base).
 
 ### Deployment
@@ -338,7 +357,7 @@ Name, copyright, footer note and email come from `data/site.json`. Still to repl
 | File | Purpose |
 | --- | --- |
 | `.editorconfig` | UTF-8, LF line endings, 2-space indent for HTML/CSS/JS/JSON, trim trailing whitespace. |
-| `.gitignore` | Ignore `.DS_Store`, `Thumbs.db`, editor folders (`.vscode/`, `.idea/`), `node_modules/`, `dist/`. `.vscode/` is ignored except the shared `tasks.json`, `extensions.json` and `launch.json`. |
+| `.gitignore` | Ignore `.DS_Store`, `Thumbs.db`, editor folders (`.vscode/`, `.idea/`), `node_modules/`, `dist/`, test and Lighthouse reports. `.vscode/` is ignored except the shared `tasks.json`, `extensions.json` and `launch.json`. |
 | `package.json` | npm scripts and tooling dependencies (preferably `devDependencies`); none of them ship to `dist/`. |
 | `wwwroot/robots.txt` | Crawler rules; the `Sitemap:` line is filled from `data/site.json` at build time. |
 | `dist/sitemap.xml` | Generated by the build from all built pages (excludes `404.html`); not a source file. |
@@ -362,7 +381,7 @@ Name, copyright, footer note and email come from `data/site.json`. Still to repl
 }
 ```
 
-Field validation (enforced by the build, failures abort `npm run build`):
+Field validation (enforced by the build, failures abort `npm run build`). The structure is defined in [`scripts/schemas/projects.schema.json`](scripts/schemas/projects.schema.json) and validated with `ajv`; unique ids, existing image and page files are checked in `scripts/lib/data.mjs`:
 
 - `title` and `summary` are non-empty strings.
 - `status` is one of: `in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`. Values contain spaces and capitals, so slugify before using one as a CSS hook.
@@ -423,11 +442,11 @@ Adding a project means adding an entry to this file and creating `html/proj/{id}
 ### Phase 4 — Quality
 Automated by the Phase 6 tooling once it exists (`test:e2e`, `lint:html`, `lint:css`, `lighthouse`).
 
-- [ ] Test layout at 320px, 768px, 1280px widths
+- [x] Test layout at 320px, 768px, 1280px widths (`npm run test:e2e`: no horizontal overflow)
 - [ ] Keyboard navigation and focus styles verified
 - [ ] Validate HTML (W3C validator) and CSS
 - [ ] Lighthouse check: accessibility and performance ≥ 95
-- [ ] Verify no cookies are set and no third-party requests are made
+- [x] Verify no cookies are set and no third-party requests are made (`npm run test:e2e`)
 
 ### Phase 5 — Release
 - [x] Choose hosting (done: Apache at `dm7wb.de`, manual SFTP upload — see [Deployment](#deployment))
@@ -438,23 +457,19 @@ Automated by the Phase 6 tooling once it exists (`test:e2e`, `lint:html`, `lint:
 ### Phase 6 — Tooling Integration
 Wires the packages from [Tooling Packages](#tooling-packages) into the workflow. One step per change; add every new file to the outline.
 
-- [ ] `npm run lint:js`: `eslint.config.js` (flat config, `@eslint/js` recommended, `globals.browser` for `wwwroot/js/`, `globals.node` for `scripts/`; ignore `wwwroot/js/vendor/`, `dist/`)
-- [ ] `npm run lint:css`: `.stylelintrc.json` (`stylelint-config-standard`; `stylelint-declaration-strict-value` for colours outside `css/base.css`; rules matched to the existing CSS conventions)
-- [ ] `npm run lint:html`: `.htmlvalidate.json`, validates `dist/**/*.html` after a build; overlap with `checkHtmlRules` documented
-- [ ] `npm run lint` runs all three; `.githooks/pre-commit` runs it after `npm run check`
-- [ ] JSON schemas for `data/*.json` in `scripts/schemas/`, validated with `ajv` in `scripts/lib/data.mjs`; `$schema` references for editor support (combine with the localized data model in `language.md`, Phase M1)
-- [ ] `npm run images`: `scripts/images.mjs` — `sharp` writes WebP next to raster originals and creates `assets/img/og-default.png` (1200×630, D25) from `favicon.svg`; `svgo` (`svgo.config.mjs`) optimises SVGs in `assets/img/`, `assets/icons/` and `favicon.svg`
-- [ ] `npm run test:e2e`: `playwright.config.mjs` + `scripts/e2e/*.spec.mjs` against `npm run serve`: every page at 320/768/1280 px, no console errors, no external requests, no cookies/storage, visible keyboard focus
-- [ ] `npm run lighthouse`: `lighthouserc.json` with local URLs, assertions ≥ 0.95 for accessibility and performance, `upload.target: "filesystem"`
-- [ ] `.gitignore`: `test-results/`, `playwright-report/`, `.lighthouseci/`
-- [ ] `.vscode/extensions.json`: recommend the ESLint, Stylelint and html-validate extensions
+- [x] `npm run lint:js`: `eslint.config.js` (flat config, `@eslint/js` recommended, `globals.browser` for `wwwroot/js/`, `globals.node` for `scripts/`; ignore `wwwroot/js/vendor/`, `dist/`)
+- [x] `npm run lint:css`: `.stylelintrc.json` (`stylelint-config-standard`; `stylelint-declaration-strict-value` for colours outside `css/base.css`; rules matched to the existing CSS conventions)
+- [x] `npm run lint:html`: `.htmlvalidate.json`, validates `dist/**/*.html` after a build; overlap with `checkHtmlRules` documented
+- [x] `npm run lint` runs all three; `.githooks/pre-commit` runs it after `npm run check`
+- [x] JSON schemas for `data/*.json` in `scripts/schemas/`, validated with `ajv` in `scripts/lib/data.mjs`; `$schema` references for editor support (combine with the localized data model in `language.md`, Phase M1)
+- [x] `npm run images`: `scripts/images.mjs` — `sharp` writes WebP next to raster originals and creates `assets/img/og-default.png` (1200×630, D25) from `favicon.svg`; `svgo` (`svgo.config.mjs`) optimises SVGs in `assets/img/`, `assets/icons/` and `favicon.svg`
+- [x] `npm run test:e2e`: `playwright.config.mjs` + `scripts/e2e/*.spec.mjs` against `npm run serve`: every page at 320/768/1280 px, no console errors, no external requests, no cookies/storage, visible keyboard focus
+- [x] `npm run lighthouse`: `lighthouserc.json` with local URLs, assertions ≥ 0.95 for accessibility and performance, `upload.target: "filesystem"`
+- [x] `.gitignore`: `test-results/`, `playwright-report/`, `.lighthouseci/`
+- [x] `.vscode/extensions.json`: recommend the ESLint, Stylelint and html-validate extensions
 
 ## Decisions
 
-All previously open decisions are resolved and recorded in [`todo.md`](todo.md):
-
 - **Hosting**: Apache at `dm7wb.de`, manual SFTP upload of `dist/` — see [Deployment](#deployment).
-- **Language**: German content and UI.
-- **Dark mode**: follow the system preference, no toggle.
 - **npm packages**: allowed for the build and tooling; the built site stays free of tracking, cookies and external services (D27).
 - **Tooling integration**: the installed packages are wired in via npm scripts and config files (see [Tooling Packages](#tooling-packages) and Phase 6); approved 2026-10-27.

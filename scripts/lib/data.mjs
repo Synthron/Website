@@ -1,51 +1,56 @@
-// Loading and validation of wwwroot/data/*.json.
+// Loading and validation of wwwroot/data/*.json. Structure is validated with
+// the JSON Schemas in scripts/schemas/ (ajv); file-system and cross-entry
+// checks stay here.
 
 import path from 'node:path';
-import { SRC, exists, fail, readJson, safeExternalUrl } from './util.mjs';
+import Ajv from 'ajv';
+import { ROOT, SRC, exists, fail, readJson, safeExternalUrl } from './util.mjs';
 
-// S40: the German UI strings rendered into pages and exposed to js/projects.js
-// via data-* attributes. Keys are the singular/plural count words and labels.
-const STRING_KEYS = ['countSingular', 'countPlural', 'withTag', 'tagFilterLabel', 'tagsLabel', 'all', 'noProjects', 'repo', 'demo'];
+const SCHEMA_DIR = path.join(ROOT, 'scripts', 'schemas');
+const ajv = new Ajv({ allErrors: true, verbose: true });
+const schemas = {};
+for (const name of ['site', 'strings', 'nav', 'projects']) {
+  schemas[name] = ajv.compile(await readJson(path.join(SCHEMA_DIR, `${name}.schema.json`)));
+}
 
-const REQUIRED_PROJECT_FIELDS = ['id', 'title', 'summary', 'tags', 'status', 'date', 'links', 'image', 'featured'];
+// D10: allowed status values, defined once in projects.schema.json. Values
+// contain spaces and capitals; slugify one before using it as a CSS class hook.
+export const STATUS_VALUES = schemas.projects.schema.items.properties.status.enum;
 
-// D10: allowed status values. Values contain spaces and capitals; slugify one
-// before using it as a CSS class hook.
-export const STATUS_VALUES = ['in Arbeit', 'fertig', 'pausiert', 'veraltet', 'Konzept', 'abgebrochen'];
+// "/0/links/repo" -> "[0].links.repo"
+const pointer = (instancePath) => instancePath.split('/').slice(1)
+  .map((part) => (/^\d+$/.test(part) ? `[${part}]` : `.${part}`)).join('');
 
-const LINK_KEYS = ['repo', 'demo'];
-const slugLike = (value) => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(value);
-
-// S13: image paths must resolve inside wwwroot/ — relative only, no ".." or "."
-// segments, no backslashes, no drive letters or leading slash.
-function insideWorkspace(value) {
-  if (typeof value !== 'string' || value === '' || value.startsWith('/') || value.includes('\\') || /^[a-zA-Z]:/.test(value)) {
-    return false;
+// Validates `data` against a schema; reports every error via fail() and returns
+// the set of top-level array indices with errors (empty for objects).
+function validate(name, rel, data) {
+  const invalid = new Set();
+  if (schemas[name](data)) return invalid;
+  for (const error of schemas[name].errors) {
+    // oneOf/anyOf report every failing branch; the summary error is enough.
+    if (/\/(oneOf|anyOf)\//.test(error.schemaPath)) continue;
+    let detail = error.message;
+    if (error.keyword === 'enum') detail += `: ${error.params.allowedValues.join(', ')}`;
+    if (error.keyword === 'additionalProperties') detail += ` "${error.params.additionalProperty}"`;
+    if (['oneOf', 'anyOf', 'pattern'].includes(error.keyword) && error.parentSchema?.description) {
+      detail += ` (${error.parentSchema.description})`;
+    }
+    fail(`${rel}${pointer(error.instancePath)}: ${detail}`);
+    const index = /^\/(\d+)/.exec(error.instancePath)?.[1];
+    if (index !== undefined) invalid.add(Number(index));
   }
-  return !value.split('/').some((segment) => segment === '..' || segment === '.');
+  return invalid;
 }
 
 export async function loadSite() {
   const site = await readJson(path.join(SRC, 'data/site.json'));
-  for (const key of ['lang', 'name', 'footerNote', 'email']) {
-    if (typeof site[key] !== 'string' || site[key] === '') fail(`data/site.json: "${key}" must be a non-empty string`);
-  }
-  if (site.copyrightYear !== undefined && !Number.isInteger(site.copyrightYear)) {
-    fail('data/site.json: "copyrightYear" must be an integer');
-  }
+  validate('site', 'data/site.json', site);
 
   // Canonical base URL for sitemap.xml and the robots.txt Sitemap line.
   let url = '';
-  if (typeof site.url !== 'string' || site.url === '') {
-    fail('data/site.json: "url" must be a non-empty string');
-  } else {
+  if (typeof site.url === 'string') {
     try {
-      const parsed = new URL(site.url);
-      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-        fail('data/site.json: "url" must be an http(s) URL');
-      } else {
-        url = parsed.href.replace(/\/+$/, '');
-      }
+      url = new URL(site.url).href.replace(/\/+$/, '');
     } catch {
       fail('data/site.json: "url" must be a valid absolute URL');
     }
@@ -67,93 +72,38 @@ export async function loadStrings() {
   if (typeof data !== 'object' || data === null || Array.isArray(data)) {
     throw new Error('data/strings.json: expected an object');
   }
-  for (const key of STRING_KEYS) {
-    if (typeof data[key] !== 'string' || data[key] === '') {
-      fail(`data/strings.json: "${key}" must be a non-empty string`);
-    }
-  }
-  return data;
+  validate('strings', 'data/strings.json', data);
+  const { $schema, ...strings } = data;
+  return strings;
 }
 
 export async function loadNav(file) {
   const rel = `data/${file}`;
   const data = await readJson(path.join(SRC, rel));
-  if (!Array.isArray(data) || data.length === 0) throw new Error(`${rel}: expected a non-empty array`);
-  const items = [];
-  for (const [index, item] of data.entries()) {
-    const label = `${rel}[${index}]`;
-    if (typeof item?.label !== 'string' || item.label.trim() === '') {
-      fail(`${label}: "label" must be a non-empty string`);
-      continue;
-    }
-    if (typeof item.href !== 'string' || item.href === '') {
-      fail(`${label}: "href" must be a non-empty string`);
-      continue;
-    }
-    const external = /^https?:\/\//i.test(item.href);
-    if (!external && /^([a-z][a-z0-9+.-]*:|\/|#)/i.test(item.href)) {
-      fail(`${label}: "href" must be a path relative to the web root or an http(s) URL`);
-      continue;
-    }
-    items.push({ label: item.label, href: item.href, external });
-  }
-  return items;
+  if (!Array.isArray(data)) throw new Error(`${rel}: expected a non-empty array`);
+  const invalid = validate('nav', rel, data);
+  return data
+    .filter((_, index) => !invalid.has(index))
+    .map((item) => ({ label: item.label, href: item.href, external: /^https?:\/\//i.test(item.href) }));
 }
 
 export async function loadProjects() {
   const data = await readJson(path.join(SRC, 'data/projects.json'));
   if (!Array.isArray(data)) throw new Error('data/projects.json: expected an array');
+  const invalid = validate('projects', 'data/projects.json', data);
   const seen = new Set();
   const projects = [];
 
   for (const [index, project] of data.entries()) {
+    if (invalid.has(index)) continue;
     const label = `data/projects.json[${index}]`;
-    const missing = REQUIRED_PROJECT_FIELDS.filter((key) => !(key in (project ?? {})));
-    if (missing.length > 0) {
-      fail(`${label}: missing field(s) ${missing.join(', ')}`);
-      continue;
-    }
-    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(project.id)) fail(`${label}: invalid id "${project.id}"`);
     if (seen.has(project.id)) fail(`${label}: duplicate id "${project.id}"`);
     seen.add(project.id);
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(project.date)) {
-      fail(`${label}: date must be YYYY-MM`);
-      continue;
-    }
-    for (const key of ['title', 'summary']) {
-      if (typeof project[key] !== 'string' || project[key].trim() === '') {
-        fail(`${label}: "${key}" must be a non-empty string`);
+    for (const key of ['repo', 'demo']) {
+      const value = project.links[key];
+      if (value !== null && value !== undefined && !safeExternalUrl(value)) {
+        fail(`${label}.links.${key}: must be null or a valid http(s) URL`);
       }
-    }
-    if (!STATUS_VALUES.includes(project.status)) {
-      fail(`${label}: "status" must be one of: ${STATUS_VALUES.join(', ')}`);
-    }
-    if (typeof project.featured !== 'boolean') fail(`${label}: "featured" must be a boolean`);
-    // S36: optional. Draft pages are still built but hidden from lists, the
-    // tag filter and sitemap.xml.
-    if (project.draft !== undefined && typeof project.draft !== 'boolean') {
-      fail(`${label}: "draft" must be a boolean`);
-    }
-    if (typeof project.links !== 'object' || project.links === null || Array.isArray(project.links)) {
-      fail(`${label}: "links" must be an object with "repo"/"demo" as string | null`);
-    } else {
-      for (const key of LINK_KEYS) {
-        if (project.links[key] !== null && project.links[key] !== undefined && !safeExternalUrl(project.links[key])) {
-          fail(`${label}: "links.${key}" must be null or a valid http(s) URL`);
-        }
-      }
-    }
-    if (!Array.isArray(project.tags)) {
-      fail(`${label}: "tags" must be an array of strings`);
-      continue;
-    }
-    for (const tag of project.tags) {
-      if (typeof tag !== 'string' || !slugLike(tag)) fail(`${label}: invalid tag "${tag}" (lowercase, hyphenated)`);
-    }
-    if (new Set(project.tags).size !== project.tags.length) fail(`${label}: duplicate tags`);
-    if (!insideWorkspace(project.image)) {
-      fail(`${label}: "image" must stay within wwwroot/ (no "../" or absolute path): ${project.image}`);
-      continue;
     }
     if (!await exists(path.join(SRC, project.image))) fail(`${label}: image not found: ${project.image}`);
     if (!await exists(path.join(SRC, 'html', 'proj', `${project.id}.html`))) {

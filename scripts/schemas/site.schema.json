@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "site.schema.json",
+  "title": "wwwroot/data/site.json",
+  "description": "Shared site info. See README -> Site Config.",
+  "type": "object",
+  "required": ["lang", "name", "url", "footerNote", "email"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "lang": { "type": "string", "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]+)*$" },
+    "name": { "type": "string", "minLength": 1 },
+    "url": { "description": "Canonical base URL (http/https).", "type": "string", "pattern": "^https?://\\S+$" },
+    "copyrightYear": { "type": "integer" },
+    "footerNote": { "type": "string", "minLength": 1 },
+    "email": { "type": "string", "pattern": "^[^@\\s]+@[^@\\s]+$" }
+  }
+}

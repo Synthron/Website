@@ -14,7 +14,6 @@ const HTML_DIR = path.join(ROOT, 'wwwroot', 'html');
 const NAV_FILE = path.join(ROOT, 'wwwroot', 'data', 'nav.json');
 const FOOTER_NAV_FILE = path.join(ROOT, 'wwwroot', 'data', 'footer-nav.json');
 
-const URL_RE = /^https?:\/\//i;
 const exists = (file) => access(file).then(() => true, () => false);
 
 // D21 minimal template: shared head (CSP, title/description with {{name}},

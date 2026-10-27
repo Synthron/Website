@@ -1,5 +1,8 @@
 {
   "recommendations": [
-    "EditorConfig.EditorConfig"
+    "EditorConfig.EditorConfig",
+    "dbaeumer.vscode-eslint",
+    "stylelint.vscode-stylelint",
+    "html-validate.vscode-html-validate"
   ]
 }
