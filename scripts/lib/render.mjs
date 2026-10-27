@@ -1,7 +1,6 @@
 // HTML/XML renderers for directives and generated files. All data is escaped.
 // UI labels come from data/strings.json (S40); dates use the site language.
 
-import path from 'node:path';
 import { esc, formatDate, safeExternalUrl } from './util.mjs';
 
 const LINK_LABELS = [['repo', 'repo'], ['demo', 'demo']];
@@ -52,7 +51,7 @@ export function renderProjectHeader(project, ctx, strings) {
     '<header class="page-header">',
     `<h1>${esc(project.title)}</h1>`,
     `<p class="page-header__lead">${esc(project.summary)}</p>`,
-    renderMeta(project, ctx.site.lang),
+    renderMeta(project, ctx.lang),
     renderTags(project.tags, strings),
     renderLinks(project, ctx.root, strings),
     '</header>',
@@ -110,16 +109,27 @@ export const ogImageRel = (project) => (project && /\.(png|jpe?g|webp)$/i.test(p
 // S64: canonical + Open Graph tags. Title and description are read back from
 // the rendered page so they match what the page shows; og:image (added by the
 // build once the file exists) is cache-busted like any local asset.
-export function renderOpenGraph(rel, html, site, imageUrl) {
+// `versions` lists every available language version of the page ({ lang, rel },
+// including the page itself); with two or more, hreflang alternates and
+// og:locale:alternate are added, x-default points to the root.
+export function renderOpenGraph(rel, html, site, imageUrl, { lang = site.defaultLang, versions = [] } = {}) {
   const pageUrl = `${site.url}/${rel === 'index.html' ? '' : rel}`;
+  const localeOf = (code) => site.languages.find((language) => language.code === code)?.locale ?? code;
   const text = (value) => (value ?? '')
     .replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"');
   const title = text(/<title>([^<]*)<\/title>/i.exec(html)?.[1]) || site.name;
   const description = text(/<meta[^>]+name="description"[^>]*content="([^"]*)"/i.exec(html)?.[1]);
+  const others = versions.filter((version) => version.lang !== lang);
+  const alternates = others.length === 0 ? [] : [
+    ...versions.map((version) => `<link rel="alternate" hreflang="${esc(version.lang)}" href="${esc(`${site.url}/${version.rel}`)}">`),
+    `<link rel="alternate" hreflang="x-default" href="${esc(`${site.url}/`)}">`,
+  ];
   const tags = [
     `<link rel="canonical" href="${esc(pageUrl)}">`,
+    ...alternates,
     '<meta property="og:type" content="website">',
-    `<meta property="og:locale" content="${esc(site.lang === 'de' ? 'de_DE' : site.lang)}">`,
+    `<meta property="og:locale" content="${esc(localeOf(lang))}">`,
+    ...others.map((version) => `<meta property="og:locale:alternate" content="${esc(localeOf(version.lang))}">`),
     `<meta property="og:site_name" content="${esc(site.name)}">`,
     `<meta property="og:title" content="${esc(title)}">`,
   ];
@@ -129,11 +139,13 @@ export function renderOpenGraph(rel, html, site, imageUrl) {
   return `  ${tags.join('\n  ')}\n`;
 }
 
-export function renderSitemap(pages, baseUrl, byId, lastmodByRel = new Map()) {
+// `projectByRel`: page path -> localized project for project pages. Pages that
+// are not built (projects hidden in a language) never reach this list.
+export function renderSitemap(pages, baseUrl, projectByRel, lastmodByRel = new Map()) {
   const entries = [];
   for (const [rel] of pages) {
     if (rel === '404.html') continue;
-    const project = rel.startsWith('html/proj/') ? byId.get(path.posix.basename(rel, '.html')) : undefined;
+    const project = projectByRel.get(rel);
     if (project?.draft) continue;
     const loc = rel === 'index.html' ? `${baseUrl}/` : `${baseUrl}/${rel}`;
     const lines = [`    <loc>${loc}</loc>`];

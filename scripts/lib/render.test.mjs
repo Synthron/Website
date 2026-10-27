@@ -39,9 +39,9 @@ test('renderNav handles the footer variant classes', () => {
 
 // --- renderSitemap -----------------------------------------------------------
 
-const byId = new Map([
-  ['sy317', { id: 'sy317', date: '2026-05' }],
-  ['draft-proj', { id: 'draft-proj', date: '2026-06', draft: true }],
+const projectByRel = new Map([
+  ['html/proj/sy317.html', { id: 'sy317', date: '2026-05' }],
+  ['html/proj/draft-proj.html', { id: 'draft-proj', date: '2026-06', draft: true }],
 ]);
 
 const pages = [
@@ -54,7 +54,7 @@ const pages = [
 
 test('renderSitemap maps pages, lastmod for projects and git pages, skips 404 and drafts', () => {
   const lastmodByRel = new Map([['html/projects.html', '2026-09-01'], ['index.html', '2026-09-02']]);
-  const xml = renderSitemap(pages, 'https://dm7wb.de', byId, lastmodByRel);
+  const xml = renderSitemap(pages, 'https://dm7wb.de', projectByRel, lastmodByRel);
   assert.match(xml, /<loc>https:\/\/dm7wb.de\/<\/loc>/);
   assert.match(xml, /<loc>https:\/\/dm7wb.de\/html\/projects\.html<\/loc>/);
   assert.match(xml, /<loc>https:\/\/dm7wb.de\/html\/proj\/sy317\.html<\/loc>/);
@@ -67,7 +67,12 @@ test('renderSitemap maps pages, lastmod for projects and git pages, skips 404 an
 
 // --- Open Graph / canonical (S64) --------------------------------------------
 
-const SITE = { url: 'https://dm7wb.de', name: 'DM7WB', lang: 'de' };
+const SITE = {
+  url: 'https://dm7wb.de',
+  name: 'DM7WB',
+  defaultLang: 'de',
+  languages: [{ code: 'de', locale: 'de_DE' }, { code: 'en', locale: 'en_GB' }],
+};
 
 test('ogImageRel picks raster project images and falls back to the default PNG', () => {
   assert.equal(ogImageRel({ image: 'assets/img/sy317_pic.webp' }), 'assets/img/sy317_pic.webp');
@@ -93,4 +98,19 @@ test('renderOpenGraph falls back to the site name and omits og:image when empty'
   assert.match(og, /<meta property="og:title" content="DM7WB">/);
   assert.match(og, /<link rel="canonical" href="https:\/\/dm7wb\.de\/">/);
   assert.doesNotMatch(og, /og:image/);
+});
+
+test('renderOpenGraph emits no alternates for a single language version', () => {
+  const og = renderOpenGraph('de/about.html', '<title>A</title>', SITE, '', { lang: 'de', versions: [{ lang: 'de', rel: 'de/about.html' }] });
+  assert.doesNotMatch(og, /hreflang|og:locale:alternate/);
+});
+
+test('renderOpenGraph emits hreflang alternates, x-default and the page locale', () => {
+  const versions = [{ lang: 'de', rel: 'de/ueber-mich.html' }, { lang: 'en', rel: 'en/about.html' }];
+  const og = renderOpenGraph('en/about.html', '<title>A</title>', SITE, '', { lang: 'en', versions });
+  assert.match(og, /<link rel="alternate" hreflang="de" href="https:\/\/dm7wb\.de\/de\/ueber-mich\.html">/);
+  assert.match(og, /<link rel="alternate" hreflang="en" href="https:\/\/dm7wb\.de\/en\/about\.html">/);
+  assert.match(og, /<link rel="alternate" hreflang="x-default" href="https:\/\/dm7wb\.de\/">/);
+  assert.match(og, /<meta property="og:locale" content="en_GB">/);
+  assert.match(og, /<meta property="og:locale:alternate" content="de_DE">/);
 });

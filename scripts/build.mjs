@@ -9,7 +9,7 @@ import { DIST, ROOT, SRC, errors, exists, gitLastModified, posix, shortHash, wal
 import { loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
 import { ogImageRel, renderOpenGraph, renderSitemap } from './lib/render.mjs';
 import {
-  applyCacheBusting, applyDirectives, applyIncludes, applyTokens, isFlasherPage,
+  applyCacheBusting, applyDirectives, applyIncludes, applyTokens, classifyPage, isFlasherPage,
   protectRaw, restoreRaw, versionCssUrls, versionJsImports,
 } from './lib/pipeline.mjs';
 import {
@@ -18,7 +18,7 @@ import {
 } from './lib/checks.mjs';
 
 // Source-only folders/files that are not copied to dist/.
-const SKIP_DIRS = new Set(['partials', 'data']);
+const SKIP_DIRS = new Set(['partials', 'data', 'templates']);
 const SKIP_FILES = new Set(['project-template.html', '.gitkeep']);
 // Whole sub-trees that are not copied to dist/ (checked by path prefix).
 const SKIP_PATHS = ['assets/firmware/dummy'];
@@ -61,20 +61,29 @@ async function computeVersions(files) {
   return { versions, outputs };
 }
 
+// Until the pages move to <lang>/ (M50) the default language lives in html/.
+const legacyPageDir = (defaultLang) => (code) => (code === defaultLang ? 'html' : code);
+
 async function build({ check = false } = {}) {
-  // Transitional (M2/M50 pending): the pipeline is still single-language and
-  // the pages still live in html/, so only the default language is used.
-  const loaded = await loadSite();
-  const lang = loaded.defaultLang;
-  const site = { ...loaded, lang, footerNote: loaded.footerNote[lang] ?? '' };
-  const pageIndex = await loadPages(loaded, { pageDir: () => 'html' });
-  const nav = (await loadNav('nav.json', loaded))[lang] ?? [];
-  const footerNav = (await loadNav('footer-nav.json', loaded))[lang] ?? [];
-  const projects = (await loadProjects(loaded, pageIndex)).map((project) => localize(project, lang)).filter(Boolean);
-  // The UI labels (S40); `lang` is merged in for formatDate().
-  const strings = { ...(await loadStrings(loaded))[lang], lang };
+  const site = await loadSite();
+  const { defaultLang } = site;
+  const pageDir = legacyPageDir(defaultLang);
+  const pageIndex = await loadPages(site, { pageDir });
+  const allProjects = await loadProjects(site, pageIndex);
+  const navs = await loadNav('nav.json', site);
+  const footerNavs = await loadNav('footer-nav.json', site);
+  const stringsByLang = await loadStrings(site);
+  // Everything a page needs in its own language; `lang` is merged into the
+  // strings for formatDate().
+  const perLang = Object.fromEntries(site.languages.map(({ code }) => [code, {
+    projects: allProjects.map((project) => localize(project, code)).filter(Boolean),
+    nav: navs[code] ?? [],
+    footerNav: footerNavs[code] ?? [],
+    strings: { ...stringsByLang[code], lang: code },
+  }]));
   await checkFirmwareManifests();
-  const byId = new Map(projects.map((project) => [project.id, project]));
+  const byId = new Map(allProjects.map((project) => [project.id, project]));
+  const projectByRel = new Map(); // page path -> localized project
 
   const partials = {};
   for (const file of await walk(path.join(SRC, 'partials'))) {
@@ -104,15 +113,31 @@ async function build({ check = false } = {}) {
       continue;
     }
 
+    const root = rel === '404.html' ? '/' : '../'.repeat(rel.split('/').length - 1);
+    const source = await readFile(from, 'utf8');
+    const page = classifyPage(rel, source, root, site, pageDir);
+    const { lang } = page;
+    const projectId = page.pagePath?.startsWith('proj/') ? pageIndex.projectId(lang, page.pagePath) : undefined;
+    const rawProject = projectId === undefined ? undefined : byId.get(projectId);
+    const project = rawProject ? localize(rawProject, lang) ?? undefined : undefined;
+    // A project page whose project is hidden in this language (TODO or missing
+    // data, already warned about by the loader) is not built.
+    if (projectId !== undefined && !project && lang !== defaultLang) continue;
+
     const ctx = {
       rel,
       site,
+      lang,
+      langRoot: page.langRoot,
+      isCommon: page.isCommon,
+      strings: stringsByLang[lang],
       // The 404 page can be served at any path, so its links must be root-relative.
-      root: rel === '404.html' ? '/' : '../'.repeat(rel.split('/').length - 1),
-      project: rel.startsWith('html/') ? byId.get(path.posix.basename(rel, '.html')) : undefined,
+      root,
+      project,
     };
+    const { projects, nav, footerNav, strings } = perLang[lang];
     const raw = [];
-    let output = protectRaw(await readFile(from, 'utf8'), raw, rel);
+    let output = protectRaw(source, raw, rel);
     // Second pass protects raw blocks that came in through partials.
     output = protectRaw(applyIncludes(output, partials, rel), raw, rel);
     ctx.flasher = isFlasherPage(output);
@@ -134,8 +159,13 @@ async function build({ check = false } = {}) {
         warnedOgImages.add(imageRel);
         warn(`S64: Open Graph image missing: wwwroot/${imageRel} (create the 1200×630 default PNG with the logo in GIMP — D25)`);
       }
-      output = output.replace('</head>', renderOpenGraph(rel, output, site, imageUrl) + '</head>');
+      // Available language versions of this page; hidden projects get none.
+      const langVersions = page.pagePath === undefined ? [] : [...pageIndex.counterparts(lang, page.pagePath)]
+        .filter(([code]) => projectId === undefined || (rawProject && Object.hasOwn(rawProject.title, code)))
+        .map(([code, file]) => ({ lang: code, rel: `${pageDir(code)}/${file}` }));
+      output = output.replace('</head>', renderOpenGraph(rel, output, site, imageUrl, { lang, versions: langVersions }) + '</head>');
     }
+    if (project) projectByRel.set(rel, project);
     if (!check) {
       await mkdir(path.dirname(to), { recursive: true });
       await writeFile(to, output);
@@ -161,11 +191,11 @@ async function build({ check = false } = {}) {
     // file (D24); omitted when git is unavailable or the file is untracked.
     const lastmodByRel = new Map();
     for (const [rel] of pages) {
-      if (rel === '404.html' || rel.startsWith('html/proj/')) continue;
+      if (rel === '404.html' || projectByRel.has(rel)) continue;
       const lastmod = await gitLastModified(rel);
       if (lastmod) lastmodByRel.set(rel, lastmod);
     }
-    await writeFile(path.join(DIST, 'sitemap.xml'), renderSitemap(pages, site.url, byId, lastmodByRel));
+    await writeFile(path.join(DIST, 'sitemap.xml'), renderSitemap(pages, site.url, projectByRel, lastmodByRel));
   }
   return pages.length;
 }

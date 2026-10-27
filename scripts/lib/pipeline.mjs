@@ -27,6 +27,29 @@ const CSP_FLASHER = `${CSP}; style-src 'self' 'unsafe-inline'`;
 
 export const isFlasherPage = (html) => /<esp-web-install-button\b/.test(html);
 
+// Language of a page. Language pages live in their language folder
+// (`pageDir(code)`), common pages are root pages whose source carries a literal
+// `<html lang="xx">`. Root pages still using `{{lang}}` are legacy default-
+// language pages (until the landing page and 404 are rewritten). `langRoot` is
+// the relative path from the page to its language folder (the root for common
+// and legacy pages); `pagePath` is the path inside the language folder.
+export function classifyPage(rel, source, root, site, pageDir) {
+  const folder = site.languages.find(({ code }) => rel.startsWith(`${pageDir(code)}/`));
+  if (folder) {
+    const pagePath = rel.slice(pageDir(folder.code).length + 1);
+    return { lang: folder.code, isCommon: false, langRoot: '../'.repeat(pagePath.split('/').length - 1), pagePath };
+  }
+  const literal = rel.includes('/') ? undefined : /<html\b[^>]*\blang="([^"]*)"/i.exec(source)?.[1];
+  if (literal !== undefined && !/[{}]/.test(literal)) {
+    if (!site.languages.some(({ code }) => code === literal)) {
+      fail(`wwwroot/${rel}: <html lang="${literal}"> is not a configured language`);
+      return { lang: site.defaultLang, isCommon: true, langRoot: root, pagePath: undefined };
+    }
+    return { lang: literal, isCommon: true, langRoot: root, pagePath: undefined };
+  }
+  return { lang: site.defaultLang, isCommon: false, langRoot: root, pagePath: undefined };
+}
+
 export function applyIncludes(html, partials, rel) {
   return html.replace(/<!--\s*@include\s+([\w-]+)\s*-->/g, (match, name, offset) => {
     if (!(name in partials)) {
@@ -39,11 +62,20 @@ export function applyIncludes(html, partials, rel) {
 
 export function applyTokens(text, ctx) {
   return text.replace(/\{\{\s*([\w:]+)\s*\}\}/g, (match, key, offset) => {
+    if (key.startsWith('t:')) {
+      const value = ctx.strings?.[key.slice(2)];
+      if (typeof value !== 'string') {
+        fail(`${ref(ctx.rel, text, offset)}: unknown UI string ${match} for language "${ctx.lang}"`);
+        return '';
+      }
+      return esc(value);
+    }
     const values = {
-      lang: ctx.site.lang,
+      lang: ctx.lang,
+      langRoot: ctx.langRoot,
       name: ctx.site.name,
       year: ctx.site.year,
-      footerNote: ctx.site.footerNote,
+      footerNote: ctx.site.footerNote[ctx.lang],
       email: ctx.site.email,
       url: ctx.site.url,
       sitemapUrl: ctx.site.sitemapUrl,
@@ -65,13 +97,14 @@ export function applyDirectives(html, ctx, projects, nav, footerNav, strings) {
     const args = rawArgs.trim().split(/\s+/).filter(Boolean);
     switch (name) {
       case 'nav':
-        return renderNav(nav, ctx);
+        // Common pages show only the brand (and the language selector).
+        return ctx.isCommon ? '' : renderNav(nav, ctx);
       case 'footer-nav':
         return renderNav(footerNav, ctx, { list: 'site-footer__list', link: 'site-footer__link' });
       case 'projects':
         return renderProjectList(projects, args, ctx, strings);
       case 'tag-filter':
-        return renderTagFilter(projects, args, ctx.site.lang, strings);
+        return renderTagFilter(projects, args, ctx.lang, strings);
       case 'project-header':
         if (!ctx.project) {
           fail(`${ref(ctx.rel, html, offset)}: @project-header needs a project with id "${path.basename(ctx.rel, '.html')}"`);

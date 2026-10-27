@@ -201,11 +201,14 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | --- | --- |
 | `<!-- @include head -->` / `<!-- @include header -->` / `<!-- @include footer -->` | Inserts `partials/head.html` / `partials/header.html` / `partials/footer.html` (any file in `partials/` works by its name). |
 | `{{csp}}` | Content Security Policy for the page. Pages containing `<esp-web-install-button>` automatically get `style-src 'self' 'unsafe-inline'` added. Used in `partials/head.html`. |
-| `{{lang}}` | Page language code from `data/site.json` (`lang`), used in `<html lang="{{lang}}">`. |
-| `{{name}}`, `{{year}}`, `{{footerNote}}`, `{{email}}` | Values from `data/site.json`. |
+| `{{lang}}` | Language of the current page: the language folder; on common root pages the literal `<html lang="…">` of the source. Root pages that still use `<html lang="{{lang}}">` count as default-language pages (transitional). |
+| `{{langRoot}}` | Relative path from the page to its language folder (`""` for pages directly in it, `"../"` one level deeper); equals `{{root}}` on common and transitional root pages. |
+| `{{t:key}}` | UI string `key` of the page language from `data/strings.json` (HTML-escaped; unknown or non-text keys fail the build). |
+| `{{name}}`, `{{year}}`, `{{email}}` | Values from `data/site.json`. |
+| `{{footerNote}}` | `footerNote` of the page language from `data/site.json`. |
 | `{{url}}`, `{{sitemapUrl}}` | Canonical base URL and `https://…/sitemap.xml` from `data/site.json` (`url`). Used by `robots.txt`. |
 | `{{root}}` | Relative path to the web root (`""` for root pages, `"../"` for pages in `html/`). |
-| `<!-- @nav -->` | Nav list built from `data/nav.json`; sets `aria-current="page"` on the entry whose `href` is the current page. Used in `partials/header.html`. |
+| `<!-- @nav -->` | Nav list built from `data/nav.json` for the page language; sets `aria-current="page"` on the entry whose `href` is the current page. Renders nothing on common pages (brand only). Used in `partials/header.html`. |
 | `<!-- @footer-nav -->` | Footer nav list built from `data/footer-nav.json`; same `aria-current="page"` handling as `@nav`. Used in `partials/footer.html`. |
 | `{{projectTitle}}`, `{{projectSummary}}` | Title/summary of the project whose `id` equals the page filename (`html/proj/{id}.html`). |
 | `<!-- @project-header -->` | Project page header (h1, summary, status/date, tags, links) from `data/projects.json`. |

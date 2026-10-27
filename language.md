@@ -261,16 +261,16 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 
 ### Phase M2 — Build pipeline (`scripts/build.mjs`, `scripts/lib/pipeline.mjs`)
 
-- [ ] **M20** Classify every HTML file: language page (`<lang>/…`, first path segment is a configured code) or common page (`index.html`, `404.html`). Language pages take `lang` from the folder; common pages from the literal `<html lang="…">` in the source (landing `de`, 404 `en`; L5, L27). Put `lang`, `langRoot` and `isCommon` into `ctx`.
-- [ ] **M21** Project lookup: `ctx.project` for `rel` under `<lang>/proj/`, resolved to the `id` via the page index (mapped name → `de/proj/{id}.html`, otherwise the file name), localized for `ctx.lang` (replaces `rel.startsWith('html/')`).
-- [ ] **M22** `applyTokens`: `{{lang}}` from `ctx.lang`; new `{{langRoot}}`, `{{t:key}}` (fail on unknown key); `footerNote`, `projectTitle`, `projectSummary` per language.
-- [ ] **M23** `applyDirectives`: pass per-language `nav`, `footerNav`, `strings` and the localized project list; add `@lang-switch`. On common pages `@nav` renders nothing (brand + selector only, L27) and the footer uses the page language.
-- [ ] **M24** Skip list: add `templates` to `SKIP_DIRS` (never built, never deployed, L19); drop `project-template.html` from `SKIP_FILES`.
-- [ ] **M25** Head alternates: inject `<link rel="alternate" hreflang>` for available translations + `x-default` → `${url}/`, together with the OG tags; hidden projects (L12) get no alternate.
-- [ ] **M26** Open Graph: `og:locale` from the language config (`en_GB`, L25); `og:locale:alternate` for available translations; canonical/`og:url` unchanged (path already contains the language).
-- [ ] **M27** `formatDate()` called with the page language.
-- [ ] **M28** Sitemap: replace the `html/proj/` detection with `<lang>/proj/`; include every language page; exclude projects hidden in a language (L12); no `xhtml:link` alternates (L21).
-- [ ] **M29** Optional pure-refactor check: after M10–M28 with `languages: ["de"]` and the files still in `html/`, compare `dist/` with the previous build — only intended differences allowed (AGENTS.md → Refactor the build).
+- [x] **M20** Classify every HTML file: language page (`<lang>/…`, first path segment is a configured code) or common page (`index.html`, `404.html`). Language pages take `lang` from the folder; common pages from the literal `<html lang="…">` in the source (landing `de`, 404 `en`; L5, L27). Put `lang`, `langRoot` and `isCommon` into `ctx`.
+- [x] **M21** Project lookup: `ctx.project` for `rel` under `<lang>/proj/`, resolved to the `id` via the page index (mapped name → `de/proj/{id}.html`, otherwise the file name), localized for `ctx.lang` (replaces `rel.startsWith('html/')`).
+- [x] **M22** `applyTokens`: `{{lang}}` from `ctx.lang`; new `{{langRoot}}`, `{{t:key}}` (fail on unknown key); `footerNote`, `projectTitle`, `projectSummary` per language.
+- [ ] **M23** (open: `@lang-switch` comes with M31) `applyDirectives`: pass per-language `nav`, `footerNav`, `strings` and the localized project list; add `@lang-switch`. On common pages `@nav` renders nothing (brand + selector only, L27) and the footer uses the page language.
+- [ ] **M24** (done: `templates` in `SKIP_DIRS`; open: drop `SKIP_FILES` entry with M57) Skip list: add `templates` to `SKIP_DIRS` (never built, never deployed, L19); drop `project-template.html` from `SKIP_FILES`.
+- [x] **M25** Head alternates: inject `<link rel="alternate" hreflang>` for available translations + `x-default` → `${url}/`, together with the OG tags; hidden projects (L12) get no alternate.
+- [x] **M26** Open Graph: `og:locale` from the language config (`en_GB`, L25); `og:locale:alternate` for available translations; canonical/`og:url` unchanged (path already contains the language).
+- [x] **M27** `formatDate()` called with the page language.
+- [x] **M28** Sitemap: replace the `html/proj/` detection with `<lang>/proj/`; include every language page; exclude projects hidden in a language (L12); no `xhtml:link` alternates (L21).
+- [x] **M29** Optional pure-refactor check: after M10–M28 with `languages: ["de"]` and the files still in `html/`, compare `dist/` with the previous build — only intended differences allowed (AGENTS.md → Refactor the build).
 
 ### Phase M3 — Renderers (`scripts/lib/render.mjs`)
 
