@@ -62,3 +62,7 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 - ~~**S50** GitHub Actions workflow.~~ Dropped (D16: no CI); the pre-commit hook is the safety net.
 - ~~**S68** `npm run package`.~~ Dropped (D7: manual SFTP upload of the folder needs no archive).
 - ~~**S72** Merge `todo.md` into README or add it to the outline.~~ Dropped (D17: kept outside the outline, deleted by the user).
+
+### for npm
+
+- **User** install browser for playwright: `npx playwright install chromium`

@@ -48,6 +48,10 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | `scripts/report.mjs` | `npm run report` | Prints a `dist/` size report: total, largest files, non-WebP raster images, unused assets. |
 | `scripts/check-external.mjs` | `npm run check:external` | Manual HEAD checks of external links (never part of `build`). |
 | `scripts/serve.mjs` | `npm run serve` | Local preview of `dist/` only (`PORT`/`HOST` overrides; mirrors the production security headers and `Cache-Control: no-store`). |
+| `scripts/images.mjs` (planned) | `npm run images` | `sharp` / `svgo` image processing (see Tooling Packages). |
+| `scripts/schemas/` (planned) | JSON Schemas for `data/*.json` | Used by `scripts/lib/data.mjs` via `ajv`. |
+| `scripts/e2e/` (planned) | Playwright specs (`*.spec.mjs`) | Never name them `*.test.mjs` (`npm test` would run them). |
+| Root config files (planned) | `eslint.config.js`, `.stylelintrc.json`, `.htmlvalidate.json`, `svgo.config.mjs`, `playwright.config.mjs`, `lighthouserc.json` | One per tool; ignore protected and generated paths. |
 | `wwwroot/index.html` | Home page | Only page-level layout and section structure. No inline styles or scripts. |
 | `wwwroot/404.html` | Not-found page | Served at any path, so the build uses root-relative links (`{{root}}` = `/`). |
 | `wwwroot/favicon.svg` | Logo favicon, also used as header brand icon | Keep it small (simplified trace). |
@@ -76,6 +80,19 @@ Commands: `npm install` (once after cloning and whenever `package.json` changes)
 - Browser scripts must not fetch content; everything is pre-rendered.
 - If you add a token, directive or check, document it in `README.md` in the same change.
 
+## Tooling Packages
+
+The `devDependencies`, their jobs, planned scripts and config files are listed in [README → Tooling Packages](README.md#tooling-packages). Wiring them in is approved and tracked in README → Phase 6.
+
+- Use the installed package for its job instead of hand-written code: `ajv` for data validation, `html-validate` for HTML rules, `eslint` / `stylelint` for JS/CSS rules, `sharp` for raster images, `svgo` for SVGs, `@playwright/test` for browser checks, `@lhci/cli` for Lighthouse.
+- Run every tool through an npm script (`lint`, `lint:js`, `lint:css`, `lint:html`, `images`, `test:e2e`, `lighthouse`) with its config file in the repository root. Document new scripts and files in the README in the same change.
+- Lint, never mass-fix: no `--fix` and no formatter over existing files without user approval. Fix findings by hand in the files you touch. If a rule flags many existing files, report it and ask whether to adjust the rule or fix the files.
+- Exclude protected and generated paths from every tool: `wwwroot/js/vendor/`, `wwwroot/assets/firmware/`, `node_modules/`, `dist/` (only `html-validate` reads the built pages in `dist/`).
+- `npm run build` and `npm run check` stay fast and offline; only `ajv` runs inside them. Playwright and Lighthouse run on demand against `npm run serve`, never inside `build` or `check`.
+- Images: `sharp` writes new files next to the original and never deletes or overwrites originals; `svgo` optimises SVGs in place (git keeps the previous version). The page keeps its `alt` text; switch references to the WebP in the same change.
+- No external services: Lighthouse CI uses `upload.target: "filesystem"` only; Playwright tests run against `localhost` and fail on any external request.
+- New package: `npm i -D <name>` (PowerShell: `npm i -D '@scope/name'`), then add it to the README table. Nothing from a package may reach `dist/` or the browser runtime.
+
 ## Common Tasks
 
 | Task | Steps |
@@ -85,6 +102,8 @@ Commands: `npm install` (once after cloning and whenever `package.json` changes)
 | Add a page | Copy the head/include structure of an existing page in `html/` → add an entry to `data/nav.json` or `data/footer-nav.json` if it should be linked → add it to the README outline → `npm run build`. |
 | Add a firmware suite | Create `assets/firmware/<suite>/` with `manifest.json` and the binaries from the user (see README → Firmware / Web Flasher for offsets) → add `<esp-web-install-button manifest="{{root}}assets/firmware/<suite>/manifest.json">` and the vendored script tag to the project page. The CSP exception is added automatically. |
 | Add a layout pattern | Append a numbered section to `project-template.html` → styles in `css/components.css` (breakpoints in `css/responsive.css`) → note it in README → Project Write-up Template. |
+| Add an image | Put the original (from the user) into `assets/img/` → `npm run images` (WebP / optimised SVG, once the script exists) → reference it with German `alt` text → `npm run build`. |
+| Add a tooling package | `npm i -D <name>` → npm script + root config file → README → Tooling Packages table → run it once and report the findings. |
 | Add a token or directive | Token: `applyTokens` in `scripts/lib/pipeline.mjs`. Directive: `applyDirectives` there, rendering in `scripts/lib/render.mjs`. Escape all inserted data with `esc()`. Document it in the README templating table. |
 | Refactor the build | Save `dist/` before, rebuild after and compare all files; a pure refactor must produce byte-identical output. |
 
@@ -140,24 +159,26 @@ Commands: `npm install` (once after cloning and whenever `package.json` changes)
 ## Verification
 
 1. `npm run build` must exit 0. Fix every reported error.
-2. Run `npm run check` and `npm test` (both exist).
-3. For page or style changes: `npm run serve` (port 8000, `PORT` overrides), open the affected pages at 320px, 768px and 1280px width.
-4. Browser DevTools: no console errors, no external requests in the Network tab, no cookies or storage entries.
+2. Run `npm run check` and `npm test` (both exist), plus `npm run lint` once it exists.
+3. For page or style changes: `npm run test:e2e` once it exists. Until then: `npm run serve` (port 8000, `PORT` overrides), open the affected pages at 320px, 768px and 1280px width.
+4. Browser DevTools (or `npm run test:e2e`): no console errors, no external requests in the Network tab, no cookies or storage entries.
 5. For build refactors: compare `dist/` before and after (see Common Tasks).
+6. Before a release: `npm run lighthouse` (accessibility and performance ≥ 95).
 
 ## Windows / PowerShell Notes
 
 The main development machine runs Windows with PowerShell 5.1.
 
 - Chain commands with `;`, not `&&` (`&&` inside npm scripts is fine).
+- Quote scoped npm package names: `npm i -D '@eslint/js'`. A bare `@name` is PowerShell splatting and silently drops the argument.
 - `Get-Content` without `-Encoding UTF8` shows UTF-8 umlauts as mojibake (`Ã¼`). That is a display issue, not a broken file; do not "fix" files based on it.
 - Never write or edit files with `>`, `Out-File` or `Set-Content` (they change encoding and line endings); use the editor tools.
 - Git may check files out with CRLF (`core.autocrlf`). Do not convert line endings of files you did not change.
 
 ## Definition of Done
 
-- `npm run build` passes (plus `npm run check` / `npm test` once available).
-- HTML rules are enforced by the build where checks exist; a manual check with the W3C validator (validator.w3.org/nu) is done occasionally, e.g. before a release, not for every change.
+- `npm run build` passes (plus `npm run check` / `npm test`, and `npm run lint` / `npm run test:e2e` once available).
+- HTML rules are enforced by the build checks and `npm run lint:html` (`html-validate`) where available; a manual check with the W3C validator (validator.w3.org/nu) is done occasionally, e.g. before a release, not for every change.
 - No console errors in the browser.
 - No external network requests and no cookies set.
 - Keyboard navigable; visible focus styles.
@@ -170,5 +191,6 @@ The main development machine runs Windows with PowerShell 5.1.
 - Do not add tracking, analytics, or consent banners (there are no cookies to consent to).
 - Do not replace the system font stack with custom or web fonts.
 - Do not extend the build pipeline beyond its documented scope without user approval. npm packages for tooling are allowed, but nothing they produce may add tracking, cookies or external requests to `dist/`.
+- Do not run `--fix`, formatters or bulk image conversions over existing files without user approval, and never upload test or Lighthouse reports to external services.
 - Do not edit files in `dist/` or any other protected file (see Protected Files).
 - Do not write long prose in code comments; keep comments short and technical.
