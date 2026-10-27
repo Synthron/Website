@@ -3,7 +3,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ogImageRel, renderNav, renderOpenGraph, renderSitemap } from './render.mjs';
+import { ogImageRel, renderCard, renderLangSwitch, renderLinks, renderMeta, renderNav, renderOpenGraph, renderSitemap } from './render.mjs';
 
 // --- renderNav --------------------------------------------------------------
 
@@ -13,28 +13,91 @@ const NAV = [
   { label: 'Beispiel', href: 'https://example.com', external: true },
 ];
 
+// Transitional layout: nav hrefs of the default language are rooted at the web root.
+const pageIndex = { base: (code) => (code === 'de' ? '' : `${code}/`), dir: (code) => (code === 'de' ? 'html' : code), projectPage: (code, id) => `proj/${id}.html` };
+const ctxFor = (rel, root, extra = {}) => ({ rel, root, lang: 'de', pages: pageIndex, ...extra });
+
 test('renderNav prefixes the web root and marks the current page', () => {
-  const html = renderNav(NAV, { rel: 'html/about.html', root: '../' });
+  const html = renderNav(NAV, ctxFor('html/about.html', '../'));
   assert.match(html, /href="\.\.\/index\.html"/);
   assert.match(html, /href="\.\.\/html\/about\.html" aria-current="page"/);
   assert.match(html, /href="\.\.\/html\/about\.html"[^>]*aria-current="page"/);
 });
 
 test('renderNav does not mark a non-current page', () => {
-  const html = renderNav(NAV, { rel: 'index.html', root: '' });
+  const html = renderNav(NAV, ctxFor('index.html', ''));
   assert.doesNotMatch(html, /href="\.\.\/html\/about\.html"/);
   assert.match(html, /href="html\/about\.html"/);
 });
 
 test('renderNav renders external links with rel=noopener noreferrer', () => {
-  const html = renderNav(NAV, { rel: 'index.html', root: '' });
+  const html = renderNav(NAV, ctxFor('index.html', ''));
   assert.match(html, /href="https:\/\/example\.com" rel="noopener noreferrer"/);
 });
 
 test('renderNav handles the footer variant classes', () => {
-  const html = renderNav(NAV, { rel: 'index.html', root: '' }, { list: 'site-footer__list', link: 'site-footer__link' });
+  const html = renderNav(NAV, ctxFor('index.html', ''), { list: 'site-footer__list', link: 'site-footer__link' });
   assert.match(html, /class="site-footer__list"/);
   assert.match(html, /class="site-footer__link"/);
+});
+
+test('renderNav prefixes the language folder and marks cross-language entries', () => {
+  const items = [{ label: 'About', href: 'about.html', external: false }, { label: 'Impressum (German)', href: 'impressum.html', external: false, lang: 'de' }];
+  const html = renderNav(items, ctxFor('en/about.html', '../', { lang: 'en' }));
+  assert.match(html, /href="\.\.\/en\/about\.html" aria-current="page"/);
+  assert.match(html, /href="\.\.\/impressum\.html" lang="de" hreflang="de"/);
+});
+
+// --- renderLangSwitch --------------------------------------------------------
+
+const MULTI = {
+  languages: [
+    { code: 'de', name: 'Deutsch', flag: 'assets/icons/flag-de.svg' },
+    { code: 'en', name: 'English', flag: 'assets/icons/flag-gb.svg' },
+  ],
+};
+const UI = { languageLabel: 'Sprache' };
+
+test('renderLangSwitch renders nothing for a single language', () => {
+  assert.equal(renderLangSwitch(ctxFor('index.html', ''), { languages: MULTI.languages.slice(0, 1) }, UI), '');
+});
+
+test('renderLangSwitch links the paired page, falls back to the home and marks the current language', () => {
+  const versions = [{ lang: 'de', rel: 'html/ueber-mich.html' }];
+  const html = renderLangSwitch(ctxFor('html/ueber-mich.html', '../', { versions }), MULTI, UI);
+  assert.match(html, /<nav class="lang-switch" aria-label="Sprache">/);
+  assert.match(html, /href="\.\.\/html\/ueber-mich\.html" lang="de" hreflang="de" aria-label="Deutsch" aria-current="true"/);
+  assert.match(html, /href="\.\.\/en\/index\.html" lang="en" hreflang="en" aria-label="English"><img[^>]+src="\.\.\/assets\/icons\/flag-gb\.svg" alt=""/);
+  assert.equal(html.match(/aria-current/g).length, 1);
+});
+
+test('renderLangSwitch marks no current language on common pages', () => {
+  const html = renderLangSwitch(ctxFor('index.html', '', { isCommon: true }), MULTI, UI);
+  assert.doesNotMatch(html, /aria-current/);
+  assert.match(html, /href="index\.html" lang="de"/);
+});
+
+// --- project renderers -------------------------------------------------------
+
+const PROJECT = { id: 'sy317', title: 'A <b>', summary: 'S', tags: ['hardware'], status: 'fertig', date: '2026-05', image: 'assets/img/x.svg', links: { repo: 'https://example.com/r', demo: null } };
+const STRINGS = { lang: 'en', status: { fertig: 'done' }, projectLinkFor: 'for', tagsLabel: 'Tags', repo: 'Source', demo: 'Demo' };
+
+test('renderMeta shows the translated status label and keeps the German key as hook', () => {
+  const html = renderMeta(PROJECT, STRINGS);
+  assert.match(html, /<span class="status" data-status="fertig">done<\/span>/);
+  assert.match(html, /May 2026/);
+});
+
+test('renderLinks uses the translated connector word', () => {
+  assert.match(renderLinks(PROJECT, '', STRINGS), /<span class="visually-hidden"> for A &lt;b&gt;<\/span>/);
+});
+
+test('renderCard links the project page of the page language', () => {
+  const html = renderCard(PROJECT, ctxFor('html/projects.html', '../'), 3, STRINGS);
+  assert.match(html, /href="\.\.\/html\/proj\/sy317\.html"/);
+  assert.match(html, /data-tags="\[&quot;hardware&quot;\]"/);
+  const english = renderCard(PROJECT, ctxFor('en/projects.html', '../', { lang: 'en', pages: { ...pageIndex, projectPage: () => 'proj/sy317-regulator.html' } }), 3, STRINGS);
+  assert.match(english, /href="\.\.\/en\/proj\/sy317-regulator\.html"/);
 });
 
 // --- renderSitemap -----------------------------------------------------------

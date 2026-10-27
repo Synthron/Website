@@ -2,7 +2,7 @@
 
 import path from 'node:path';
 import { esc, fail, ref } from './util.mjs';
-import { renderNav, renderProjectHeader, renderProjectList, renderTagFilter } from './render.mjs';
+import { renderLangSwitch, renderNav, renderProjectHeader, renderProjectList, renderTagFilter } from './render.mjs';
 
 const RAW_BLOCK = /<!--\s*@raw\s*-->([\s\S]*?)<!--\s*@endraw\s*-->/g;
 const RAW_MARKER = /<!--\s*@(?:raw|endraw)\s*-->/g;
@@ -99,6 +99,8 @@ export function applyDirectives(html, ctx, projects, nav, footerNav, strings) {
       case 'nav':
         // Common pages show only the brand (and the language selector).
         return ctx.isCommon ? '' : renderNav(nav, ctx);
+      case 'lang-switch':
+        return renderLangSwitch(ctx, ctx.site, strings);
       case 'footer-nav':
         return renderNav(footerNav, ctx, { list: 'site-footer__list', link: 'site-footer__link' });
       case 'projects':

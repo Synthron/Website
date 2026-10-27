@@ -209,7 +209,8 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `{{url}}`, `{{sitemapUrl}}` | Canonical base URL and `https://…/sitemap.xml` from `data/site.json` (`url`). Used by `robots.txt`. |
 | `{{root}}` | Relative path to the web root (`""` for root pages, `"../"` for pages in `html/`). |
 | `<!-- @nav -->` | Nav list built from `data/nav.json` for the page language; sets `aria-current="page"` on the entry whose `href` is the current page. Renders nothing on common pages (brand only). Used in `partials/header.html`. |
-| `<!-- @footer-nav -->` | Footer nav list built from `data/footer-nav.json`; same `aria-current="page"` handling as `@nav`. Used in `partials/footer.html`. |
+| `<!-- @footer-nav -->` | Footer nav list built from `data/footer-nav.json` for the page language; same `aria-current="page"` handling as `@nav`. Entries with `lang` pointing to another language get `lang`/`hreflang`. Used in `partials/footer.html`. |
+| `<!-- @lang-switch -->` | Language selector: one link per language (flag, code, language name as `aria-label`) to the same page in that language, else to that language's home; `aria-current="true"` on the current language of a language page. Renders nothing with a single configured language. Cards, status labels and the link hint word use the page language. |
 | `{{projectTitle}}`, `{{projectSummary}}` | Title/summary of the project whose `id` equals the page filename (`html/proj/{id}.html`). |
 | `<!-- @project-header -->` | Project page header (h1, summary, status/date, tags, links) from `data/projects.json`. |
 | `<!-- @projects all\|featured level=2\|3 id=list-id -->` | Pre-rendered project card grid, newest first. |
@@ -288,7 +289,7 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 | --- | --- |
 | `data-tag-filter="<list-id>"` | Filter host for the list with that `id`; `js/projects.js` reveals it and toggles cards via their `data-tags`. |
 | `data-filter-status="<list-id>"` | Live status text with the result count. |
-| `data-count-singular` / `data-count-plural` / `data-with-tag` / `data-lang` | German count words and the "mit Tag" connector, rendered from `data/strings.json` so `js/projects.js` never hard-codes labels. |
+| `data-count-singular` / `data-count-plural` / `data-with-tag` / `data-quote-open` / `data-quote-close` / `data-lang` | Count words, the "mit Tag" connector and the quote marks of the page language, rendered from `data/strings.json` so `js/projects.js` never hard-codes labels. |
 
 ### Project Write-up Template
 

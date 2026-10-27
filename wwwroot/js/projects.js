@@ -40,7 +40,7 @@ export function initTagFilter(host) {
     });
     if (status) {
       status.textContent = tag
-        ? `${countLabel(visible)} ${status.dataset.withTag ?? ''} “${tag}”`
+        ? `${countLabel(visible)} ${status.dataset.withTag ?? ''} ${status.dataset.quoteOpen ?? ''}${tag}${status.dataset.quoteClose ?? ''}`
         : countLabel(visible);
     }
   });

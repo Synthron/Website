@@ -53,7 +53,7 @@ test('applyTokens fails on an unknown or non-text UI string', () => {
 });
 
 test('applyDirectives renders no @nav on common pages', () => {
-  const ctx = { rel: 'index.html', lang: 'de', root: '', isCommon: true, site };
+  const ctx = { rel: 'index.html', lang: 'de', root: '', isCommon: true, site, pages: { base: () => '' } };
   const nav = [{ label: 'Start', href: 'index.html', external: false }];
   assert.equal(applyDirectives('<!-- @nav -->', ctx, [], nav, nav, {}), '');
   assert.match(applyDirectives('<!-- @nav -->', { ...ctx, isCommon: false }, [], nav, nav, {}), /<ul class="site-nav__list">/);

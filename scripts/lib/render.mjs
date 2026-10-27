@@ -5,22 +5,42 @@ import { esc, formatDate, safeExternalUrl } from './util.mjs';
 
 const LINK_LABELS = [['repo', 'repo'], ['demo', 'demo']];
 
-// Nav links are relative to the web root; `aria-current` marks the current page.
+// Nav hrefs are relative to the language folder (`ctx.pages.base(lang)`);
+// `aria-current` marks the current page. Entries with a `lang` other than the
+// page language (cross-language footer links) get `lang`/`hreflang`.
 export function renderNav(items, ctx, cls = { list: 'site-nav__list', link: 'site-nav__link' }) {
   const links = items.map((item) => {
     if (item.external) {
       return `<li><a class="${cls.link}" href="${esc(item.href)}" rel="noopener noreferrer">${esc(item.label)}</a></li>`;
     }
-    const current = item.href.split(/[?#]/)[0] === ctx.rel ? ' aria-current="page"' : '';
-    return `<li><a class="${cls.link}" href="${esc(ctx.root + item.href)}"${current}>${esc(item.label)}</a></li>`;
+    const target = item.lang ?? ctx.lang;
+    const base = ctx.pages.base(target);
+    const current = base + item.href.split(/[?#]/)[0] === ctx.rel ? ' aria-current="page"' : '';
+    const language = target === ctx.lang ? '' : ` lang="${esc(target)}" hreflang="${esc(target)}"`;
+    return `<li><a class="${cls.link}" href="${esc(ctx.root + base + item.href)}"${language}${current}>${esc(item.label)}</a></li>`;
   });
   return `<ul class="${cls.list}">\n${links.join('\n')}\n</ul>`;
 }
 
-export function renderMeta(project, lang) {
+// Language selector: one link per language to the same page in that language
+// (`ctx.versions`) or to its home when the page does not exist there. Only
+// rendered with two or more languages.
+export function renderLangSwitch(ctx, site, strings) {
+  if (site.languages.length < 2) return '';
+  const versions = new Map((ctx.versions ?? []).map((version) => [version.lang, version.rel]));
+  const items = site.languages.map(({ code, name, flag }) => {
+    const target = versions.get(code) ?? `${ctx.pages.base(code)}index.html`;
+    const current = !ctx.isCommon && code === ctx.lang ? ' aria-current="true"' : '';
+    return `<li><a class="lang-switch__link" href="${esc(ctx.root + target)}" lang="${esc(code)}" hreflang="${esc(code)}" aria-label="${esc(name)}"${current}><img class="lang-switch__flag" src="${esc(ctx.root + flag)}" alt="" width="20" height="12"><span>${esc(code.toUpperCase())}</span></a></li>`;
+  });
+  return `<nav class="lang-switch" aria-label="${esc(strings.languageLabel)}">\n<ul class="lang-switch__list">\n${items.join('\n')}\n</ul>\n</nav>`;
+}
+
+// The label is translated; data-status keeps the German key for CSS hooks.
+export function renderMeta(project, strings) {
   return `<p class="project-meta">
-  <span class="status">${esc(project.status)}</span>
-  <time datetime="${esc(project.date)}">${esc(formatDate(project.date, lang))}</time>
+  <span class="status" data-status="${esc(project.status)}">${esc(strings.status?.[project.status] ?? project.status)}</span>
+  <time datetime="${esc(project.date)}">${esc(formatDate(project.date, strings.lang))}</time>
 </p>`;
 }
 
@@ -41,7 +61,7 @@ export function renderLinks(project, root, strings) {
       ? `<span class="link-list__badge"><img src="${esc(root)}assets/icons/GitHub_Invertocat_White.svg" alt="" width="18" height="18"></span>`
       : '';
     const label = strings[stringKey];
-    items.push(`<li><a class="button button--secondary" href="${esc(href)}" rel="noopener noreferrer">${icon}${esc(label)}<span class="visually-hidden"> für ${esc(project.title)}</span></a></li>`);
+    items.push(`<li><a class="button button--secondary" href="${esc(href)}" rel="noopener noreferrer">${icon}${esc(label)}<span class="visually-hidden"> ${esc(strings.projectLinkFor)} ${esc(project.title)}</span></a></li>`);
   }
   return items.length > 0 ? `<ul class="link-list">\n  ${items.join('\n  ')}\n</ul>` : '';
 }
@@ -51,20 +71,22 @@ export function renderProjectHeader(project, ctx, strings) {
     '<header class="page-header">',
     `<h1>${esc(project.title)}</h1>`,
     `<p class="page-header__lead">${esc(project.summary)}</p>`,
-    renderMeta(project, ctx.lang),
+    renderMeta(project, strings),
     renderTags(project.tags, strings),
     renderLinks(project, ctx.root, strings),
     '</header>',
   ].filter(Boolean).join('\n');
 }
 
-export function renderCard(project, root, level, strings) {
+export function renderCard(project, ctx, level, strings) {
   const tag = `h${level}`;
+  const page = ctx.pages.projectPage(ctx.lang, project.id) ?? `proj/${project.id}.html`;
+  const href = `${ctx.root}${ctx.pages.dir(ctx.lang)}/${page}`;
   return `<article class="project-card" data-tags="${esc(JSON.stringify(project.tags))}">
-  <img class="project-card__image" src="${esc(root + project.image)}" alt="" loading="lazy" decoding="async">
+  <img class="project-card__image" src="${esc(ctx.root + project.image)}" alt="" loading="lazy" decoding="async">
   <div class="project-card__body">
-    <${tag} class="project-card__title"><a class="project-card__link" href="${esc(`${root}html/proj/${project.id}.html`)}">${esc(project.title)}</a></${tag}>
-    ${renderMeta(project, strings.lang)}
+    <${tag} class="project-card__title"><a class="project-card__link" href="${esc(href)}">${esc(project.title)}</a></${tag}>
+    ${renderMeta(project, strings)}
     <p class="project-card__summary">${esc(project.summary)}</p>
     ${renderTags(project.tags, strings)}
   </div>
@@ -83,7 +105,7 @@ export function renderProjectList(projects, args, ctx, strings) {
   const selection = mode === 'featured' ? visible.filter((project) => project.featured === true) : visible;
   const id = options.id ? ` id="${esc(options.id)}"` : '';
   const inner = selection.length > 0
-    ? selection.map((project) => renderCard(project, ctx.root, level, strings)).join('\n')
+    ? selection.map((project) => renderCard(project, ctx, level, strings)).join('\n')
     : `<p class="message">${esc(strings.noProjects)}</p>`;
   return `<div class="project-grid"${id}>\n${inner}\n</div>`;
 }
@@ -98,7 +120,7 @@ export function renderTagFilter(projects, args, lang, strings) {
   return `<div class="tag-filter" role="group" aria-label="${esc(strings.tagFilterLabel)}" data-tag-filter="${esc(listId)}" hidden>
 ${buttons.join('\n')}
 </div>
-<p class="filter-status" role="status" data-filter-status="${esc(listId)}" data-count-singular="${esc(strings.countSingular)}" data-count-plural="${esc(strings.countPlural)}" data-with-tag="${esc(strings.withTag)}" data-lang="${esc(lang)}">${esc(format(visible.length))}</p>`;
+<p class="filter-status" role="status" data-filter-status="${esc(listId)}" data-count-singular="${esc(strings.countSingular)}" data-count-plural="${esc(strings.countPlural)}" data-with-tag="${esc(strings.withTag)}" data-quote-open="${esc(strings.quoteOpen)}" data-quote-close="${esc(strings.quoteClose)}" data-lang="${esc(lang)}">${esc(format(visible.length))}</p>`;
 }
 
 // S64: project pages use their raster project image for Open Graph; everything

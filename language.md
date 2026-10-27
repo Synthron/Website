@@ -264,7 +264,7 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 - [x] **M20** Classify every HTML file: language page (`<lang>/…`, first path segment is a configured code) or common page (`index.html`, `404.html`). Language pages take `lang` from the folder; common pages from the literal `<html lang="…">` in the source (landing `de`, 404 `en`; L5, L27). Put `lang`, `langRoot` and `isCommon` into `ctx`.
 - [x] **M21** Project lookup: `ctx.project` for `rel` under `<lang>/proj/`, resolved to the `id` via the page index (mapped name → `de/proj/{id}.html`, otherwise the file name), localized for `ctx.lang` (replaces `rel.startsWith('html/')`).
 - [x] **M22** `applyTokens`: `{{lang}}` from `ctx.lang`; new `{{langRoot}}`, `{{t:key}}` (fail on unknown key); `footerNote`, `projectTitle`, `projectSummary` per language.
-- [ ] **M23** (open: `@lang-switch` comes with M31) `applyDirectives`: pass per-language `nav`, `footerNav`, `strings` and the localized project list; add `@lang-switch`. On common pages `@nav` renders nothing (brand + selector only, L27) and the footer uses the page language.
+- [x] **M23** `applyDirectives`: pass per-language `nav`, `footerNav`, `strings` and the localized project list; add `@lang-switch`. On common pages `@nav` renders nothing (brand + selector only, L27) and the footer uses the page language.
 - [ ] **M24** (done: `templates` in `SKIP_DIRS`; open: drop `SKIP_FILES` entry with M57) Skip list: add `templates` to `SKIP_DIRS` (never built, never deployed, L19); drop `project-template.html` from `SKIP_FILES`.
 - [x] **M25** Head alternates: inject `<link rel="alternate" hreflang>` for available translations + `x-default` → `${url}/`, together with the OG tags; hidden projects (L12) get no alternate.
 - [x] **M26** Open Graph: `og:locale` from the language config (`en_GB`, L25); `og:locale:alternate` for available translations; canonical/`og:url` unchanged (path already contains the language).
@@ -274,13 +274,13 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 
 ### Phase M3 — Renderers (`scripts/lib/render.mjs`)
 
-- [ ] **M30** `renderNav`: prefix `ctx.root + lang + '/'` for internal entries; `aria-current` comparison against `<lang>/<href>`; cross-language footer entries get `hreflang`/`lang`.
-- [ ] **M31** New `renderLangSwitch(ctx, site, strings, pageIndex)`: `<nav aria-label="{{t:languageLabel}}">` with one link per language: flag image (`alt=""`, fixed `width`/`height`) + code, language `name` as accessible label; target per L9 via the page index (M17); `lang`, `hreflang`, `aria-current="true"` on the current language; HTML-escaped.
-- [ ] **M32** `renderCard`: link to the project page of the card's language (`${root}${lang}/proj/` + `{id}.html` or the mapped name, L31); localized title, summary, tags (`data-tags` from the language's tags).
-- [ ] **M33** `renderProjectHeader`, `renderMeta`: localized texts; status label from `strings[lang].status[project.status]` (L14), `data-status`/CSS hooks keep using the German key.
-- [ ] **M34** `renderLinks`: replace the hard-coded ` für ` with a string (`projectLinkFor`).
-- [ ] **M35** `renderProjectList`, `renderTagFilter`: only projects available in the page language; tags of that language; `data-lang` from the page.
-- [ ] **M36** `renderOpenGraph`: locale map instead of the `de` special case.
+- [x] **M30** (until M50 the default language's hrefs are web-root-relative via `pages.base()`) `renderNav`: prefix `ctx.root + lang + '/'` for internal entries; `aria-current` comparison against `<lang>/<href>`; cross-language footer entries get `hreflang`/`lang`.
+- [x] **M31** (signature `renderLangSwitch(ctx, site, strings)`; pairs come from `ctx.versions`; renders nothing with one language; the `@lang-switch` directive is wired, the header partial uses it in M55) New `renderLangSwitch(ctx, site, strings, pageIndex)`: `<nav aria-label="{{t:languageLabel}}">` with one link per language: flag image (`alt=""`, fixed `width`/`height`) + code, language `name` as accessible label; target per L9 via the page index (M17); `lang`, `hreflang`, `aria-current="true"` on the current language; HTML-escaped.
+- [x] **M32** `renderCard`: link to the project page of the card's language (`${root}${lang}/proj/` + `{id}.html` or the mapped name, L31); localized title, summary, tags (`data-tags` from the language's tags).
+- [x] **M33** `renderProjectHeader`, `renderMeta`: localized texts; status label from `strings[lang].status[project.status]` (L14), `data-status`/CSS hooks keep using the German key.
+- [x] **M34** `renderLinks`: replace the hard-coded ` für ` with a string (`projectLinkFor`).
+- [x] **M35** (the filter status also carries `data-quote-open`/`data-quote-close`) `renderProjectList`, `renderTagFilter`: only projects available in the page language; tags of that language; `data-lang` from the page.
+- [x] **M36** (done in M26) `renderOpenGraph`: locale map instead of the `de` special case.
 
 ### Phase M4 — Checks (`scripts/lib/checks.mjs`)
 
@@ -298,7 +298,7 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 - [ ] **M51** `data/footer-nav.json`: English entries point to the German legal pages via `"lang": "de"` (L16); **User** provides the English labels.
 - [ ] **M52** Move the current home content from `wwwroot/index.html` to `wwwroot/de/index.html` (L3); fix its links (`html/projects.html` → `projects.html`).
 - [ ] **M53** **User**: new common landing page `wwwroot/index.html` (L2, L27) — bilingual, `lang` per text block, links to both language homes; structure by agent, text by user. Only shown as redirect fallback (L23).
-- [ ] **M54** Common `404.html` (L5, L27, L28): English text already written by the user, keep it. Remaining: `<html lang="en">` instead of `{{lang}}`, header with brand + selector only, stays root-relative (`{{root}}` = `/`). The button label is still German (`Zurück zur Startseite`) — **User** provides the English label.
+- [ ] **M54** Common `404.html` (L5, L27, L28): English text already written by the user, keep it. Remaining: `<html lang="en">` instead of `{{lang}}`, header with brand + selector only, stays root-relative (`{{root}}` = `/`).
 - [ ] **M55** Partials: replace hard-coded German strings with `{{t:…}}`; brand link `{{langRoot}}index.html` (L6); `<!-- @lang-switch -->` in `header.html` next to the menu button, outside the collapsible nav (L8); footer uses the per-language `footerNote`.
 - [ ] **M56** Convert `data/nav.json`, `data/footer-nav.json`, `data/strings.json`, `data/site.json`, `data/projects.json` to the new format with the existing German values; add `data/pages.json` (initially `[]`).
 - [ ] **M57** Move `project-template.html` to `wwwroot/templates/` (L19); update its instruction comment and the `{{root}}` assumptions in it.
@@ -309,7 +309,7 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 
 - [ ] **M60** Selector styles in `css/layout.css` (header): flag + code, current language highlighted by more than colour (e.g. underline or border, custom properties only); breakpoints in `css/responsive.css`; visible focus style; fits at 320px next to the menu button (L7, L8).
 - [ ] **M61** `js/nav.js`: the selector sits outside the collapsible nav and is never hidden by the toggle (L8).
-- [ ] **M62** `js/projects.js`: quote marks around the tag from `data-*` attributes (`quoteOpen`/`quoteClose`) instead of the hard-coded `“ ”`.
+- [x] **M62** `js/projects.js`: quote marks around the tag from `data-*` attributes (`quoteOpen`/`quoteClose`) instead of the hard-coded `“ ”`.
 - [ ] **M63** Bilingual blocks on the landing page: `lang="de"` / `lang="en"` on the respective elements (screen readers, hyphenation).
 - [x] **M64** Flag icons `assets/icons/flag-de.svg` and `assets/icons/flag-gb.svg` (L26): small, self-hosted, geometric SVGs.
 

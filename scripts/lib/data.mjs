@@ -173,7 +173,7 @@ export async function loadNav(file, site) {
 // Index of the language pages: which files exist per language, which pages
 // are the same page under different names (data/pages.json) and which pages
 // pair by identical path. Paths are relative to the language folder.
-export async function loadPages(site, { pageDir = langDir } = {}) {
+export async function loadPages(site, { pageDir = langDir, langBase = (code) => `${code}/` } = {}) {
   const rel = 'data/pages.json';
   const data = await readJson(path.join(SRC, rel));
   if (!Array.isArray(data)) throw new Error(`${rel}: expected an array`);
@@ -225,6 +225,8 @@ export async function loadPages(site, { pageDir = langDir } = {}) {
   return {
     groups,
     dir: pageDir,
+    // Web-root-relative folder (with trailing slash) that nav hrefs and the home page of a language are relative to.
+    base: langBase,
     // Sorted page paths of a language (relative to its folder).
     files: (code) => [...files.get(code) ?? []].sort(),
     // Map language -> page path for every language that has this page (incl. itself).

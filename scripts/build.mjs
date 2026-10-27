@@ -61,14 +61,18 @@ async function computeVersions(files) {
   return { versions, outputs };
 }
 
-// Until the pages move to <lang>/ (M50) the default language lives in html/.
-const legacyPageDir = (defaultLang) => (code) => (code === defaultLang ? 'html' : code);
+// Until the pages move to <lang>/ (M50) the default language lives in html/
+// and its home page and nav hrefs are rooted at the web root.
+const legacyLayout = (defaultLang) => ({
+  pageDir: (code) => (code === defaultLang ? 'html' : code),
+  langBase: (code) => (code === defaultLang ? '' : `${code}/`),
+});
 
 async function build({ check = false } = {}) {
   const site = await loadSite();
   const { defaultLang } = site;
-  const pageDir = legacyPageDir(defaultLang);
-  const pageIndex = await loadPages(site, { pageDir });
+  const { pageDir, langBase } = legacyLayout(defaultLang);
+  const pageIndex = await loadPages(site, { pageDir, langBase });
   const allProjects = await loadProjects(site, pageIndex);
   const navs = await loadNav('nav.json', site);
   const footerNavs = await loadNav('footer-nav.json', site);
@@ -124,9 +128,16 @@ async function build({ check = false } = {}) {
     // data, already warned about by the loader) is not built.
     if (projectId !== undefined && !project && lang !== defaultLang) continue;
 
+    // Available language versions of this page; hidden projects get none.
+    const langVersions = page.pagePath === undefined ? [] : [...pageIndex.counterparts(lang, page.pagePath)]
+      .filter(([code]) => projectId === undefined || (rawProject && Object.hasOwn(rawProject.title, code)))
+      .map(([code, file]) => ({ lang: code, rel: `${pageDir(code)}/${file}` }));
+
     const ctx = {
       rel,
       site,
+      pages: pageIndex,
+      versions: langVersions,
       lang,
       langRoot: page.langRoot,
       isCommon: page.isCommon,
@@ -159,10 +170,6 @@ async function build({ check = false } = {}) {
         warnedOgImages.add(imageRel);
         warn(`S64: Open Graph image missing: wwwroot/${imageRel} (create the 1200×630 default PNG with the logo in GIMP — D25)`);
       }
-      // Available language versions of this page; hidden projects get none.
-      const langVersions = page.pagePath === undefined ? [] : [...pageIndex.counterparts(lang, page.pagePath)]
-        .filter(([code]) => projectId === undefined || (rawProject && Object.hasOwn(rawProject.title, code)))
-        .map(([code, file]) => ({ lang: code, rel: `${pageDir(code)}/${file}` }));
       output = output.replace('</head>', renderOpenGraph(rel, output, site, imageUrl, { lang, versions: langVersions }) + '</head>');
     }
     if (project) projectByRel.set(rel, project);
