@@ -1,11 +1,14 @@
-// Removes a project: deletes its entry from data/projects.json and its page
-// wwwroot/html/proj/{id}.html (S66). Asks for confirmation unless --yes.
-// Node built-ins only.
+// Removes a project: deletes its entry from data/projects.json, its page in
+// every language folder (<lang>/proj/{id}.html or the mapped name from
+// data/pages.json) and its pages.json group (S66). Asks for confirmation
+// unless --yes. Node built-ins only.
 
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadSetup, PAGES_FILE, projectPagePath, readPages, writeJson } from './lib/scaffold.mjs';
+import { exists } from './lib/util.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PROJECTS = path.join(ROOT, 'wwwroot/data/projects.json');
@@ -38,8 +41,15 @@ async function main() {
   }
 
   const project = data[index];
-  const page = path.join(ROOT, 'wwwroot/html/proj', `${id}.html`);
-  const message = `Remove project "${project.title}" (${id})?\nThis deletes its entry from data/projects.json and the page wwwroot/html/proj/${id}.html.\nContinue? [y/N] `;
+  const { languages, defaultLang } = await loadSetup();
+  const pages = await readPages();
+  const title = typeof project.title === 'object' ? (project.title[defaultLang] ?? id) : project.title;
+  const candidates = languages.map((code) => `wwwroot/${code}/${projectPagePath(pages, defaultLang, code, id)}`);
+  const existing = [];
+  for (const rel of candidates) {
+    if (await exists(path.join(ROOT, rel))) existing.push(rel);
+  }
+  const message = `Remove project "${title}" (${id})?\nThis deletes its entry from data/projects.json and ${existing.length > 0 ? `the pages ${existing.join(', ')}` : 'no pages (none found)'}.\nContinue? [y/N] `;
   if (!yes && !(await confirm(message))) {
     console.log('Aborted.');
     return;
@@ -47,9 +57,14 @@ async function main() {
 
   data.splice(index, 1);
   await writeFile(PROJECTS, `${JSON.stringify(data, null, 2)}\n`);
-  await rm(page, { force: true });
+  for (const rel of existing) await rm(path.join(ROOT, rel), { force: true });
+  const remaining = pages.filter((group) => group[defaultLang] !== `proj/${id}.html`);
+  if (remaining.length !== pages.length) {
+    await writeJson(PAGES_FILE, remaining);
+    console.log('Removed its group from data/pages.json.');
+  }
   // The project image is shared, so it is deliberately left in place.
-  console.log(`Removed ${id}: entry and page deleted (image left in place). Run \`npm run build\` and remove stale files on the server.`);
+  console.log(`Removed ${id}: entry and ${existing.length} page(s) deleted (image left in place). Run \`npm run build\` and remove stale files on the server.`);
 }
 
 await main();

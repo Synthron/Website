@@ -9,6 +9,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { hasFlasher, languageCodes, rootRedirect } from './lib/preview.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'wwwroot');
@@ -36,8 +37,8 @@ const TYPES = {
 
 const NO_STORE = 'no-store';
 // Security headers mirrored from wwwroot/.htaccess (S60): the local preview
-// should behave like production. The flasher page (nixie-clock.html) gets the
-// style-src 'self' 'unsafe-inline' CSP exception, as in .htaccess.
+// should behave like production. Flasher pages (detected from the served
+// HTML) get the style-src 'self' 'unsafe-inline' CSP exception, as in .htaccess.
 const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
@@ -47,7 +48,6 @@ const SECURITY_HEADERS = {
   'Strict-Transport-Security': 'max-age=86400',
 };
 const FLASHER_CSP = "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'";
-const isFlasherPage = (pathname) => path.posix.basename(pathname) === 'nixie-clock.html';
 // Serves only while `npm run dev` runs; never part of dist/.
 const RELOAD_SCRIPT = '<script src="/__reload.js"></script>';
 const RELOAD_JS = `const source = new EventSource('/__reload');\nsource.addEventListener('reload', () => location.reload());\n`;
@@ -93,9 +93,11 @@ async function isDirectory(file) {
   }
 }
 
-async function send(res, status, file, flasher = false) {
+async function send(res, status, file, extraHeaders = {}) {
   let body = await readFile(file);
-  if (path.extname(file) === '.html') {
+  const html = path.extname(file) === '.html';
+  const flasher = html && hasFlasher(body.toString('utf8'));
+  if (html) {
     // Inject the dev-only reload script, never written to disk.
     body = Buffer.from(body.toString('utf8').replace('</body>', `${RELOAD_SCRIPT}\n  </body>`));
   }
@@ -103,6 +105,7 @@ async function send(res, status, file, flasher = false) {
     'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream',
     'Cache-Control': NO_STORE,
     ...SECURITY_HEADERS,
+    ...extraHeaders,
   };
   if (flasher) headers['Content-Security-Policy'] = FLASHER_CSP;
   res.writeHead(status, headers);
@@ -112,7 +115,6 @@ async function send(res, status, file, flasher = false) {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const pathname = decodeURIComponent(url.pathname);
-  const flasher = isFlasherPage(pathname);
 
   // SSE stream for live reload.
   if (pathname === '/__reload') {
@@ -136,6 +138,15 @@ const server = createServer(async (req, res) => {
   }
 
   try {
+    // Mirrors the .htaccess redirect for "/" (302, Vary: Accept-Language).
+    if (pathname === '/') {
+      const target = rootRedirect(req.headers['accept-language'], await languageCodes());
+      if (target) {
+        res.writeHead(302, { Location: target, Vary: 'Accept-Language', 'Cache-Control': NO_STORE, ...SECURITY_HEADERS });
+        res.end();
+        return;
+      }
+    }
     let filePath = pathname;
     if (!filePath.endsWith('/')) {
       const dirFile = path.join(DIST, path.normalize(filePath));
@@ -152,7 +163,7 @@ const server = createServer(async (req, res) => {
     if (filePath.endsWith('/')) filePath += 'index.html';
     const file = path.join(DIST, path.normalize(filePath));
     if (!file.startsWith(DIST + path.sep)) throw new Error('outside root');
-    await send(res, 200, file, flasher);
+    await send(res, 200, file, filePath === '/index.html' ? { Vary: 'Accept-Language' } : {});
   } catch {
     try {
       await send(res, 404, path.join(DIST, '404.html'));

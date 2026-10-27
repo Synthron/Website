@@ -29,8 +29,8 @@ export const isFlasherPage = (html) => /<esp-web-install-button\b/.test(html);
 
 // Language of a page. Language pages live in their language folder
 // (`pageDir(code)`), common pages are root pages whose source carries a literal
-// `<html lang="xx">`. Root pages still using `{{lang}}` are legacy default-
-// language pages (until the landing page and 404 are rewritten). `langRoot` is
+// `<html lang="xx">`. Other root files (robots.txt) count as default-language
+// files. `langRoot` is
 // the relative path from the page to its language folder (the root for common
 // and legacy pages); `pagePath` is the path inside the language folder.
 export function classifyPage(rel, source, root, site, pageDir) {

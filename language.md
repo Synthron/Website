@@ -294,33 +294,33 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 
 ### Phase M5 — Content migration (`wwwroot/`)
 
-- [ ] **M50** Move `wwwroot/html/` → `wwwroot/de/` (`git mv`, keeps history and the sitemap `lastmod`), including the legal pages (approved, L16; wording unchanged). Relative links inside the folder (`../projects.html` on project pages) stay valid.
-- [ ] **M51** `data/footer-nav.json`: English entries point to the German legal pages via `"lang": "de"` (L16); **User** provides the English labels.
-- [ ] **M52** Move the current home content from `wwwroot/index.html` to `wwwroot/de/index.html` (L3); fix its links (`html/projects.html` → `projects.html`).
-- [ ] **M53** **User**: new common landing page `wwwroot/index.html` (L2, L27) — bilingual, `lang` per text block, links to both language homes; structure by agent, text by user. Only shown as redirect fallback (L23).
-- [ ] **M54** Common `404.html` (L5, L27, L28): English text already written by the user, keep it. Remaining: `<html lang="en">` instead of `{{lang}}`, header with brand + selector only, stays root-relative (`{{root}}` = `/`).
-- [ ] **M55** Partials: replace hard-coded German strings with `{{t:…}}`; brand link `{{langRoot}}index.html` (L6); `<!-- @lang-switch -->` in `header.html` next to the menu button, outside the collapsible nav (L8); footer uses the per-language `footerNote`.
-- [ ] **M56** Convert `data/nav.json`, `data/footer-nav.json`, `data/strings.json`, `data/site.json`, `data/projects.json` to the new format with the existing German values; add `data/pages.json` (initially `[]`).
-- [ ] **M57** Move `project-template.html` to `wwwroot/templates/` (L19); update its instruction comment and the `{{root}}` assumptions in it.
-- [ ] **M58** **User**: English texts — `en/index.html`, `en/projects.html`, `en/about.html`, `en/proj/*.html` (prose, figure captions, alt texts), English strings, nav labels, footer note, project titles, summaries and tags. Agents create only the page skeletons with clearly marked placeholders (L22).
-- [ ] **M59** German tags per project (tags are redefined per language) — **User** provides the lists.
+- [x] **M50** Move `wwwroot/html/` → `wwwroot/de/` (`git mv`, keeps history and the sitemap `lastmod`), including the legal pages (approved, L16; wording unchanged). Relative links inside the folder (`../projects.html` on project pages) stay valid.
+- [x] **M51** (English labels are `TODO_<German label>` placeholders, see U02) `data/footer-nav.json`: English entries point to the German legal pages via `"lang": "de"` (L16); **User** provides the English labels.
+- [x] **M52** (English placeholders: `TODO_<German label>`) Move the current home content from `wwwroot/index.html` to `wwwroot/de/index.html` (L3); fix its links (`html/projects.html` → `projects.html`).
+- [x] **M53** (placeholder page titled "UNDER CONSTRUCTION" with a button per language; final text is U01) **User**: new common landing page `wwwroot/index.html` (L2, L27) — bilingual, `lang` per text block, links to both language homes; structure by agent, text by user. Only shown as redirect fallback (L23).
+- [x] **M54** (own partial `header-common.html` with brand + selector, no nav) Common `404.html` (L5, L27, L28): English text already written by the user, keep it. Remaining: `<html lang="en">` instead of `{{lang}}`, header with brand + selector only, stays root-relative (`{{root}}` = `/`).
+- [x] **M55** Partials: replace hard-coded German strings with `{{t:…}}`; brand link `{{langRoot}}index.html` (L6); `<!-- @lang-switch -->` in `header.html` next to the menu button, outside the collapsible nav (L8); footer uses the per-language `footerNote`.
+- [x] **M56** (English blocks hold placeholders) Convert `data/nav.json`, `data/footer-nav.json`, `data/strings.json`, `data/site.json`, `data/projects.json` to the new format with the existing German values; add `data/pages.json` (initially `[]`).
+- [x] **M57** (`SKIP_FILES` entry removed; `npm run create` still points to the old path until M70) Move `project-template.html` to `wwwroot/templates/` (L19); update its instruction comment and the `{{root}}` assumptions in it.
+- [x] **M58** (skeletons with `TODO` placeholders for pages, strings, nav, footer note and project data; real texts are U02–U05) **User**: English texts — `en/index.html`, `en/projects.html`, `en/about.html`, `en/proj/*.html` (prose, figure captions, alt texts), English strings, nav labels, footer note, project titles, summaries and tags. Agents create only the page skeletons with clearly marked placeholders (L22).
+- [ ] **M59** (open, see U06) German tags per project (tags are redefined per language) — **User** provides the lists.
 
 ### Phase M6 — Front end (`wwwroot/css/`, `wwwroot/js/`)
 
-- [ ] **M60** Selector styles in `css/layout.css` (header): flag + code, current language highlighted by more than colour (e.g. underline or border, custom properties only); breakpoints in `css/responsive.css`; visible focus style; fits at 320px next to the menu button (L7, L8).
-- [ ] **M61** `js/nav.js`: the selector sits outside the collapsible nav and is never hidden by the toggle (L8).
+- [x] **M60** Selector styles in `css/layout.css` (header): flag + code, current language highlighted by more than colour (e.g. underline or border, custom properties only); breakpoints in `css/responsive.css`; visible focus style; fits at 320px next to the menu button (L7, L8).
+- [x] **M61** (the selector sits outside `#site-nav`, `nav.js` needed no change) `js/nav.js`: the selector sits outside the collapsible nav and is never hidden by the toggle (L8).
 - [x] **M62** `js/projects.js`: quote marks around the tag from `data-*` attributes (`quoteOpen`/`quoteClose`) instead of the hard-coded `“ ”`.
-- [ ] **M63** Bilingual blocks on the landing page: `lang="de"` / `lang="en"` on the respective elements (screen readers, hyphenation).
+- [x] **M63** (`lang` attributes on the placeholder landing page; final bilingual blocks with U01) Bilingual blocks on the landing page: `lang="de"` / `lang="en"` on the respective elements (screen readers, hyphenation).
 - [x] **M64** Flag icons `assets/icons/flag-de.svg` and `assets/icons/flag-gb.svg` (L26): small, self-hosted, geometric SVGs.
 
 ### Phase M7 — Scripts (`scripts/`)
 
-- [ ] **M70** `create.mjs`: copy `templates/project-template.html` to `<lang>/proj/{id}.html` for every language; write the default-language `title`/`summary` from the arguments and `"TODO"` for every other language (L20); duplicate check across all language folders; `--tags` for the default language, other languages start empty.
-- [ ] **M71** `page.mjs`: create the page in every language (default title from the argument, `--title-<lang>` for other languages, otherwise `TODO` title); per-language slug; add a `data/pages.json` group when slugs differ (L10); `--nav`/`--footer` entries into the per-language arrays; `{{t:…}}`-based skeleton.
-- [ ] **M72** `remove.mjs`: delete the project page in every language folder (`{id}.html` or the mapped name) and its `pages.json` group; update the confirmation text.
-- [ ] **M73** `report.mjs`: per-language page sizes; adapt any `html/` assumptions.
-- [ ] **M74** `serve.mjs`, `dev.mjs`: mirror the `Accept-Language` redirect for `/` (L29); `/de/` and `/en/` serve their `index.html`, `/de` redirects to `/de/`; flasher CSP detection must cover mapped file names (L31), e.g. by checking the served HTML for `<esp-web-install-button` instead of the hard-coded `nixie-clock.html` basename.
-- [ ] **M75** `check-external.mjs`, `firmware.mjs`: verify; the firmware snippet uses `{{root}}` and needs no change.
+- [x] **M70** `create.mjs`: copy `templates/project-template.html` to `<lang>/proj/{id}.html` for every language; write the default-language `title`/`summary` from the arguments and `"TODO"` for every other language (L20); duplicate check across all language folders; `--tags` for the default language, other languages start empty.
+- [x] **M71** (the skeleton needs no `{{t:…}}`: the UI strings live in the partials; other languages get `TODO_<title>` labels, matching the M5 convention) `page.mjs`: create the page in every language (default title from the argument, `--title-<lang>` for other languages, otherwise `TODO` title); per-language slug; add a `data/pages.json` group when slugs differ (L10); `--nav`/`--footer` entries into the per-language arrays; `{{t:…}}`-based skeleton.
+- [x] **M72** `remove.mjs`: delete the project page in every language folder (`{id}.html` or the mapped name) and its `pages.json` group; update the confirmation text.
+- [x] **M73** `report.mjs`: per-language page sizes; adapt any `html/` assumptions.
+- [x] **M74** (the redirect uses the first `Accept-Language` entry, like the planned `.htaccess` rule) `serve.mjs`, `dev.mjs`: mirror the `Accept-Language` redirect for `/` (L29); `/de/` and `/en/` serve their `index.html`, `/de` redirects to `/de/`; flasher CSP detection must cover mapped file names (L31), e.g. by checking the served HTML for `<esp-web-install-button` instead of the hard-coded `nixie-clock.html` basename.
+- [x] **M75** (no change needed) `check-external.mjs`, `firmware.mjs`: verify; the firmware snippet uses `{{root}}` and needs no change.
 
 ### Phase M8 — Server and deployment
 
@@ -350,6 +350,26 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 - [ ] **M113** `<html lang>`, `hreflang` alternates, `og:locale`, canonical and `sitemap.xml` correct for sample pages of each language; `TODO` projects hidden in `en`.
 - [ ] **M114** DevTools: no console errors, no external requests, no cookies/storage.
 - [ ] **M115** After deploy: root redirect (`Accept-Language: de` → `/de/`, `en-GB` → `/en/`, `fr` or none → landing page), `/de/` and `/en/` directory index, 404 page at a deep path (`/en/does-not-exist`), flasher page CSP in both languages, old `/html/` folder gone.
+
+### Phase M20 — User actions
+
+Everything the agents cannot do (texts, decisions, server work). Agents never invent English content (L22); until a task is done, the placeholders stay (`TODO_<German label>` for labels, `TODO` for project texts) and the build warns. IDs use `U` to avoid clashing with the M2x steps.
+
+- [ ] **U01** (M53, M63) Landing page `wwwroot/index.html`: replace the "UNDER CONSTRUCTION" placeholder with the final bilingual text (`lang="de"` / `lang="en"` per block, links to both language homes).
+- [ ] **U02** (M51, M58) English labels: replace every `TODO_…` value in `data/strings.json` (`en` block, incl. the status labels; `quoteOpen`/`quoteClose` are already English typographic quotes), `data/nav.json` (`en`), `data/footer-nav.json` (`en`, e.g. with a "(German)" hint while the legal pages are German) and `footerNote.en` in `data/site.json`.
+- [ ] **U03** (M58) English page texts in `en/index.html`, `en/about.html`, `en/projects.html`: `title`, `meta description`, headings, lead and body (all `TODO` / `TODO_…` markers).
+- [ ] **U04** (M58) English project data in `data/projects.json` for `nixie-clock`, `sy317`, `placeholder-project-two`: `title`, `summary` (now `"TODO"`) and `tags.en` (now `[]`). A project becomes visible in `en` as soon as both texts are filled in.
+- [ ] **U05** (M58) English project pages `en/proj/nixie-clock.html`, `sy317.html`, `placeholder-project-two.html`: prose, figure captions, alt texts and the web flasher section of `nixie-clock` (currently a `TODO` skeleton).
+- [ ] **U06** (M59) German tags per project: review `tags.de` (they are redefined per language; today they mix English and German words like `electronics`, `tubes`) and decide the English lists for U04.
+- [ ] **U07** (L16) English legal pages (`impressum`, `privacy`, `rechtliches`) or keep the German ones: until translated, the build warns "no counterpart in en" for these three pages and the English footer links to the German pages (`"lang": "de"`).
+- [ ] **U08** (M60) Review the language selector in the browser (flags, UK flag proportions, highlighted language, 320px) and request style changes if needed.
+- [ ] **U09** Before deploying: decide how to handle the placeholder pages in `en/` (they are built and listed in `sitemap.xml`): finish U03 first, or ask for `noindex` on them.
+- [ ] **U10** (M82, M115) On the server after the first upload: delete the old `/html/` folder, then run the M115 checks. The `Accept-Language` redirect (M80) still has to be implemented before the root redirect works.
+- [ ] **U11** Existing, not language-specific: the de pages `about.html` and the `placeholder-project-*` pages still contain "Placeholder paragraph" text (build warnings), and `assets/img/og-default.png` is missing.
+
+### Open follow-ups caused by the move
+
+README sections beyond the outline, the script documentation and the file paths, and `AGENTS.md` beyond the script rows and file paths, follow in M100/M101. The preview servers already mirror the root redirect; the production rule (M80) is still open. Known, not caused by the move: a page created from the template contains the dummy web flasher section (`assets/firmware/dummy` is not deployed), so `npm run build` reports a broken link until that section is deleted.
 
 ---
 

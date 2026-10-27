@@ -1,8 +1,10 @@
-// Project scaffold: creates a new project page from the master template and
-// registers it in data/projects.json. Node built-ins only.
+// Project scaffold: creates a new project page from the master template in
+// every language folder and registers the project in data/projects.json.
+// Languages other than the default get "TODO" texts (the project stays hidden
+// there until they are filled in). Node built-ins only.
 //
 // Usage: npm run create -- "Project Name" "One-sentence brief" [flags]
-//   --tags a,b        comma-separated tags (lowercase, hyphenated)
+//   --tags a,b        comma-separated tags of the default language (lowercase, hyphenated)
 //   --featured        mark the project as featured
 //   --status <value>  one of the D10 enum values (default "in Arbeit")
 //   --repo <url>      http(s) source repository URL
@@ -12,11 +14,11 @@ import { access, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { STATUS_VALUES } from './lib/data.mjs';
+import { loadSetup, readPages, projectPagePath, writeJson } from './lib/scaffold.mjs';
 import { slugify } from './lib/util.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PROJ_DIR = path.join(ROOT, 'wwwroot', 'html', 'proj');
-const TEMPLATE = path.join(PROJ_DIR, 'project-template.html');
+const TEMPLATE = path.join(ROOT, 'wwwroot', 'templates', 'project-template.html');
 const PROJECTS_FILE = path.join(ROOT, 'wwwroot', 'data', 'projects.json');
 
 // Same id/tag rule the build enforces in scripts/build.mjs.
@@ -82,23 +84,32 @@ async function main() {
     process.exit(1);
   }
 
+  const { languages, defaultLang } = await loadSetup();
+  const pages = await readPages();
   const projects = JSON.parse(await readFile(PROJECTS_FILE, 'utf8'));
   if (projects.some((project) => project.id === id)) {
     console.error(`A project with id "${id}" already exists in data/projects.json.`);
     process.exit(1);
   }
 
-  const page = path.join(PROJ_DIR, `${id}.html`);
-  if (await exists(page)) {
-    console.error(`A page already exists at wwwroot/html/proj/${id}.html.`);
-    process.exit(1);
+  const pageFiles = new Map(); // language -> absolute page file
+  for (const code of languages) {
+    pageFiles.set(code, path.join(ROOT, 'wwwroot', code, projectPagePath(pages, defaultLang, code, id)));
+  }
+  for (const [code, file] of pageFiles) {
+    if (await exists(file)) {
+      console.error(`A page already exists at wwwroot/${code}/proj/${path.basename(file)}.`);
+      process.exit(1);
+    }
   }
 
+  // Default language from the arguments, every other language starts as TODO.
+  const perLang = (value, placeholder) => Object.fromEntries(languages.map((code) => [code, code === defaultLang ? value : placeholder]));
   const entry = {
     id,
-    title: name,
-    summary: brief,
-    tags: options.tags,
+    title: perLang(name, 'TODO'),
+    summary: perLang(brief, 'TODO'),
+    tags: perLang(options.tags, []),
     status: options.status,
     date: currentMonth(),
     links: { repo: options.repo, demo: null },
@@ -107,19 +118,21 @@ async function main() {
   };
 
   if (options.dryRun) {
-    console.log(`Dry run: would create wwwroot/html/proj/${id}.html and register:`);
+    console.log(`Dry run: would create ${[...pageFiles.keys()].map((code) => `wwwroot/${code}/proj/${id}.html`).join(', ')} and register:`);
     console.log(JSON.stringify(entry, null, 2));
     return;
   }
 
-  const template = await readFile(TEMPLATE, 'utf8');
-  await writeFile(page, template.replace(MASTER_COMMENT, ''));
+  const template = (await readFile(TEMPLATE, 'utf8')).replace(MASTER_COMMENT, '');
+  for (const file of pageFiles.values()) await writeFile(file, template);
 
   projects.push(entry);
-  await writeFile(PROJECTS_FILE, `${JSON.stringify(projects, null, 2)}\n`);
+  await writeJson(PROJECTS_FILE, projects);
 
-  console.log(`Created wwwroot/html/proj/${id}.html from project-template.html`);
+  for (const code of pageFiles.keys()) console.log(`Created wwwroot/${code}/proj/${id}.html from project-template.html`);
   console.log(`Registered "${name}" in wwwroot/data/projects.json`);
+  const others = languages.filter((code) => code !== defaultLang);
+  if (others.length > 0) console.log(`Hidden in ${others.join(', ')} until title, summary (TODO) and the page text are translated.`);
   console.log('Next: replace the placeholder body, set tags/links/image, then run npm run build.');
 }
 

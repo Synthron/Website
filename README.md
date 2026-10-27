@@ -39,42 +39,50 @@ Website/
 │   │   ├── data.mjs       # Load and validate data/*.json (ajv + file checks)
 │   │   ├── render.mjs     # HTML/XML renderers for directives and sitemap
 │   │   ├── pipeline.mjs   # @raw, includes, tokens, directives, cache busting (assets/JS/CSS)
-│   │   ├── checks.mjs     # Checks on the rendered output (links)
-│   │   └── *.test.mjs     # Unit tests (node --test): util, render, checks
-│   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects)
+│   │   ├── checks.mjs     # Checks on the rendered output (links, anchors, language setup)
+│   │   ├── scaffold.mjs   # Shared helpers of create/page/remove (languages, pages.json)
+│   │   ├── preview.mjs    # Shared helpers of serve/dev (root redirect, flasher detection)
+│   │   └── *.test.mjs     # Unit tests (node --test): util, data, render, pipeline, checks, preview
+│   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects, pages)
 │   ├── e2e/               # Playwright specs (*.spec.mjs)
 │   │   └── pages.spec.mjs # Every built page: 320/768/1280 px, console, requests, storage, focus
 │   ├── create.mjs         # Scaffold a new project page + projects.json entry
 │   ├── dev.mjs            # Dev server: build, serve, watch, live reload
 │   ├── firmware.mjs       # Scaffold an assets/firmware/<suite>/manifest.json
 │   ├── images.mjs         # WebP conversion, OG default image, SVG optimisation
-│   ├── page.mjs           # Scaffold a minimal secondary page in html/
+│   ├── page.mjs           # Scaffold a minimal secondary page in every language folder
 │   ├── remove.mjs         # Delete a project entry and its page (npm run remove)
 │   ├── report.mjs         # Report dist/ size, largest files, unused assets
 │   ├── check-external.mjs # Manual HEAD checks of external links
 │   └── serve.mjs          # Local preview server for dist/
 ├── dist/                  # Build output (generated, git-ignored, deploy this)
 └── wwwroot/               # Source (build input)
-    ├── index.html         # Entry page (home / overview)
-    ├── 404.html           # Not-found page
+    ├── index.html         # Common landing page (placeholder "UNDER CONSTRUCTION"; fallback of the root redirect)
+    ├── 404.html           # Common not-found page (English)
     ├── .htaccess          # Apache config for dm7wb.de (error page, headers, caching; production only)
     ├── favicon.svg        # Logo favicon (simplified trace; also the header brand icon)
     ├── robots.txt         # Crawler rules
     ├── partials/          # Build-time includes (not copied to dist/)
     │   ├── head.html      # Shared <head> content (charset, CSP, favicon, CSS, main.js)
-    │   ├── header.html    # Shared skip link, header and nav
+    │   ├── header.html    # Shared skip link, header, language selector and nav (language pages)
+    │   ├── header-common.html  # Skip link, brand and language selector only (common pages)
     │   └── footer.html    # Shared footer (copyright, footer nav)
-    ├── html/              # Additional page templates
+    ├── templates/         # Source-only templates (not built, not deployed)
+    │   └── project-template.html  # Master project write-up template (all layouts)
+    ├── de/                # German pages (default language)
+    │   ├── index.html     # German home (intro, featured projects)
     │   ├── projects.html  # Project listing page with tag filter
     │   ├── about.html     # About and contact page
     │   ├── impressum.html # Legal: imprint
     │   ├── privacy.html   # Legal: privacy policy
     │   ├── rechtliches.html # Legal: legal notes
     │   └── proj/          # Individual project pages (one per project, named by `id`)
-    │       ├── project-template.html  # Master project write-up template (all layouts; not built)
     │       ├── sy317.html # Static project page (from template)
     │       ├── nixie-clock.html  # Static project page (from template)
     │       └── placeholder-project-*.html  # Static project pages (from template)
+    ├── en/                # English pages (placeholders marked TODO until translated)
+    │   ├── index.html, projects.html, about.html
+    │   └── proj/          # Skeletons; hidden while the project data in projects.json is TODO
     ├── css/
     │   ├── base.css       # Reset, custom properties, typography, colour schemes
     │   ├── layout.css     # Container, header, nav, footer, sections
@@ -116,10 +124,10 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | --- | --- |
 | `npm run build` | Deletes `dist/` and rebuilds it from `wwwroot/`. Exits non-zero on invalid data, unknown tokens/includes or broken internal links. |
 | `npm run check` | Validation only: runs every build check (data, firmware manifests, tokens/includes/directives, links) and **writes nothing**. Fast pre-commit check; used by the git hook. |
-| `npm run create -- "Name" "Brief" [flags]` | Scaffolds a new project: copies `project-template.html` to `html/proj/{id}.html` and registers the project in `data/projects.json`. Flags: `--tags a,b`, `--featured`, `--status <value>`, `--repo <url>`, `--dry-run` (validate only). |
-| `npm run page -- "Title" [--nav\|--footer]` | Scaffolds a minimal secondary page (shared head with CSP/`{{name}}` title/description, header, `h1`, one prose section, footer) at `html/{slug}.html`; refuses to overwrite; optionally appends a nav entry to `data/nav.json` / `data/footer-nav.json`. |
-| `npm run remove -- <id>` | Deletes a project from `data/projects.json` and its page `html/proj/{id}.html`; asks for confirmation (`--yes` skips the prompt). The image file is left in place. |
-| `npm run report` | Prints a size report of `dist/` (run `npm run build` first): total size, largest files, per-page sizes, raster images not converted to WebP, unused images. |
+| `npm run create -- "Name" "Brief" [flags]` | Scaffolds a new project: copies `templates/project-template.html` to `<lang>/proj/{id}.html` for every language and registers the project in `data/projects.json` (other languages as `TODO`). Flags: `--tags a,b`, `--featured`, `--status <value>`, `--repo <url>`, `--dry-run` (validate only). |
+| `npm run page -- "Title" [--title-<lang> "…"] [--nav\|--footer]` | Scaffolds a minimal secondary page (shared head with CSP/`{{name}}` title/description, header, `h1`, one prose section, footer) at `<lang>/{slug}.html` for every language; refuses to overwrite; pairs differently named pages in `data/pages.json`; optionally appends nav entries to `data/nav.json` / `data/footer-nav.json`. |
+| `npm run remove -- <id>` | Deletes a project from `data/projects.json`, its pages in every language folder and its `pages.json` group; asks for confirmation (`--yes` skips the prompt). The image file is left in place. |
+| `npm run report` | Prints a size report of `dist/` (run `npm run build` first): total size, largest files, page sizes (overall and per language), raster images not converted to WebP, unused images. |
 | `npm run check:external` | Sends a HEAD request to every external link found in `wwwroot/` (pages, partials, template, `data/*.json`) and reports the status. Manual only — never part of `build` or `check`. |
 | `npm run firmware -- <suite> --chip <family> [--chip …]` | Creates `assets/firmware/<suite>/manifest.json` with a `builds` entry per `--chip` and prints the `<esp-web-install-button>` snippet. Supported chips: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 (see Firmware section for offsets). |
 | `npm run dev` | Build once, serve `dist/`, then rebuild automatically on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`). Live reload via Server-Sent Events: the dev server injects a same-origin `<script src="/__reload.js">` into served HTML and broadcasts a reload after each successful build — never written into `dist/`, and the CSP (`'self'`) still holds. Build errors print to the terminal; the server keeps running so a fix triggers the next rebuild. Serves on `localhost:8000` (`PORT`/`HOST` overrides apply as with `serve`). |
@@ -131,12 +139,12 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | `npm run images [-- --dry-run]` | WebP next to raster originals in `assets/img/` (skipped when not smaller), creates `assets/img/og-default.png` if missing, optimises SVGs in place. Never overwrites existing outputs or originals. |
 | `npm run test:e2e` | Builds, then runs the Playwright specs in `scripts/e2e/` against `scripts/serve.mjs` on port 8010. |
 | `npm run lighthouse` | Builds, then runs Lighthouse CI against `scripts/serve.mjs` on port 8020; reports go to `.lighthouseci/` (never uploaded). |
-| `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` and `HOST` env vars override) with `Cache-Control: no-store` and the same security headers as production (mirrors `.htaccess`); redirects directory requests to add the trailing slash. `HOST=0.0.0.0` works for phone testing on the LAN, but WebSerial needs a secure context, so the web flasher will not work there. |
+| `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` and `HOST` env vars override) with `Cache-Control: no-store` and the same security headers as production (mirrors `.htaccess`, flasher CSP exception detected from the served page); redirects directory requests to add the trailing slash and mirrors the root redirect (`/` → `/de/` or `/en/` by the first `Accept-Language` entry, `302` + `Vary: Accept-Language`; other languages get the landing page). `HOST=0.0.0.0` works for phone testing on the LAN, but WebSerial needs a secure context, so the web flasher will not work there. |
 | `npm start` | Build, then serve. |
 | `npm run clean` | Removes `dist/`. |
 | `npm run setup` | Activates the versioned git hooks: sets `core.hooksPath` to `.githooks` (the `pre-commit` hook runs `npm run check`, then `npm run lint`). Run once after cloning. |
 
-The build copies `wwwroot/` to `dist/` except `partials/`, `data/`, `html/proj/project-template.html` and `assets/firmware/dummy/` (the template's example suite is not a real product, so it is not deployed). HTML files and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then local asset URLs are cache-busted and finally the `@raw` blocks are put back unchanged. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
+The build copies `wwwroot/` to `dist/` except `partials/`, `data/`, `templates/` and `assets/firmware/dummy/` (the template's example suite is not a real product, so it is not deployed). HTML files and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then local asset URLs are cache-busted and finally the `@raw` blocks are put back unchanged. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
 
 The build also generates `dist/sitemap.xml` from every built page (excluding `404.html`; `index.html` becomes the root URL). Project pages carry a `lastmod` from their `date`; all other pages take it from the last git commit date of their source file — today when the file has uncommitted changes, omitted when git is unavailable or the file is untracked. The build also fills the `Sitemap:` line in `dist/robots.txt`. Both use the canonical `url` in `data/site.json`. Keep `data/site.json`'s `url` current when the site moves domains.
 
@@ -223,7 +231,7 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `{{name}}`, `{{year}}`, `{{email}}` | Values from `data/site.json`. |
 | `{{footerNote}}` | `footerNote` of the page language from `data/site.json`. |
 | `{{url}}`, `{{sitemapUrl}}` | Canonical base URL and `https://…/sitemap.xml` from `data/site.json` (`url`). Used by `robots.txt`. |
-| `{{root}}` | Relative path to the web root (`""` for root pages, `"../"` for pages in `html/`). |
+| `{{root}}` | Relative path to the web root (`""` for root pages, `"../"` for pages directly in a language folder). |
 | `<!-- @nav -->` | Nav list built from `data/nav.json` for the page language; sets `aria-current="page"` on the entry whose `href` is the current page. Renders nothing on common pages (brand only). Used in `partials/header.html`. |
 | `<!-- @footer-nav -->` | Footer nav list built from `data/footer-nav.json` for the page language; same `aria-current="page"` handling as `@nav`. Entries with `lang` pointing to another language get `lang`/`hreflang`. Used in `partials/footer.html`. |
 | `<!-- @lang-switch -->` | Language selector: one link per language (flag, code, language name as `aria-label`) to the same page in that language, else to that language's home; `aria-current="true"` on the current language of a language page. Renders nothing with a single configured language. Cards, status labels and the link hint word use the page language. |
@@ -309,7 +317,7 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 
 ### Project Write-up Template
 
-[`wwwroot/html/proj/project-template.html`](wwwroot/html/proj/project-template.html) is the master template for writing about a project. It is a reference page that is not built into `dist/`; it demonstrates every supported layout pattern with placeholder body content. Its header, title and description are generated from `data/projects.json` like any project page.
+[`wwwroot/templates/project-template.html`](wwwroot/templates/project-template.html) is the master template for writing about a project. It is a reference page that is not built into `dist/`; it demonstrates every supported layout pattern with placeholder body content. Its header, title and description are generated from `data/projects.json` like any project page.
 
 - To write a new project page, add the project to `data/projects.json`, copy the template to `html/proj/{id}.html`, keep the includes and `@project-header`, and replace the placeholder body content.
 - Each numbered section shows one layout pattern: pure text, text with a small image, full-width image, text/image side by side, image gallery, callout, code block, lists, and table.
@@ -328,11 +336,11 @@ npm run create -- "My Project" "One-sentence description of the project."
 
 The command:
 
-- Derives a lowercase, hyphenated `id` from the name (e.g. `My Project` → `my-project`) and refuses to run if that `id` already exists in `data/projects.json` or as a page in `html/proj/`.
-- Copies `html/proj/project-template.html` to `html/proj/{id}.html` (without the master-template instruction comment).
-- Appends an entry to `data/projects.json` with the required schema: `id`, `title` (the name), `summary` (the brief), empty `tags`, `status: "in Arbeit"`, `date` (current `YYYY-MM`), `links` (`repo`/`demo` both `null`), the placeholder image, and `featured: false`.
+- Derives a lowercase, hyphenated `id` from the name (e.g. `My Project` → `my-project`) and refuses to run if that `id` already exists in `data/projects.json` or as a page in any `<lang>/proj/` folder (mapped names from `data/pages.json` included).
+- Copies `templates/project-template.html` to `<lang>/proj/{id}.html` for **every** configured language (without the master-template instruction comment).
+- Appends an entry to `data/projects.json` with the required schema: `id`, `title` and `summary` per language (the default language gets the name/brief, every other language `"TODO"`), `tags` per language (the default language gets `--tags`, others start empty), `status: "in Arbeit"`, `date` (current `YYYY-MM`), `links` (`repo`/`demo` both `null`), the placeholder image, and `featured: false`. The project stays hidden in a language until its `TODO` texts are replaced.
 
-After scaffolding, replace the placeholder body on the new page and set `tags`, `links` and `image` in `data/projects.json`, then run `npm run build`.
+After scaffolding, replace the placeholder body on the new pages and set `tags`, `links` and `image` in `data/projects.json`, then run `npm run build`.
 
 ### Scaffolding a Secondary Page (`npm run page`)
 
@@ -344,9 +352,10 @@ npm run page -- "Petikette" --nav
 
 The command:
 
-- Derives a lowercase, hyphenated `slug` from the title (`ü`/`ä`/`ö`/`ß` are transliterated, e.g. `Über mich` → `ueber-mich`) and refuses to overwrite an existing `html/{slug}.html`.
+- Derives a lowercase, hyphenated `slug` from the title (`ü`/`ä`/`ö`/`ß` are transliterated, e.g. `Über mich` → `ueber-mich`) and refuses to overwrite an existing `<lang>/{slug}.html`.
+- Creates the page in **every** language folder. Other languages get `TODO_<title>` titles and a `TODO` text unless `--title-<lang> "…"` is given; then that language's file name follows its title and the differing names are paired in `data/pages.json`.
 - Writes a minimal template: shared `<!-- @include head -->` (CSP, title and `meta description` with `{{name}}`, stylesheets, `main.js`), `<!-- @include header -->`, an `h1`, one `prose` section, `<!-- @include footer -->`.
-- With `--nav` / `--footer` it appends an entry `{ "label": "<Title>", "href": "html/{slug}.html" }` to `data/nav.json` / `data/footer-nav.json` (skips duplicates). `--description "…"` overrides the placeholder `meta description`.
+- With `--nav` / `--footer` it appends `{ "label": "<Title>", "href": "{slug}.html" }` to the matching language array of `data/nav.json` / `data/footer-nav.json` (skips duplicates). `--description "…"` overrides the placeholder `meta description` of the default language.
 
 After scaffolding, replace the placeholder body text and add the page to the README outline, then run `npm run build`.
 
@@ -355,7 +364,7 @@ After scaffolding, replace the placeholder body text and add the page to the REA
 `npm run remove -- <id>` removes a project you no longer want to publish:
 
 - Validates `<id>` (lowercase, hyphenated) and looks it up in `data/projects.json`.
-- Asks for a confirmation prompt and deletes the entry plus its page `html/proj/{id}.html`; pass `--yes` to skip the prompt.
+- Asks for a confirmation prompt (listing the files) and deletes the entry plus its page in every language folder (`<lang>/proj/{id}.html` or the mapped name) and its group in `data/pages.json`; pass `--yes` to skip the prompt.
 - The project's image file is left in place — images can be shared between projects. Delete it manually if nothing references it anymore (`npm run report` lists unused images).
 - Run `npm run build` afterwards and remove the now-stale files from the server on the next deploy.
 

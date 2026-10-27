@@ -1,7 +1,12 @@
 {
   "de": [
-    { "label": "Impressum", "href": "html/impressum.html" },
-    { "label": "Datenschutz", "href": "html/privacy.html" },
-    { "label": "Rechtliche Hinweise", "href": "html/rechtliches.html" }
+    { "label": "Impressum", "href": "impressum.html" },
+    { "label": "Datenschutz", "href": "privacy.html" },
+    { "label": "Rechtliche Hinweise", "href": "rechtliches.html" }
+  ],
+  "en": [
+    { "label": "TODO_Impressum", "href": "impressum.html", "lang": "de" },
+    { "label": "TODO_Datenschutz", "href": "privacy.html", "lang": "de" },
+    { "label": "TODO_Rechtliche Hinweise", "href": "rechtliches.html", "lang": "de" }
   ]
 }

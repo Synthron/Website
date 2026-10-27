@@ -1,7 +1,12 @@
 {
   "de": [
     { "label": "Start", "href": "index.html" },
-    { "label": "Über mich", "href": "html/about.html" },
-    { "label": "Projekte", "href": "html/projects.html" }
+    { "label": "Über mich", "href": "about.html" },
+    { "label": "Projekte", "href": "projects.html" }
+  ],
+  "en": [
+    { "label": "TODO_Start", "href": "index.html" },
+    { "label": "TODO_Über mich", "href": "about.html" },
+    { "label": "TODO_Projekte", "href": "projects.html" }
   ]
 }

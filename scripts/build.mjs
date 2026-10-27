@@ -20,7 +20,7 @@ import {
 
 // Source-only folders/files that are not copied to dist/.
 const SKIP_DIRS = new Set(['partials', 'data', 'templates']);
-const SKIP_FILES = new Set(['project-template.html', '.gitkeep']);
+const SKIP_FILES = new Set(['.gitkeep']);
 // Whole sub-trees that are not copied to dist/ (checked by path prefix).
 const SKIP_PATHS = ['assets/firmware/dummy'];
 // S64: warn once per missing Open Graph image (the default PNG is a manual
@@ -62,18 +62,11 @@ async function computeVersions(files) {
   return { versions, outputs };
 }
 
-// Until the pages move to <lang>/ (M50) the default language lives in html/
-// and its home page and nav hrefs are rooted at the web root.
-const legacyLayout = (defaultLang) => ({
-  pageDir: (code) => (code === defaultLang ? 'html' : code),
-  langBase: (code) => (code === defaultLang ? '' : `${code}/`),
-});
-
 async function build({ check = false } = {}) {
   const site = await loadSite();
   const { defaultLang } = site;
-  const { pageDir, langBase } = legacyLayout(defaultLang);
-  const pageIndex = await loadPages(site, { pageDir, langBase });
+  const pageIndex = await loadPages(site);
+  const pageDir = pageIndex.dir;
   const allProjects = await loadProjects(site, pageIndex);
   const navs = await loadNav('nav.json', site);
   const footerNavs = await loadNav('footer-nav.json', site);

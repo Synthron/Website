@@ -8,6 +8,7 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { hasFlasher, languageCodes, rootRedirect } from './lib/preview.mjs';
 
 const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 const PORT = Number(process.env.PORT) || 8000;
@@ -42,10 +43,9 @@ const SECURITY_HEADERS = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), serial=(self)',
   'Strict-Transport-Security': 'max-age=86400',
 };
-// Same exception as <Files "nixie-clock.html"> in .htaccess (ESP Web Tools
-// injects inline styles on the flasher page only).
+// Same exception as the <Files> block in .htaccess (ESP Web Tools injects
+// inline styles on flasher pages only); detected from the served HTML.
 const FLASHER_CSP = "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'";
-const isFlasherPage = (pathname) => path.posix.basename(pathname) === 'nixie-clock.html';
 
 async function isDirectory(file) {
   try {
@@ -55,14 +55,15 @@ async function isDirectory(file) {
   }
 }
 
-async function send(res, status, file, flasher = false) {
+async function send(res, status, file, extraHeaders = {}) {
   const body = await readFile(file);
   const headers = {
     'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream',
     'Cache-Control': NO_STORE,
     ...SECURITY_HEADERS,
+    ...extraHeaders,
   };
-  if (flasher) headers['Content-Security-Policy'] = FLASHER_CSP;
+  if (path.extname(file) === '.html' && hasFlasher(body.toString('utf8'))) headers['Content-Security-Policy'] = FLASHER_CSP;
   res.writeHead(status, headers);
   res.end(body);
 }
@@ -70,8 +71,16 @@ async function send(res, status, file, flasher = false) {
 createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
-    const flasher = isFlasherPage(url.pathname);
     let pathname = decodeURIComponent(url.pathname);
+    // Mirrors the .htaccess redirect for "/" (302, Vary: Accept-Language).
+    if (pathname === '/') {
+      const target = rootRedirect(req.headers['accept-language'], await languageCodes());
+      if (target) {
+        res.writeHead(302, { Location: target, Vary: 'Accept-Language', 'Cache-Control': NO_STORE, ...SECURITY_HEADERS });
+        res.end();
+        return;
+      }
+    }
     if (!pathname.endsWith('/')) {
       const file = path.join(DIST, path.normalize(pathname));
       if (file.startsWith(DIST + path.sep) && await isDirectory(file)) {
@@ -88,7 +97,7 @@ createServer(async (req, res) => {
     if (pathname.endsWith('/')) pathname += 'index.html';
     const file = path.join(DIST, path.normalize(pathname));
     if (!file.startsWith(DIST + path.sep)) throw new Error('outside root');
-    await send(res, 200, file, flasher);
+    await send(res, 200, file, pathname === '/index.html' ? { Vary: 'Accept-Language' } : {});
   } catch {
     try {
       await send(res, 404, path.join(DIST, '404.html'));

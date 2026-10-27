@@ -27,5 +27,33 @@
       "Konzept": "Konzept",
       "abgebrochen": "abgebrochen"
     }
+  },
+  "en": {
+    "countSingular": "TODO_Projekt",
+    "countPlural": "TODO_Projekte",
+    "withTag": "TODO_mit Tag",
+    "tagFilterLabel": "TODO_Nach Tag filtern",
+    "tagsLabel": "TODO_Schlagwörter",
+    "all": "TODO_Alle",
+    "noProjects": "TODO_Noch keine Projekte",
+    "repo": "TODO_Quellcode",
+    "demo": "TODO_Demo",
+    "skipLink": "TODO_Zum Inhalt springen",
+    "menu": "TODO_Menü",
+    "mainNavLabel": "TODO_Hauptnavigation",
+    "footerNavLabel": "TODO_Fußbereich",
+    "languageLabel": "TODO_Sprache",
+    "projectLinkFor": "TODO_für",
+    "backToProjects": "TODO_← Alle Projekte",
+    "quoteOpen": "“",
+    "quoteClose": "”",
+    "status": {
+      "in Arbeit": "TODO_in Arbeit",
+      "fertig": "TODO_fertig",
+      "pausiert": "TODO_pausiert",
+      "veraltet": "TODO_veraltet",
+      "Konzept": "TODO_Konzept",
+      "abgebrochen": "TODO_abgebrochen"
+    }
   }
 }

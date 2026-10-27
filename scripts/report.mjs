@@ -1,13 +1,20 @@
-// dist/ report (S65): total size, largest files, per-page sizes, raster images
-// not converted to WebP and unused assets in assets/img/. Read-only; run after
-// `npm run build`. Node built-ins only.
+// dist/ report (S65): total size, largest files, page sizes per language,
+// raster images not converted to WebP and unused assets in assets/img/.
+// Read-only; run after `npm run build`. Node built-ins only.
 
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const DIST = path.join(ROOT, 'dist');
 const TOP = 10;
+
+// Language folders from data/site.json; root pages (landing, 404) count as "common".
+async function languageCodes() {
+  const site = JSON.parse(await readFile(path.join(ROOT, 'wwwroot', 'data', 'site.json'), 'utf8'));
+  return (site.languages ?? []).map((language) => language.code);
+}
 
 async function walkFiles(dir) {
   const files = [];
@@ -59,6 +66,13 @@ async function main() {
   print(sizes);
   console.log('\nPages by size:');
   print(pages);
+  console.log('\nPages per language:');
+  const codes = await languageCodes();
+  for (const group of [...codes, 'common']) {
+    const rows = pages.filter(({ rel }) => (group === 'common' ? !codes.some((code) => rel.startsWith(`${code}/`)) : rel.startsWith(`${group}/`)));
+    const sum = rows.reduce((subtotal, row) => subtotal + row.size, 0);
+    console.log(`  ${group.padEnd(8)} ${String(rows.length).padStart(3)} page(s)  ${pad(kb(sum), 9)}`);
+  }
   console.log('\nRaster images not converted to WebP:');
   if (rasterImages.length === 0) console.log('  (none — all raster images use WebP)');
   else print(rasterImages);
