@@ -12,7 +12,7 @@ Recommended option in **bold**.
 
 | ID  | Question | Options| Answer |
 | --- | -------- | ------ | ------ |
-| D1  | Which language is the site (content + UI strings)? | **German content and German UI** · German content, English UI · English everything  | German Content and German UI  |
+| D1  | Which language is the site (content + UI strings)? | **German content and German UI** · German content, English UI · English everything  | German Content and German UI. **Superseded** by [`language.md`](language.md): German (default) and English, content and UI strings per language |
 | D6  | What happens with `placeholder-project-two`?| **Delete it** · Keep it as `draft` (needs step S36) · Keep it as is | Keep it as is for now  |
 | D10 | Allowed values for `status`?| **`active`, `finished`, `paused`, `archived`** · other list  | **`in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`**|
 | D13 | Should new HTML rule checks (one `h1`, `alt`, no inline styles …) fail the build or only warn? | **Fail** · Warn  | Fail|

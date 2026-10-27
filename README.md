@@ -1,6 +1,6 @@
 # Personal Project Website
 
-A minimal, responsive, personal project website built with pure HTML, CSS and JavaScript. No frameworks, no runtime dependencies, no cookies. A small Node.js build script (`npm run build`) compiles the sources in `wwwroot/` into static pages in `dist/`.
+A minimal, responsive, personal project website built with pure HTML, CSS and JavaScript. No frameworks, no runtime dependencies, no cookies. A small Node.js build script (`npm run build`) compiles the sources in `wwwroot/` into static pages in `dist/`. The site is multi-language (German as the default language, English in progress); see [Languages](#languages).
 
 ## Core Directives
 
@@ -19,6 +19,8 @@ A minimal, responsive, personal project website built with pure HTML, CSS and Ja
 Website/
 ├── README.md              # This file: directives, outline, todos
 ├── AGENTS.md              # Instructions for AI agents / contributors (AGENTS.md)
+├── language.md            # Multi-language plan, decision record (L1–L32), work log (M-steps) and open user tasks (Phase M20)
+├── todo.md                # Remaining work and decision record (kept outside the outline, may be deleted)
 ├── .gitignore             # Ignore OS/editor junk, node_modules/, dist/
 ├── .gitattributes         # LF line endings for text; binary for .bin/.jpg/.png/.webp
 ├── .editorconfig          # Indentation and encoding rules
@@ -51,7 +53,7 @@ Website/
 │   ├── firmware.mjs       # Scaffold an assets/firmware/<suite>/manifest.json
 │   ├── images.mjs         # WebP conversion, OG default image, SVG optimisation
 │   ├── page.mjs           # Scaffold a minimal secondary page in every language folder
-│   ├── remove.mjs         # Delete a project entry and its page (npm run remove)
+│   ├── remove.mjs         # Delete a project entry and its pages in all languages (npm run remove)
 │   ├── report.mjs         # Report dist/ size, largest files, unused assets
 │   ├── check-external.mjs # Manual HEAD checks of external links
 │   └── serve.mjs          # Local preview server for dist/
@@ -116,6 +118,27 @@ Website/
             └── flag-gb.svg  # UK flag (language selector)
 ```
 
+### Languages
+
+The site is multi-language; the decisions behind it are recorded in [`language.md`](language.md) (L1–L32), including the open tasks for the owner (Phase M20).
+
+- **Configuration** (`data/site.json`): `languages` (`code`, `name`, `locale`, `flag`), `defaultLang` (`de`, also the `x-default` and fallback language) and `footerNote` per language. The code is the folder name below `wwwroot/`.
+- **Pages**: `wwwroot/<lang>/…` per language (`de/` is complete, `en/` holds placeholders). Two common pages live at the root: the landing page `index.html` (`lang="de"`, text blocks marked with their own `lang`) and `404.html` (English). Both use `partials/header-common.html` (brand and language selector, no nav). The legal pages exist in German only.
+- **Root redirect**: `.htaccess` (and the preview servers) redirect `/` to `/de/` or `/en/` by the first `Accept-Language` entry (`302`, `Vary: Accept-Language`); everything else gets the landing page.
+- **Page pairs**: a page pairs with the page of the same path in another language. Pages with different file names per language are listed in `data/pages.json` (`[{ "de": "ueber-mich.html", "en": "about.html" }]`; project groups must contain `"de": "proj/{id}.html"`). The language selector, the `hreflang` alternates and `npm run create`/`page`/`remove` use these pairs; a missing counterpart leads to that language's home.
+- **Localized data**: `strings.json`, `nav.json`, `footer-nav.json` hold one block per language; in `projects.json` `title`, `summary` and `tags` are objects per language (tag lists are independent, not translations, ASCII lowercase-hyphenated). `status` stays a German key; its label per language is `strings.<lang>.status`.
+- **Missing translations**: the default language is required, other languages are optional. A project whose `title`/`summary` is missing or starts with `TODO` in a language (or whose page is missing) is hidden there (lists, filter, sitemap, alternates; its page is not built) and the build warns. Placeholders follow two conventions: `TODO` for project texts, `TODO_<German label>` for labels (navigation, strings, footer note).
+- **Translations are written by the owner.** Agents only create structure and clearly marked placeholders unless asked to translate.
+
+#### Add a language
+
+1. `data/site.json`: add the language to `languages` (code, name, `locale` such as `fr_FR`, `flag` path; put the flag SVG into `assets/icons/`) and add `footerNote.<code>`.
+2. `data/strings.json`, `data/nav.json`, `data/footer-nav.json`: add a block for the code (copy the default block; `TODO_<label>` until translated). Footer entries that point to pages that only exist in another language get `"lang": "<code>"`.
+3. `data/projects.json`: add the code to `title` and `summary` (`"TODO"`) and `tags` (`[]`) of every project.
+4. Create `wwwroot/<code>/` with `index.html`, `projects.html`, `about.html` and `proj/{id}.html` (copy the German pages and mark the texts `TODO`, or use the existing `en/` skeletons as a model). `npm run create` and `npm run page` create new pages in the new language automatically.
+5. `wwwroot/.htaccess`: add a rewrite rule for the code next to the `de`/`en` rules; the preview servers read the codes from `site.json`.
+6. `npm run build` (check the warnings), `npm test`, `npm run test:e2e`; add the new pages to `lighthouserc.json` if wanted.
+
 ### Build and Preview
 
 Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `package.json` changes; it installs the tooling dependencies into `node_modules/` (git-ignored, never deployed).
@@ -131,7 +154,7 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | `npm run check:external` | Sends a HEAD request to every external link found in `wwwroot/` (pages, partials, template, `data/*.json`) and reports the status. Manual only — never part of `build` or `check`. |
 | `npm run firmware -- <suite> --chip <family> [--chip …]` | Creates `assets/firmware/<suite>/manifest.json` with a `builds` entry per `--chip` and prints the `<esp-web-install-button>` snippet. Supported chips: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 (see Firmware section for offsets). |
 | `npm run dev` | Build once, serve `dist/`, then rebuild automatically on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`). Live reload via Server-Sent Events: the dev server injects a same-origin `<script src="/__reload.js">` into served HTML and broadcasts a reload after each successful build — never written into `dist/`, and the CSP (`'self'`) still holds. Build errors print to the terminal; the server keeps running so a fix triggers the next rebuild. Serves on `localhost:8000` (`PORT`/`HOST` overrides apply as with `serve`). |
-| `npm test` | Runs the unit tests (`node --test "scripts/**/*.test.mjs"`): `esc`, `slugify`, `safeExternalUrl`, `formatDate`, `renderNav` (`aria-current`), sitemap rendering and the link check. |
+| `npm test` | Runs the unit tests (`node --test "scripts/**/*.test.mjs"`): helpers, data loaders (fixture trees), renderers (nav, language selector, cards, sitemap, Open Graph), pipeline (page classification, tokens), output checks and the preview helpers. |
 | `npm run lint` | Runs `lint:js`, `lint:css` and `lint:html` (stops at the first failing linter). Also run by the pre-commit hook. |
 | `npm run lint:js` | ESLint over `wwwroot/js/` (browser) and `scripts/` + root configs (Node). |
 | `npm run lint:css` | Stylelint over `wwwroot/css/`. |
@@ -146,7 +169,7 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 
 The build copies `wwwroot/` to `dist/` except `partials/`, `data/`, `templates/` and `assets/firmware/dummy/` (the template's example suite is not a real product, so it is not deployed). HTML files and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then local asset URLs are cache-busted and finally the `@raw` blocks are put back unchanged. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
 
-The build also generates `dist/sitemap.xml` from every built page (excluding `404.html`; `index.html` becomes the root URL). Project pages carry a `lastmod` from their `date`; all other pages take it from the last git commit date of their source file — today when the file has uncommitted changes, omitted when git is unavailable or the file is untracked. The build also fills the `Sitemap:` line in `dist/robots.txt`. Both use the canonical `url` in `data/site.json`. Keep `data/site.json`'s `url` current when the site moves domains.
+The build also generates `dist/sitemap.xml` from every built page (excluding `404.html`; `index.html` becomes the root URL). Project pages carry a `lastmod` from their `date`; all other pages take it from the last git commit date of their source file — today when the file has uncommitted changes, omitted when git is unavailable or the file is untracked. Pages of projects that are hidden in a language are not built and therefore not listed; the sitemap has no `hreflang` alternates (those are `<link>` tags in the page heads). The build also fills the `Sitemap:` line in `dist/robots.txt`. Both use the canonical `url` in `data/site.json`. Keep `data/site.json`'s `url` current when the site moves domains.
 
 ### Tooling Packages
 
@@ -176,7 +199,8 @@ Installed as `devDependencies` (D27); none of them ship to `dist/`. Use these pa
 
 Every built page except `404.html` automatically gets a canonical link and Open Graph tags injected into its `<head>` by the build:
 
-- `canonical`, `og:url`, `og:type="website"`, `og:locale`, `og:site_name`, `og:title` and `og:description` come from `data/site.json` plus the page's own `<title>` and `meta name="description"` (parsed from the rendered page, so they always match).
+- `canonical`, `og:url`, `og:type="website"`, `og:locale`, `og:site_name`, `og:title` and `og:description` come from `data/site.json` plus the page's own `<title>` and `meta name="description"` (parsed from the rendered page, so they always match). `og:locale` is the `locale` of the page language (`de_DE`, `en_GB`).
+- Pages that exist in two or more languages also get `<link rel="alternate" hreflang="…">` for every available version (a project hidden in a language gets none), `hreflang="x-default"` pointing to the root `/`, and `og:locale:alternate` for the other versions.
 - `og:image` uses the project's raster image (`.png`/`.jpg`/`.webp`) on project pages; every other page (and projects whose image is an SVG) uses `assets/img/og-default.png`. Create that file once — 1200×630, logo on a plain background: `npm run images` generates it from `favicon.svg` (or make it by hand in GIMP); until it exists the build warns and the image tag is omitted. The image URL is cache-busted like any local asset.
 - No page edits needed: the tags are added at build time. Keep `url` in `data/site.json` current (it is the canonical base).
 
@@ -217,7 +241,7 @@ Beyond the link, anchor and HTML-rule checks, the build verifies the language se
 | Default-language page without a counterpart in another language (project pages are covered by the project data warnings) | warn |
 | Project page without project data in its language | warn |
 | Link from a language page into another language's folder (the language selector and entries with `hreflang`/`lang` are exempt; common pages are not checked) | warn |
-| Link into the removed `html/` folder (active once no language lives there) | fail |
+| Link into the removed `html/` folder (old URLs; the pages moved to `<lang>/`) | fail |
 | Flasher page (`<esp-web-install-button>`) whose file name is not covered by a `<Files>`/`<FilesMatch>` block with `'unsafe-inline'` in `wwwroot/.htaccess` | warn |
 
 `TODO` placeholders and missing translations in `data/projects.json` are reported when the data is loaded (one warning per project and language).
@@ -228,10 +252,10 @@ Content is never hard-coded where it can be generated. Source pages use these co
 
 | Construct | Result |
 | --- | --- |
-| `<!-- @include head -->` / `<!-- @include header -->` / `<!-- @include footer -->` | Inserts `partials/head.html` / `partials/header.html` / `partials/footer.html` (any file in `partials/` works by its name). |
+| `<!-- @include head -->` / `<!-- @include header -->` / `<!-- @include header-common -->` / `<!-- @include footer -->` | Inserts `partials/head.html` / `partials/header.html` (language pages) / `partials/header-common.html` (landing page and 404: brand and language selector only) / `partials/footer.html` (any file in `partials/` works by its name). |
 | `{{csp}}` | Content Security Policy for the page. Pages containing `<esp-web-install-button>` automatically get `style-src 'self' 'unsafe-inline'` added. Used in `partials/head.html`. |
-| `{{lang}}` | Language of the current page: the language folder; on common root pages the literal `<html lang="…">` of the source. Root pages that still use `<html lang="{{lang}}">` count as default-language pages (transitional). |
-| `{{langRoot}}` | Relative path from the page to its language folder (`""` for pages directly in it, `"../"` one level deeper); equals `{{root}}` on common and transitional root pages. |
+| `{{lang}}` | Language of the current page: the language folder; on the common root pages the literal `<html lang="…">` of the source (landing page `de`, `404.html` `en`). Other root files such as `robots.txt` use the default language. |
+| `{{langRoot}}` | Relative path from the page to its language folder (`""` for pages directly in it, `"../"` one level deeper); equals `{{root}}` on the common root pages. |
 | `{{t:key}}` | UI string `key` of the page language from `data/strings.json` (HTML-escaped; unknown or non-text keys fail the build). |
 | `{{name}}`, `{{year}}`, `{{email}}` | Values from `data/site.json`. |
 | `{{footerNote}}` | `footerNote` of the page language from `data/site.json`. |
@@ -240,7 +264,7 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `<!-- @nav -->` | Nav list built from `data/nav.json` for the page language; sets `aria-current="page"` on the entry whose `href` is the current page. Renders nothing on common pages (brand only). Used in `partials/header.html`. |
 | `<!-- @footer-nav -->` | Footer nav list built from `data/footer-nav.json` for the page language; same `aria-current="page"` handling as `@nav`. Entries with `lang` pointing to another language get `lang`/`hreflang`. Used in `partials/footer.html`. |
 | `<!-- @lang-switch -->` | Language selector: one link per language (flag, code, language name as `aria-label`) to the same page in that language, else to that language's home; `aria-current="true"` on the current language of a language page. Renders nothing with a single configured language. Cards, status labels and the link hint word use the page language. |
-| `{{projectTitle}}`, `{{projectSummary}}` | Title/summary of the project whose `id` equals the page filename (`html/proj/{id}.html`). |
+| `{{projectTitle}}`, `{{projectSummary}}` | Title/summary (in the page language) of the project whose page this is: `<lang>/proj/{id}.html` or the mapped name from `data/pages.json`. |
 | `<!-- @project-header -->` | Project page header (h1, summary, status/date, tags, links) from `data/projects.json`. |
 | `<!-- @projects all\|featured level=2\|3 id=list-id -->` | Pre-rendered project card grid, newest first. |
 | `<!-- @tag-filter list-id -->` | Tag filter buttons and status line for the list with that `id` (hidden until `js/projects.js` runs). |
@@ -248,7 +272,7 @@ Content is never hard-coded where it can be generated. Source pages use these co
 
 All inserted values are HTML-escaped. Use `{{name}}` (not a hard-coded name) in every `<title>` and `meta[name="description"]`. Source files in `wwwroot/` are templates and are not meant to be opened directly in a browser; open the built files in `dist/`.
 
-The build validates `data/projects.json` (required fields, unique lowercase ids, `YYYY-MM` dates, existing image and `html/proj/{id}.html` page) and checks every internal link in the output: `href`, `src`, `manifest` (firmware flasher), `poster` and all candidates of `srcset`.
+The build validates every data file (schemas in `scripts/schemas/`, cross-checks in `scripts/lib/data.mjs`: language keys, status labels, unique ids, image and page files per language, `pages.json` groups) and checks every internal link in the output: `href`, `src`, `manifest` (firmware flasher), `poster` and all candidates of `srcset`.
 
 ### Shared Head, Header and Footer
 
@@ -262,14 +286,15 @@ The common `<head>` content (charset, viewport, CSP, colour scheme, favicon, sty
 </head>
 ```
 
-The header (skip link, brand, nav) and footer live once in `wwwroot/partials/`. Edit them there; every page picks them up on the next build. The nav toggle starts `hidden` so that without JavaScript the nav is always visible. Required header structure (used by `css/layout.css` and `js/nav.js`):
+The header (skip link, brand, language selector, nav) and footer live once in `wwwroot/partials/`; the landing page and `404.html` use the smaller `header-common.html` (skip link, brand, selector). Edit them there; every page picks them up on the next build. All texts come from `data/strings.json` via `{{t:key}}`. The nav toggle starts `hidden` so that without JavaScript the nav is always visible. The language selector sits next to the toggle, outside the collapsible nav. Required header structure (used by `css/layout.css` and `js/nav.js`):
 
 ```html
 <header class="site-header">
   <div class="container site-header__inner">
-    <a class="site-brand" href="…">…</a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden>Menü</button>
-    <nav class="site-nav" id="site-nav" aria-label="Hauptnavigation">…</nav>
+    <a class="site-brand" href="{{langRoot}}index.html">…</a>
+    <!-- @lang-switch -->
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden>{{t:menu}}</button>
+    <nav class="site-nav" id="site-nav" aria-label="{{t:mainNavLabel}}">…</nav>
   </div>
 </header>
 ```
@@ -279,7 +304,7 @@ The footer mirrors the header: a `site-footer__nav` element (fed by `@footer-nav
 ```html
 <footer class="site-footer">
   <div class="container site-footer__inner">
-    <nav class="site-footer__nav" aria-label="Fußbereich">…</nav>
+    <nav class="site-footer__nav" aria-label="{{t:footerNavLabel}}">…</nav>
     <div class="site-footer__info">…</div>
   </div>
 </footer>
@@ -287,16 +312,23 @@ The footer mirrors the header: a `site-footer__nav` element (fed by `@footer-nav
 
 ### Navigation (`data/nav.json`)
 
-The navbar is generated from `data/nav.json`, an ordered array; the footer nav comes from `data/footer-nav.json` via `<!-- @footer-nav -->` (see `partials/footer.html`). Add, remove or reorder entries in either file to control which pages appear.
+The navbar is generated from `data/nav.json`, an object with one ordered array per language; the footer nav comes from `data/footer-nav.json` (same shape) via `<!-- @footer-nav -->` (see `partials/footer.html`). Add, remove or reorder entries in either file to control which pages appear.
 
 ```json
-[
-  { "label": "Home", "href": "index.html" },
-  { "label": "Projects", "href": "html/projects.html" }
-]
+{
+  "de": [
+    { "label": "Start", "href": "index.html" },
+    { "label": "Projekte", "href": "projects.html" }
+  ],
+  "en": [
+    { "label": "Home", "href": "index.html" },
+    { "label": "Projects", "href": "projects.html" },
+    { "label": "Imprint (German)", "href": "impressum.html", "lang": "de" }
+  ]
+}
 ```
 
-`href` is relative to the web root (the build prefixes `../` where needed) or an absolute `http(s)` URL (rendered with `rel="noopener noreferrer"`). Internal targets must exist or the build fails on the broken link. Both `nav.json` and `footer-nav.json` use the same schema.
+`href` is relative to the language folder (the build prefixes `<lang>/` and `../` where needed) or an absolute `http(s)` URL (rendered with `rel="noopener noreferrer"`). An optional `lang` points to a page in another language (e.g. English footer → German legal pages) and adds `lang`/`hreflang` to the link. Internal targets must exist or the build fails on the broken link. Both files use the same schema; every configured language needs an array.
 
 ### Site Config (`data/site.json`)
 
@@ -304,10 +336,12 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 
 | Field | Used for |
 | --- | --- |
-| `lang` | Page language code (used by `<html lang="{{lang}}">` and `formatDate`). |
+| `languages` | Configured languages: `code` (folder name), `name` (in that language, selector label), `locale` (Open Graph, e.g. `en_GB`), `flag` (SVG path inside `wwwroot/`). |
+| `defaultLang` | Fallback and `x-default` language; must be a configured code. |
 | `name` | Header brand, `{{name}}` in titles/descriptions/intro, footer copyright. |
+| `url` | Canonical base URL (sitemap, canonical and Open Graph URLs). |
 | `copyrightYear` | Footer copyright line (optional; defaults to the build year). |
-| `footerNote` | Footer note. |
+| `footerNote` | Footer note, one text per configured language. |
 | `email` | Contact `mailto:` link on the About page. |
 
 ### Script Hooks
@@ -324,12 +358,12 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 
 [`wwwroot/templates/project-template.html`](wwwroot/templates/project-template.html) is the master template for writing about a project. It is a reference page that is not built into `dist/`; it demonstrates every supported layout pattern with placeholder body content. Its header, title and description are generated from `data/projects.json` like any project page.
 
-- To write a new project page, add the project to `data/projects.json`, copy the template to `html/proj/{id}.html`, keep the includes and `@project-header`, and replace the placeholder body content.
+- To write a new project page, run `npm run create` (it adds the project to `data/projects.json` and copies the template to `<lang>/proj/{id}.html` for every language), keep the includes and `@project-header`, and replace the placeholder body content.
 - Each numbered section shows one layout pattern: pure text, text with a small image, full-width image, text/image side by side, image gallery, callout, code block, lists, and table.
 - The styles for all patterns live in `css/components.css` (base) and `css/responsive.css` (breakpoints at 640px and 960px). Do not add inline styles.
 - To add a NEW layout pattern, append a new numbered section to the template, add its styles to `css/components.css` (and `css/responsive.css` if it needs breakpoints), and note it here.
 - Placeholder images for different aspect ratios live in `assets/img/` (`placeholder.svg` wide, `placeholder-square.svg`, `placeholder-portrait.svg`).
-- Project cards link to a static page per project at `html/proj/{id}.html` (e.g. `html/proj/placeholder-project-one.html`). When adding a project to `data/projects.json`, create its page from this template and name it after the project `id`.
+- Project cards link to a static page per project at `<lang>/proj/{id}.html` (e.g. `de/proj/sy317.html`; other languages may use a mapped name from `data/pages.json`). The template is never built; `npm run create` copies it.
 
 ### Scaffolding a New Project (`npm run create`)
 
@@ -387,7 +421,7 @@ Some projects ship firmware that visitors can flash to an ESP32 directly from th
 
 ### Placeholders
 
-Name, copyright, footer note and email come from `data/site.json`. Still to replace with real content: the intro on `index.html`, the text on `html/about.html`, the three `placeholder-project-*` entries in `data/projects.json` and their page bodies.
+Name, copyright and email come from `data/site.json`. Still to replace with real content: the landing page `index.html` ("UNDER CONSTRUCTION"), the intro on `de/index.html`, the text on `de/about.html`, the three `placeholder-project-*` entries in `data/projects.json` and their page bodies, and every `TODO` / `TODO_…` placeholder of the English version (see the open tasks in `language.md`, Phase M20).
 
 ### Supporting Files
 
@@ -399,7 +433,7 @@ Name, copyright, footer note and email come from `data/site.json`. Still to repl
 | `wwwroot/robots.txt` | Crawler rules; the `Sitemap:` line is filled from `data/site.json` at build time. |
 | `dist/sitemap.xml` | Generated by the build from all built pages (excludes `404.html`); not a source file. |
 | `wwwroot/favicon.svg` | Logo favicon (simplified SVG trace); also used as the header brand icon. |
-| `wwwroot/404.html` | Minimal not-found page using the shared stylesheet. |
+| `wwwroot/404.html` | Common not-found page (English, root-relative links) using the shared stylesheet and `header-common.html`. |
 | `wwwroot/.htaccess` | Apache config for production on `dm7wb.de` (confirmed live 2026-10-23): `ErrorDocument` for 404 and 403 (both serve `404.html` for now — a separate 403 page can be added later), an HTTPS redirect via mod_rewrite (safe because Cloudflare is DNS only — a proxied "Flexible" SSL mode would loop), a `302` redirect for the path `/` only by the first `Accept-Language` entry (`de` → `/de/`, `en` → `/en/`; everything else gets the landing page; `Vary: Accept-Language` on the response), `Options -Indexes`, `DirectoryIndex`, `AddDefaultCharset UTF-8`, caching headers (HTML/firmware revalidate, versioned CSS/JS/images cache for a year — see [Caching and Cache Busting](#caching-and-cache-busting)) and security headers (`X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`, `Content-Security-Policy` with `frame-ancestors 'none'`, `Permissions-Policy` disabling camera/mic/geolocation but keeping `serial`, and `Strict-Transport-Security` with a short `max-age`). The flasher pages get the `style-src 'self' 'unsafe-inline'` CSP exception via a `<FilesMatch>` block that matches by file name in every language folder (a flasher page with another name in some language must be added to its pattern; the build warns). Applies **only** on Apache — it is copied to `dist/` but ignored by `npm run serve`. |
 
 ### Data Model (`data/projects.json`)
@@ -407,9 +441,9 @@ Name, copyright, footer note and email come from `data/site.json`. Still to repl
 ```json
 {
   "id": "example-project",
-  "title": "Example Project",
-  "summary": "One-sentence description.",
-  "tags": ["javascript", "tool"],
+  "title": { "de": "Beispielprojekt", "en": "Example Project" },
+  "summary": { "de": "Ein Satz.", "en": "One-sentence description." },
+  "tags": { "de": ["software", "werkzeug"], "en": ["javascript", "tool"] },
   "status": "fertig",
   "date": "2026-01",
   "links": { "repo": "https://example.com/repo", "demo": null },
@@ -418,17 +452,28 @@ Name, copyright, footer note and email come from `data/site.json`. Still to repl
 }
 ```
 
-Field validation (enforced by the build, failures abort `npm run build`). The structure is defined in [`scripts/schemas/projects.schema.json`](scripts/schemas/projects.schema.json) and validated with `ajv`; unique ids, existing image and page files are checked in `scripts/lib/data.mjs`:
+Field validation (enforced by the build, failures abort `npm run build`). The structure is defined in [`scripts/schemas/projects.schema.json`](scripts/schemas/projects.schema.json) and validated with `ajv`; language keys, unique ids, existing image and page files are checked in `scripts/lib/data.mjs`:
 
-- `title` and `summary` are non-empty strings.
-- `status` is one of: `in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`. Values contain spaces and capitals, so slugify before using one as a CSS hook.
+- `title`, `summary` and `tags` are objects keyed by language code. The default language is required; other languages are optional. A value that is missing or starts with `TODO` hides the project in that language and the build warns (`npm run create` writes `"TODO"` for every other language).
+- `title` and `summary` are non-empty strings; `tags` are independent lists per language (not translations).
+- `status` is one of the German keys: `in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`. Values contain spaces and capitals, so slugify before using one as a CSS hook. The label shown per language is `strings.<lang>.status[<key>]`; cards and headers carry the key as `data-status`.
 - `featured` is a boolean.
-- `draft` (optional) is a boolean when present. Draft projects keep their page built and their `html/proj/{id}.html` link working, but are excluded from project lists, the tag filter and `sitemap.xml` — useful for projects that are not ready to be shown yet.
+- `draft` (optional) is a boolean when present. Draft projects keep their page built and their `<lang>/proj/{id}.html` link working, but are excluded from project lists, the tag filter and `sitemap.xml` — useful for projects that are not ready to be shown yet.
 - `links` is an object; `repo` and `demo` are `null` or a valid http(s) URL (anything else fails the build).
-- `tags` are lowercase and hyphenated (same rule as `id`) and must not repeat within a project.
+- `tags` are lowercase and hyphenated (same rule as `id`) and must not repeat within a language.
 - `image` is a relative path that resolves inside `wwwroot/`; `../` segments and absolute paths are rejected.
+- Every project needs the page `de/proj/{id}.html`; other languages use `<lang>/proj/{id}.html` or the mapped name from `data/pages.json`.
 
-Adding a project means adding an entry to this file and creating `html/proj/{id}.html` from the project template. Cards, filter, page title and page header are generated by the build. The project header's **Source** button (from `links.repo`) renders with the Github mark (`assets/icons/GitHub_Invertocat_White.svg`) as a leading badge; the **Demo** button (from `links.demo`) stays a plain text button. Omit the link to hide its button.
+Adding a project means `npm run create` (entry plus pages in all languages). Cards, filter, page title and page header are generated by the build. The project header's **Source** button (from `links.repo`) renders with the Github mark (`assets/icons/GitHub_Invertocat_White.svg`) as a leading badge; the **Demo** button (from `links.demo`) stays a plain text button. Omit the link to hide its button.
+
+### Other Data Files
+
+| File | Content |
+| --- | --- |
+| `data/strings.json` | `{ "<lang>": { … } }`: UI strings per language (count words, labels, skip link, menu, aria labels, the connector word `projectLinkFor`, quote marks, `status` labels). Every language needs every key; `status` needs one label per status value. Rendered via `{{t:key}}` and the directives. |
+| `data/nav.json`, `data/footer-nav.json` | See [Navigation](#navigation-datanavjson). |
+| `data/pages.json` | Groups of the same page under different file names per language, see [Languages](#languages). `[]` when all pages pair by identical path. |
+| `data/site.json` | See [Site Config](#site-config-datasitejson). |
 
 ## Todo List
 
@@ -447,11 +492,11 @@ Adding a project means adding an entry to this file and creating `html/proj/{id}
 
 ### Phase 2 — Content & Structure
 - [x] Home page: intro, featured projects (placeholder text)
-- [x] `html/projects.html`: full project listing
-- ~~[x] `html/project.html`: detail template (driven by `?id=` query parameter)~~ — obsolete; replaced by static `html/proj/{id}.html` pages
-- [x] `html/about.html`: about and contact (contact via plain `mailto:` link)
+- [x] `de/projects.html`: full project listing
+- ~~[x] `html/project.html`: detail template (driven by `?id=` query parameter)~~ — obsolete; replaced by static `<lang>/proj/{id}.html` pages
+- [x] `de/about.html`: about and contact (contact via plain `mailto:` link)
 - [x] Shared header/footer markup, documented how to keep it consistent across pages
-- [x] `html/project-template.html`: master project write-up template with all layout patterns
+- [x] `templates/project-template.html`: master project write-up template with all layout patterns
 - [ ] Replace placeholder content (intro, about text, project entries and pages)
 
 ### Phase 3 — Data & Scripts
@@ -505,8 +550,20 @@ Wires the packages from [Tooling Packages](#tooling-packages) into the workflow.
 - [x] `.gitignore`: `test-results/`, `playwright-report/`, `.lighthouseci/`
 - [x] `.vscode/extensions.json`: recommend the ESLint, Stylelint and html-validate extensions
 
+### Phase 7 — Multi-language
+Plan, decisions and work log: [`language.md`](language.md).
+
+- [x] Localized data model, loaders and schemas (`site`, `strings`, `nav`, `projects`, `pages`)
+- [x] Language-aware pipeline, renderers, language selector, hreflang alternates and checks
+- [x] Content moved to `de/`, English skeletons in `en/`, landing page and 404 as common pages
+- [x] Scaffolding and preview scripts for all languages; root redirect and flasher CSP in `.htaccess`
+- [x] Unit tests for loaders, renderers, pipeline and checks
+- [ ] English texts and the final landing page (owner, `language.md` Phase M20)
+- [ ] Verification in the browser and on the server (`language.md`, Phase M11)
+
 ## Decisions
 
 - **Hosting**: Apache at `dm7wb.de`, manual SFTP upload of `dist/` — see [Deployment](#deployment).
 - **npm packages**: allowed for the build and tooling; the built site stays free of tracking, cookies and external services (D27).
 - **Tooling integration**: the installed packages are wired in via npm scripts and config files (see [Tooling Packages](#tooling-packages) and Phase 6); approved 2026-10-27.
+- **Languages**: German (default) and English; one folder per language (`de/`, `en/`) plus a common landing page and 404 at the root; the root redirects by `Accept-Language` (`302`) and falls back to the landing page; tags, titles and summaries are defined per language; `status` keeps German keys with labels per language; missing translations hide a project in that language and warn; legal pages stay German for now; no redirects from the old `/html/` URLs; all translations come from the owner. Full record: [`language.md`](language.md).

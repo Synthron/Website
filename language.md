@@ -1,6 +1,6 @@
 # language.md — Multi-language Plan
 
-Plan for turning the site into a multi-language site. **Nothing in this file is implemented yet.** All decisions (L1–L32) were answered on 2026-10-27, including the build-scope approval (L32). The target structure and the work items (M-steps) below follow the answers; implementation can start with Phase M1.
+Plan and work log for the multi-language site. **Status:** Phases M1–M10 are implemented; what is left are the owner's tasks (Phase M20) and the verification in Phase M11. All decisions (L1–L32) were answered on 2026-10-27, including the build-scope approval (L32). The sections below keep the original plan; the checkboxes show the progress.
 
 Like `todo.md`, this file is kept outside the README outline until the user decides otherwise.
 
@@ -337,10 +337,10 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 
 ### Phase M10 — Documentation
 
-- [ ] **M100** `README.md`: outline (new tree, `templates/`, `data/pages.json`, flag icons, `language.md` if kept), Build-time Templating table (`{{lang}}`, `{{langRoot}}`, `{{t:key}}`, `@lang-switch`, alternates), Site Config, Navigation, Data Model (localized fields, `TODO`, status labels), Script Hooks, Project Write-up Template, scaffolding sections (`create`, `page`, `remove`), Open Graph section (`og:locale`, alternates), `.htaccess` (root redirect), Deployment (old `/html/` folder), Decisions (language).
-- [ ] **M101** `AGENTS.md`: Language section (content per language, `de` default, translations only on explicit request, L22), Protected Files (legal pages now in `de/`), Directory Responsibilities (`html/` → `<lang>/`, `templates/`, `data/pages.json`), Common Tasks (add a project/page in all languages, add a language), Data rules (localized fields, German status keys, per-language tags).
-- [ ] **M102** `todo.md`: note in D1 that it is superseded by this plan.
-- [ ] **M103** New “Add a language” recipe in README/AGENTS.md: add the language to `site.json` (with flag), add its block to `strings.json`/`nav.json`/`footer-nav.json`, create `wwwroot/<lang>/`, add project data, extend the `.htaccess` redirect, build.
+- [x] **M100** (`language.md` stays in the repository and is listed in the outline) `README.md`: outline (new tree, `templates/`, `data/pages.json`, flag icons, `language.md` if kept), Build-time Templating table (`{{lang}}`, `{{langRoot}}`, `{{t:key}}`, `@lang-switch`, alternates), Site Config, Navigation, Data Model (localized fields, `TODO`, status labels), Script Hooks, Project Write-up Template, scaffolding sections (`create`, `page`, `remove`), Open Graph section (`og:locale`, alternates), `.htaccess` (root redirect), Deployment (old `/html/` folder), Decisions (language).
+- [x] **M101** `AGENTS.md`: Language section (content per language, `de` default, translations only on explicit request, L22), Protected Files (legal pages now in `de/`), Directory Responsibilities (`html/` → `<lang>/`, `templates/`, `data/pages.json`), Common Tasks (add a project/page in all languages, add a language), Data rules (localized fields, German status keys, per-language tags).
+- [x] **M102** `todo.md`: note in D1 that it is superseded by this plan.
+- [x] **M103** (README → Languages → Add a language; AGENTS.md → Common Tasks links to it) New “Add a language” recipe in README/AGENTS.md: add the language to `site.json` (with flag), add its block to `strings.json`/`nav.json`/`footer-nav.json`, create `wwwroot/<lang>/`, add project data, extend the `.htaccess` redirect, build.
 
 ### Phase M11 — Verification
 

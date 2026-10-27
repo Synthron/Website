@@ -4,12 +4,13 @@ Instructions for AI agents and contributors working in this repository.
 
 ## Project Summary
 
-This repository contains a personal project website built with **pure HTML, CSS and vanilla JavaScript**. See [`README.md`](README.md) for the full outline, data model, templating reference and todo list. Treat the core directives in the README as binding. If [`todo.md`](todo.md) exists, it tracks the remaining open work and records the decisions already made with the user.
+This repository contains a personal project website built with **pure HTML, CSS and vanilla JavaScript**. See [`README.md`](README.md) for the full outline, data model, templating reference and todo list. Treat the core directives in the README as binding. If [`todo.md`](todo.md) exists, it tracks the remaining open work and records the decisions already made with the user. The multi-language setup is recorded in [`language.md`](language.md) (decisions L1–L32, work log, open owner tasks in Phase M20).
 
 ## Language
 
-- **Site content and all UI text** (page text, buttons, labels, `title`, `meta description`, alt text): **German**.
-- **Code, comments, docs** (`README.md`, `AGENTS.md`, `todo.md`) and **commit messages**: **English**.
+- **Site content and all UI text** (page text, buttons, labels, `title`, `meta description`, alt text) exist per language: **German** (`de`, default) and **English** (`en`). The content of a page is always in the language of its folder; UI texts come from `data/strings.json` (`{{t:key}}`).
+- **Translations are written by the owner.** Do not invent or translate English (or other) site content unless the user explicitly asks. Create structure and clearly marked placeholders instead: `TODO` for project texts, `TODO_<German label>` for labels (navigation, strings, footer note), `TODO: …` for body text.
+- **Code, comments, docs** (`README.md`, `AGENTS.md`, `todo.md`, `language.md`) and **commit messages**: **English**.
 - Commit messages use [Conventional Commits](https://www.conventionalcommits.org/): `type: summary` with `type` one of `feat`, `fix`, `docs`, `perf`, `refactor`, `style`, `chore`; imperative summary, at most 72 characters; then a bullet list of the concrete changes.
 
 ## Hard Constraints
@@ -39,7 +40,7 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | Path | Contents | Rules |
 | --- | --- | --- |
 | `scripts/build.mjs` | Build CLI | Orchestration only. Put logic into `scripts/lib/`. |
-| `scripts/lib/` | Build modules: `util` (paths, `fail()`, escaping), `data` (load/validate JSON), `render` (HTML renderers), `pipeline` (`@raw`, includes, tokens, directives), `checks` (output checks) | Node built-ins or npm packages declared in `package.json`. Keep the build deterministic and failing loudly on bad data. New checks go into `checks.mjs`, new renderers into `render.mjs`. |
+| `scripts/lib/` | Build modules: `util` (paths, `fail()`, escaping), `data` (load/validate JSON, page index, `localize()`), `render` (HTML renderers), `pipeline` (`@raw`, includes, tokens, directives, page classification), `checks` (output checks), `scaffold` (helpers of create/page/remove), `preview` (helpers of serve/dev) | Node built-ins or npm packages declared in `package.json`. Keep the build deterministic and failing loudly on bad data. New checks go into `checks.mjs`, new renderers into `render.mjs`. Every module has unit tests (`*.test.mjs`). |
 | `scripts/create.mjs` | `npm run create` | Scaffolds a project page from the template in every language folder and registers it in `projects.json` (other languages as `TODO`; flags: `--tags`, `--featured`, `--status`, `--repo`, `--dry-run`). |
 | `scripts/dev.mjs` | `npm run dev` | Build once, then rebuild on changes in `wwwroot/`/`scripts/`; serves `dist/` with SSE live reload, the production security headers and the root `Accept-Language` redirect (dev-only). |
 | `scripts/firmware.mjs` | `npm run firmware` | Scaffolds `assets/firmware/<suite>/manifest.json` for the given `--chip` families and prints the flasher button snippet. |
@@ -52,19 +53,19 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | `scripts/schemas/` | JSON Schemas for `data/*.json` | Used by `scripts/lib/data.mjs` via `ajv`. Change schema and loader together. |
 | `scripts/e2e/` | Playwright specs (`*.spec.mjs`) | Never name them `*.test.mjs` (`npm test` would run them). |
 | Root config files | `eslint.config.js`, `.stylelintrc.json`, `.htmlvalidate.json`, `svgo.config.mjs`, `playwright.config.mjs`, `lighthouserc.json` | One per tool; ignore protected and generated paths. |
-| `wwwroot/index.html` | Home page | Only page-level layout and section structure. No inline styles or scripts. |
-| `wwwroot/404.html` | Not-found page | Served at any path, so the build uses root-relative links (`{{root}}` = `/`). |
+| `wwwroot/index.html` | Common landing page (fallback of the root redirect) | Literal `<html lang="de">` with text blocks marked by `lang`; uses `header-common`. No inline styles or scripts. |
+| `wwwroot/404.html` | Common not-found page (English) | Served at any path, so the build uses root-relative links (`{{root}}` = `/`); literal `<html lang="en">`; uses `header-common`. |
 | `wwwroot/favicon.svg` | Logo favicon, also used as header brand icon | Keep it small (simplified trace). |
 | `wwwroot/robots.txt` | Crawler rules | `Sitemap:` line comes from `{{sitemapUrl}}`. |
 | `wwwroot/.htaccess` | Apache config for `dm7wb.de` (error pages, HTTPS redirect, headers, caching) | Applies only on the production server, not in `npm run serve`. |
-| `wwwroot/partials/` | `head.html`, `header.html`, `footer.html` | Single copy of the shared markup. Not copied to `dist/`. |
-| `wwwroot/de/`, `wwwroot/en/` | Language pages (incl. legal pages in `de/`) | One page per file. Use the `head`, `header` and `footer` includes. |
+| `wwwroot/partials/` | `head.html`, `header.html` (language pages), `header-common.html` (landing page, 404), `footer.html` | Single copy of the shared markup; texts via `{{t:key}}`. Not copied to `dist/`. |
+| `wwwroot/de/`, `wwwroot/en/` | Language pages (incl. legal pages in `de/`; `de/index.html` and `en/index.html` are the language homes) | One page per file. Use the `head`, `header` and `footer` includes and `<html lang="{{lang}}">`. New languages: see README → Languages → Add a language. |
 | `wwwroot/<lang>/proj/` | Project pages | One page per project, `{id}.html` matching the `id` in `data/projects.json` (e.g. `sy317.html`). |
 | `wwwroot/templates/project-template.html` | Master project write-up template | Reference for every supported layout (not built). Append new layouts here. |
 | `wwwroot/css/` | Stylesheets | Split by concern: `base`, `layout`, `components`, `responsive`. Use CSS custom properties for all colours and spacing. |
 | `wwwroot/js/` | Scripts | One module per concern (`nav`, `projects`, `main`). Use `type="module"` and no global variables. |
 | `wwwroot/js/vendor/` | Vendored third-party JS | See Protected Files. |
-| `wwwroot/data/` | JSON content (build input) | `projects.json` is the single source of truth for projects; `site.json` holds shared site info (`lang`, name, copyright, email); `strings.json` holds the German UI strings; `nav.json`/`footer-nav.json` drive the navs. Keep all valid JSON. Not copied to `dist/`. |
+| `wwwroot/data/` | JSON content (build input) | `projects.json` is the single source of truth for projects (`title`, `summary`, `tags` per language); `site.json` holds shared site info (`languages`, `defaultLang`, name, copyright, email, `footerNote` per language); `strings.json` holds the UI strings per language; `nav.json`/`footer-nav.json` drive the navs per language; `pages.json` pairs pages with different file names per language. Keep all valid JSON. Not copied to `dist/`. |
 | `wwwroot/assets/img/` | Images | Prefer SVG; raster images preferably WebP (no hard size limit); always provide `alt` text. |
 | `wwwroot/assets/icons/` | SVG icons | e.g. the GitHub mark used by the Source button. |
 | `wwwroot/assets/firmware/<suite>/` | Web-flasher suites | One folder per firmware variant: `manifest.json` plus the binaries it references. |
@@ -97,12 +98,13 @@ The `devDependencies`, their jobs, planned scripts and config files are listed i
 
 | Task | Steps |
 | --- | --- |
-| Add a project | `npm run create -- "Name" "Brief"` → set `tags`, `links`, `image` in `data/projects.json` → replace the placeholder body in `html/proj/{id}.html` (German text from the user, never invented) → `npm run build`. |
+| Add a project | `npm run create -- "Name" "Brief"` (creates the page in every language, other languages as `TODO`) → set `tags`, `links`, `image` in `data/projects.json` → replace the placeholder body in `de/proj/{id}.html` (German text from the user, never invented; other languages only on the user's texts) → `npm run build`. |
 | Remove a project | `npm run remove -- <id>` → `npm run build` → delete the now-stale files on the server. |
-| Add a page | Copy the head/include structure of an existing page in `html/` → add an entry to `data/nav.json` or `data/footer-nav.json` if it should be linked → add it to the README outline → `npm run build`. |
+| Add a page | `npm run page -- "Title" [--title-en "…"] [--nav\|--footer]` (creates the page in every language) → replace the placeholder text (user content) → add it to the README outline → `npm run build`. Without the script: copy the head/include structure of an existing page into every language folder and add nav entries per language. |
+| Add a language | Follow README → Languages → Add a language (`site.json`, `strings.json`, nav files, `projects.json`, `wwwroot/<code>/`, `.htaccess` rule) with `TODO` placeholders; the translations come from the user. |
 | Add a firmware suite | Create `assets/firmware/<suite>/` with `manifest.json` and the binaries from the user (see README → Firmware / Web Flasher for offsets) → add `<esp-web-install-button manifest="{{root}}assets/firmware/<suite>/manifest.json">` and the vendored script tag to the project page. The CSP exception is added automatically. |
 | Add a layout pattern | Append a numbered section to `project-template.html` → styles in `css/components.css` (breakpoints in `css/responsive.css`) → note it in README → Project Write-up Template. |
-| Add an image | Put the original (from the user) into `assets/img/` → `npm run images` (WebP / optimised SVG) → reference it with German `alt` text → `npm run build`. |
+| Add an image | Put the original (from the user) into `assets/img/` → `npm run images` (WebP / optimised SVG) → reference it with `alt` text in the page language → `npm run build`. |
 | Add a tooling package | `npm i -D <name>` → npm script + root config file → README → Tooling Packages table → run it once and report the findings. |
 | Add a token or directive | Token: `applyTokens` in `scripts/lib/pipeline.mjs`. Directive: `applyDirectives` there, rendering in `scripts/lib/render.mjs`. Escape all inserted data with `esc()`. Document it in the README templating table. |
 | Refactor the build | Save `dist/` before, rebuild after and compare all files; a pure refactor must produce byte-identical output. |
@@ -113,7 +115,7 @@ The `devDependencies`, their jobs, planned scripts and config files are listed i
 - Semantic elements first (`header`, `nav`, `main`, `section`, `article`, `footer`).
 - Exactly one `h1` per page.
 - Attributes in double quotes; lowercase tags and attributes.
-- Links to internal pages use relative paths (e.g., `html/projects.html`); shared partials use `{{root}}`. The build fails on broken internal links.
+- Links to internal pages use relative paths (e.g., `projects.html` inside a language folder, or `{{langRoot}}projects.html`); shared partials use `{{root}}`. Links stay inside the page's language (exceptions: the language selector and footer entries with `lang`). The build fails on broken internal links.
 - Every `img` has `alt` (empty `alt=""` only for purely decorative images).
 
 ### CSS
@@ -138,12 +140,14 @@ The `devDependencies`, their jobs, planned scripts and config files are listed i
 ### Data
 - `data/projects.json` must match the schema documented in `README.md`.
 - Required fields: `id`, `title`, `summary`, `tags`, `status`, `date`, `links`, `image`, `featured`.
+- `title`, `summary` and `tags` are objects keyed by language code; the default language is required, others are optional (`"TODO"` or a missing key hides the project in that language and the build warns). `id`, `status`, `date`, `links`, `image`, `featured` and `draft` are language-neutral.
 - `id` values are unique, lowercase, hyphenated.
-- `status` is one of: `in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`.
-- `tags` are lowercase and hyphenated (same rule as `id`), no duplicates per project.
+- `status` is one of the German keys: `in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`; the label per language is `strings.<lang>.status`.
+- `tags` are lowercase and hyphenated (same rule as `id`), no duplicates per project and language; the lists of the languages are independent.
 - `links.repo` / `links.demo` are `null` or an http(s) URL; `image` is a relative path inside `wwwroot/` (no `../`).
 - `date` format: `YYYY-MM`.
-- Each project needs a page `wwwroot/html/proj/{id}.html`; the build fails otherwise.
+- Each project needs a page `wwwroot/de/proj/{id}.html`; other languages use `<lang>/proj/{id}.html` or the mapped name from `data/pages.json`. The build fails without the default-language page.
+- `strings.json`, `nav.json`, `footer-nav.json` and `site.footerNote` need an entry for every configured language; `data/pages.json` only lists pages whose file names differ.
 
 ## Workflow for Agents
 
@@ -187,7 +191,7 @@ The main development machine runs Windows with PowerShell 5.1.
 
 ## Things Agents Must Not Do
 
-- Do not invent project data or page text. Use placeholders clearly marked as such, or ask the user.
+- Do not invent project data or page text, and do not translate site content on your own initiative. Use placeholders clearly marked as such (`TODO`, `TODO_<German label>`), or ask the user.
 - Do not add tracking, analytics, or consent banners (there are no cookies to consent to).
 - Do not replace the system font stack with custom or web fonts.
 - Do not extend the build pipeline beyond its documented scope without user approval. npm packages for tooling are allowed, but nothing they produce may add tracking, cookies or external requests to `dist/`.
