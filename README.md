@@ -22,7 +22,7 @@ Website/
 ├── .gitignore             # Ignore OS/editor junk, node_modules/, dist/
 ├── .gitattributes         # LF line endings for text; binary for .bin/.jpg/.png/.webp
 ├── .editorconfig          # Indentation and encoding rules
-├── .nvmrc                # Pins the local Node.js version to 22 (nvm)
+├── .nvmrc                # Pins the local Node.js version to 24 (nvm)
 ├── .githooks/            # Versioned git hooks (pre-commit runs `npm run check`; activate with `npm run setup`)
 ├── .vscode/              # Shared editor config (tasks.json, launch.json, extensions.json)
 ├── package.json           # npm scripts and tooling dependencies
@@ -97,7 +97,7 @@ Website/
 
 ### Build and Preview
 
-Requires Node.js ≥ 22. Run `npm install` once after cloning and whenever `package.json` changes; it installs the tooling dependencies into `node_modules/` (git-ignored, never deployed).
+Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `package.json` changes; it installs the tooling dependencies into `node_modules/` (git-ignored, never deployed).
 
 | Command | Effect |
 | --- | --- |
