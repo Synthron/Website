@@ -1,6 +1,6 @@
 # language.md — Multi-language Plan
 
-Plan for turning the site into a multi-language site. **Nothing in this file is implemented yet.** Decisions L1–L22 were answered on 2026-10-27; the follow-up questions L23–L32 are still open. The target structure and the work items (M-steps) below follow the answers.
+Plan for turning the site into a multi-language site. **Nothing in this file is implemented yet.** All decisions (L1–L32) were answered on 2026-10-27, including the build-scope approval (L32). The target structure and the work items (M-steps) below follow the answers; implementation can start with Phase M1.
 
 Like `todo.md`, this file is kept outside the README outline until the user decides otherwise.
 
@@ -70,12 +70,15 @@ Recommended option in **bold**. Answers go into the last column; new questions g
 Condensed reading of the answers; the target structure and the M-steps implement exactly this.
 
 - **Languages** (L1): `de` (default, fallback, `x-default`) and `en`.
-- **Root `/`** (L2, L4): `.htaccess` redirects by `Accept-Language` to `/de/` or `/en/`; the common bilingual landing page `index.html` is the fallback (details L23, L24).
+- **Root `/`** (L2, L4, L23, L24): `.htaccess` redirects the exact path `/` by the highest-priority `Accept-Language` entry (primary subtag: `de-AT` → `de`, `en-US` → `en`) with `302` + `Vary: Accept-Language` to `/de/` or `/en/`. Any other or missing language (most crawlers) gets the common bilingual landing page `index.html`.
 - **Language homes** (L3): `/de/index.html` and `/en/index.html` with intro and featured projects; the current home content moves to `/de/index.html`.
-- **404** (L5): common page at the root, `lang="en"`, English text (L28).
+- **404** (L5, L28): common page at the root, `lang="en"`; the English text is already written by the user and stays.
+- **Common pages header** (L27): brand + language selector only, no nav; landing page `lang="de"` with every text block marked `lang="de"` / `lang="en"`.
 - **Brand link** (L6): the language home.
-- **Selector** (L7, L8, L9): code + flag (`DE` with the German flag, `EN` with the UK flag), current language highlighted; always visible in the top bar next to the menu button; links to the same page in the other language, otherwise to that language's home.
-- **File names** (L10): may differ per language; `data/pages.json` pairs them. Pages not listed pair by identical path.
+- **Selector** (L7, L8, L9, L26): code + flag (`DE` with the German flag, `EN` with the UK flag; both SVGs created by an agent), current language highlighted; always visible in the top bar next to the menu button; links to the same page in the other language, otherwise to that language's home.
+- **`og:locale`** (L25): `de_DE`, `en_GB`.
+- **File names** (L10, L31): may differ per language, project pages included; `data/pages.json` pairs them. Pages not listed pair by identical path. The `de` project page always stays `de/proj/{id}.html` (anchor for the `id`); other languages default to `{id}.html` and may be renamed.
+- **Local preview** (L29): `npm run serve` / `npm run dev` mirror the root redirect.
 - **Coverage** (L11, L12): every page and project must exist in `de`; other languages are optional. Missing translations → build warning; the project is hidden in that language (lists, filter, sitemap, alternates).
 - **Tags** (L13): per language, ASCII lowercase-hyphenated (slug rule unchanged).
 - **Status** (L14): the German values stay the data keys; per-language labels are mapped in `data/strings.json`.
@@ -84,25 +87,26 @@ Condensed reading of the answers; the target structure and the M-steps implement
 - **Old URLs** (L17): no redirects; the old `/html/` folder is simply deleted on the server.
 - **Project pages** (L18): one source file per language.
 - **Template** (L19): `wwwroot/templates/project-template.html`, never built or deployed.
-- **`npm run create`** (L20): non-default languages get `TODO` placeholder texts; the build warns.
+- **`npm run create`** (L20, L30): non-default languages get `TODO` placeholder texts; the build warns, and a `TODO` counts as missing, so the project stays hidden in that language until the text is filled in.
 - **Sitemap** (L21): no alternates; `hreflang` only as head tags.
 - **Translations** (L22): the user provides all texts; agents translate only on explicit request.
+- **Build scope** (L32): all extensions in this plan are approved (`{{langRoot}}`, `{{t:key}}`, `@lang-switch`, head alternates, `data/pages.json`, new checks, `Accept-Language` redirect).
 - Superseded: `todo.md` **D1** (German content and UI) → `AGENTS.md` → Language changes accordingly (M101, M102).
 
 ### Follow-up questions (L23–L32)
 
 | ID | Question | Options | Answer |
 | --- | --- | --- | --- |
-| L23 | Root fallback: L2 mentions the German page as fallback, L4 the common landing page. What does a visitor get whose browser prefers neither `de` nor `en`, or sends no `Accept-Language` (most crawlers)? | **Common bilingual landing page** · Redirect to `/de/` | |
-| L24 | Matching rule and type of the root redirect? | **Only for the exact path `/`; match the first (highest-priority) language by primary subtag (`de-AT` → `de`, `en-US` → `en`); `302` + `Vary: Accept-Language`** · Match any listed language in order · `301` (gets cached by browsers) | |
-| L25 | `og:locale` for English? | **`en_GB` (matches the UK flag)** · `en_US` | |
-| L26 | Flag icons: who provides them? They must be self-hosted SVGs (no external requests). | **Agent creates two small geometric SVGs (`assets/icons/flag-de.svg`, `assets/icons/flag-gb.svg`)** · User provides them | |
-| L27 | Header on the common pages (landing, 404): only brand + language selector, or also a nav? `<html lang>` of the bilingual landing page? | **Brand + selector only; landing `lang="de"` with every text block marked `lang="de"` / `lang="en"`** · English nav on the 404 page · German nav on both | |
-| L28 | The 404 page becomes English (L5). Who writes the English text replacing the current German teapot text? | **User provides it** · Agent translates the current text (explicit request per L22) | |
-| L29 | Should `npm run serve` / `npm run dev` mirror the `Accept-Language` redirect so it can be tested locally? | **Yes (like the mirrored security headers)** · No, test on the server only | |
-| L30 | Does a `TODO` placeholder (L20) count as missing data, so the project stays hidden in that language (L12) until the text is filled in? | **Yes** · No, show it with the placeholder text | |
-| L31 | Project page file names: `<lang>/proj/{id}.html` in every language (the `id` is shared), or mappable like other pages (L10)? | **Always `{id}.html`** (no mapping for projects) · Mappable via `data/pages.json` | |
-| L32 | Approve the build extension this plan needs (AGENTS.md: no scope extension without approval): `{{langRoot}}`, `{{t:key}}`, `@lang-switch`, head alternates, `data/pages.json`, new checks, `Accept-Language` redirect. | **Approve all** · Approve with changes | |
+| L23 | Root fallback: L2 mentions the German page as fallback, L4 the common landing page. What does a visitor get whose browser prefers neither `de` nor `en`, or sends no `Accept-Language` (most crawlers)? | **Common bilingual landing page** · Redirect to `/de/` | common bilingual langing page |
+| L24 | Matching rule and type of the root redirect? | **Only for the exact path `/`; match the first (highest-priority) language by primary subtag (`de-AT` → `de`, `en-US` → `en`); `302` + `Vary: Accept-Language`** · Match any listed language in order · `301` (gets cached by browsers) | default |
+| L25 | `og:locale` for English? | **`en_GB` (matches the UK flag)** · `en_US` | en_GB |
+| L26 | Flag icons: who provides them? They must be self-hosted SVGs (no external requests). | **Agent creates two small geometric SVGs (`assets/icons/flag-de.svg`, `assets/icons/flag-gb.svg`)** · User provides them | agent creates |
+| L27 | Header on the common pages (landing, 404): only brand + language selector, or also a nav? `<html lang>` of the bilingual landing page? | **Brand + selector only; landing `lang="de"` with every text block marked `lang="de"` / `lang="en"`** · English nav on the 404 page · German nav on both | default |
+| L28 | The 404 page becomes English (L5). Who writes the English text replacing the current German teapot text? | **User provides it** · Agent translates the current text (explicit request per L22) | 404 page has been changed to english by user and will stay this way |
+| L29 | Should `npm run serve` / `npm run dev` mirror the `Accept-Language` redirect so it can be tested locally? | **Yes (like the mirrored security headers)** · No, test on the server only | yes |
+| L30 | Does a `TODO` placeholder (L20) count as missing data, so the project stays hidden in that language (L12) until the text is filled in? | **Yes** · No, show it with the placeholder text | yes |
+| L31 | Project page file names: `<lang>/proj/{id}.html` in every language (the `id` is shared), or mappable like other pages (L10)? | **Always `{id}.html`** (no mapping for projects) · Mappable via `data/pages.json` | mappable, just in case |
+| L32 | Approve the build extension this plan needs (AGENTS.md: no scope extension without approval): `{{langRoot}}`, `{{t:key}}`, `@lang-switch`, head alternates, `data/pages.json`, new checks, `Accept-Language` redirect. | **Approve all** · Approve with changes | approve |
 
 ---
 
@@ -181,11 +185,12 @@ wwwroot/
 
 `id`, `status`, `date`, `links`, `image`, `featured` and `draft` stay language-neutral. A fresh `npm run create` writes `"TODO"` for every non-default language (L20); such a value counts as missing (L30).
 
-`pages.json` (only pages whose names differ; everything else pairs by identical path, project pages by `id`, L31):
+`pages.json` (only pages whose names differ; everything else pairs by identical path; a project group must contain `"de": "proj/{id}.html"`, L31):
 
 ```json
 [
-  { "de": "ueber-mich.html", "en": "about.html" }
+  { "de": "ueber-mich.html", "en": "about.html" },
+  { "de": "proj/sy317.html", "en": "proj/sy317-voltage-regulator.html" }
 ]
 ```
 
@@ -239,7 +244,7 @@ Order matters: data and pipeline first with only `de` configured, then the move,
 
 - [x] **M01** **User**: answer L1–L22 (2026-10-27).
 - [x] **M02** Record the answers and the resulting decisions here.
-- [ ] **M03** **User**: answer the follow-ups L23–L32 (L32 is the build-scope approval; nothing in M1–M8 starts before it).
+- [x] **M03** **User**: answer the follow-ups L23–L32 (2026-10-27; build scope approved, L32).
 
 ### Phase M1 — Data model and validation (`scripts/lib/data.mjs`)
 
@@ -248,14 +253,14 @@ Order matters: data and pipeline first with only `de` configured, then the move,
 - [ ] **M12** `loadNav(file)`: per-language arrays; same validation per entry; hrefs relative to the language folder; optional `lang` for cross-language footer entries (L16), must be a configured code.
 - [ ] **M13** `loadProjects()`: `title`, `summary` as objects keyed by language; `tags` as object of arrays per language; the default language is required (fail); other languages optional; `"TODO"` (or a value starting with `TODO`) counts as missing (L20, L30) and warns; ASCII slug rule and no duplicates per language (L13).
 - [ ] **M14** `status`: German values stay the keys, `STATUS_VALUES` unchanged (L14); no migration of `projects.json` status values needed.
-- [ ] **M15** Page existence: `wwwroot/de/proj/{id}.html` required for every project (fail); `wwwroot/<lang>/proj/{id}.html` for other languages: data without page or page without data → warn, project hidden in that language (L11, L12).
+- [ ] **M15** Page existence: `wwwroot/de/proj/{id}.html` required for every project (fail); for other languages the page is `<lang>/proj/{id}.html` or its mapped name from `pages.json` (L31): data without page or page without data → warn, project hidden in that language (L11, L12).
 - [ ] **M16** Helper: `localize(project, lang)` returning a flat view (`title`, `summary`, `tags`) so the renderers stay simple; `null` when the project is not available in that language.
-- [ ] **M17** New `loadPages()` for `data/pages.json` (L10): array of `{ <lang>: <path> }` groups; known language codes only; every path exists under `wwwroot/<lang>/`; no path in two groups; no `proj/` paths (L31). Builds a page index `(lang, rel) → counterparts` used by `@lang-switch`, head alternates and the coverage check; unlisted pages pair by identical path.
+- [ ] **M17** New `loadPages()` for `data/pages.json` (L10): array of `{ <lang>: <path> }` groups; known language codes only; every path exists under `wwwroot/<lang>/`; no path in two groups; a group with a `proj/` path must contain `"de": "proj/{id}.html"` of an existing project and only `proj/` paths (L31). Builds a page index `(lang, rel) → counterparts` used by `@lang-switch`, head alternates and the coverage check; unlisted pages pair by identical path.
 
 ### Phase M2 — Build pipeline (`scripts/build.mjs`, `scripts/lib/pipeline.mjs`)
 
 - [ ] **M20** Classify every HTML file: language page (`<lang>/…`, first path segment is a configured code) or common page (`index.html`, `404.html`). Language pages take `lang` from the folder; common pages from the literal `<html lang="…">` in the source (landing `de`, 404 `en`; L5, L27). Put `lang`, `langRoot` and `isCommon` into `ctx`.
-- [ ] **M21** Project lookup: `ctx.project` for `rel` matching `<lang>/proj/{id}.html`, localized for `ctx.lang` (replaces `rel.startsWith('html/')`).
+- [ ] **M21** Project lookup: `ctx.project` for `rel` under `<lang>/proj/`, resolved to the `id` via the page index (mapped name → `de/proj/{id}.html`, otherwise the file name), localized for `ctx.lang` (replaces `rel.startsWith('html/')`).
 - [ ] **M22** `applyTokens`: `{{lang}}` from `ctx.lang`; new `{{langRoot}}`, `{{t:key}}` (fail on unknown key); `footerNote`, `projectTitle`, `projectSummary` per language.
 - [ ] **M23** `applyDirectives`: pass per-language `nav`, `footerNav`, `strings` and the localized project list; add `@lang-switch`. On common pages `@nav` renders nothing (brand + selector only, L27) and the footer uses the page language.
 - [ ] **M24** Skip list: add `templates` to `SKIP_DIRS` (never built, never deployed, L19); drop `project-template.html` from `SKIP_FILES`.
@@ -269,7 +274,7 @@ Order matters: data and pipeline first with only `de` configured, then the move,
 
 - [ ] **M30** `renderNav`: prefix `ctx.root + lang + '/'` for internal entries; `aria-current` comparison against `<lang>/<href>`; cross-language footer entries get `hreflang`/`lang`.
 - [ ] **M31** New `renderLangSwitch(ctx, site, strings, pageIndex)`: `<nav aria-label="{{t:languageLabel}}">` with one link per language: flag image (`alt=""`, fixed `width`/`height`) + code, language `name` as accessible label; target per L9 via the page index (M17); `lang`, `hreflang`, `aria-current="true"` on the current language; HTML-escaped.
-- [ ] **M32** `renderCard`: link `${root}${lang}/proj/${id}.html`; localized title, summary, tags (`data-tags` from the language's tags).
+- [ ] **M32** `renderCard`: link to the project page of the card's language (`${root}${lang}/proj/` + `{id}.html` or the mapped name, L31); localized title, summary, tags (`data-tags` from the language's tags).
 - [ ] **M33** `renderProjectHeader`, `renderMeta`: localized texts; status label from `strings[lang].status[project.status]` (L14), `data-status`/CSS hooks keep using the German key.
 - [ ] **M34** `renderLinks`: replace the hard-coded ` für ` with a string (`projectLinkFor`).
 - [ ] **M35** `renderProjectList`, `renderTagFilter`: only projects available in the page language; tags of that language; `data-lang` from the page.
@@ -277,12 +282,13 @@ Order matters: data and pipeline first with only `de` configured, then the move,
 
 ### Phase M4 — Checks (`scripts/lib/checks.mjs`)
 
-- [ ] **M40** `checkOrphanPages`: `<lang>/proj/*.html` without project data in that language (warn).
+- [ ] **M40** `checkOrphanPages`: `<lang>/proj/*.html` (resolved via the page index) without project data in that language (warn).
 - [ ] **M41** New: `<html lang>` of a language page must equal its folder; on common pages it must be a configured code.
 - [ ] **M42** New: translation coverage via the page index (M17): a page in another language without a `de` counterpart → fail (L11: required in `de`); a `de` page without a counterpart → warn.
 - [ ] **M43** New: links between language folders (e.g. `de/…` → `en/…`) outside the language selector and declared cross-language footer entries → warn; leftover `html/` links → fail.
 - [ ] **M44** New: warn for every `TODO` placeholder left in `projects.json` (L20), listing project and language.
 - [ ] **M45** `checkLinks`, `checkAnchors`: no change expected; verify with the new tree.
+- [ ] **M46** New: a page containing `<esp-web-install-button>` whose file name is not covered by the flasher CSP exception in `.htaccess` → warn (mapped names can differ per language, L31).
 
 ### Phase M5 — Content migration (`wwwroot/`)
 
@@ -290,7 +296,7 @@ Order matters: data and pipeline first with only `de` configured, then the move,
 - [ ] **M51** `data/footer-nav.json`: English entries point to the German legal pages via `"lang": "de"` (L16); **User** provides the English labels.
 - [ ] **M52** Move the current home content from `wwwroot/index.html` to `wwwroot/de/index.html` (L3); fix its links (`html/projects.html` → `projects.html`).
 - [ ] **M53** **User**: new common landing page `wwwroot/index.html` (L2, L27) — bilingual, `lang` per text block, links to both language homes; structure by agent, text by user. Only shown as redirect fallback (L23).
-- [ ] **M54** **User**: common `404.html` in English (L5, L28) — `<html lang="en">`, links to both language homes; stays root-relative (`{{root}}` = `/`).
+- [ ] **M54** Common `404.html` (L5, L27, L28): English text already written by the user, keep it. Remaining: `<html lang="en">` instead of `{{lang}}`, header with brand + selector only, stays root-relative (`{{root}}` = `/`). The button label is still German (`Zurück zur Startseite`) — **User** provides the English label.
 - [ ] **M55** Partials: replace hard-coded German strings with `{{t:…}}`; brand link `{{langRoot}}index.html` (L6); `<!-- @lang-switch -->` in `header.html` next to the menu button, outside the collapsible nav (L8); footer uses the per-language `footerNote`.
 - [ ] **M56** Convert `data/nav.json`, `data/footer-nav.json`, `data/strings.json`, `data/site.json`, `data/projects.json` to the new format with the existing German values; add `data/pages.json` (initially `[]`).
 - [ ] **M57** Move `project-template.html` to `wwwroot/templates/` (L19); update its instruction comment and the `{{root}}` assumptions in it.
@@ -309,15 +315,15 @@ Order matters: data and pipeline first with only `de` configured, then the move,
 
 - [ ] **M70** `create.mjs`: copy `templates/project-template.html` to `<lang>/proj/{id}.html` for every language; write the default-language `title`/`summary` from the arguments and `"TODO"` for every other language (L20); duplicate check across all language folders; `--tags` for the default language, other languages start empty.
 - [ ] **M71** `page.mjs`: create the page in every language (default title from the argument, `--title-<lang>` for other languages, otherwise `TODO` title); per-language slug; add a `data/pages.json` group when slugs differ (L10); `--nav`/`--footer` entries into the per-language arrays; `{{t:…}}`-based skeleton.
-- [ ] **M72** `remove.mjs`: delete `<lang>/proj/{id}.html` in every language folder; update the confirmation text.
+- [ ] **M72** `remove.mjs`: delete the project page in every language folder (`{id}.html` or the mapped name) and its `pages.json` group; update the confirmation text.
 - [ ] **M73** `report.mjs`: per-language page sizes; adapt any `html/` assumptions.
-- [ ] **M74** `serve.mjs`, `dev.mjs`: mirror the `Accept-Language` redirect for `/` (L29); `/de/` and `/en/` serve their `index.html`, `/de` redirects to `/de/`; flasher detection by basename keeps working in both languages.
+- [ ] **M74** `serve.mjs`, `dev.mjs`: mirror the `Accept-Language` redirect for `/` (L29); `/de/` and `/en/` serve their `index.html`, `/de` redirects to `/de/`; flasher CSP detection must cover mapped file names (L31), e.g. by checking the served HTML for `<esp-web-install-button` instead of the hard-coded `nixie-clock.html` basename.
 - [ ] **M75** `check-external.mjs`, `firmware.mjs`: verify; the firmware snippet uses `{{root}}` and needs no change.
 
 ### Phase M8 — Server and deployment
 
 - [ ] **M80** `.htaccess`: `Accept-Language` redirect for the exact path `/` only (L4, L23, L24): `RewriteCond %{REQUEST_URI} ^/$` + `RewriteCond %{HTTP:Accept-Language} ^en` → `/en/` and `^de` → `/de/` with `[R=302,L]`; `Vary: Accept-Language` on the root response; no match → `index.html` (landing). No `/html/` redirects (L17). `ErrorDocument` stays `/404.html`.
-- [ ] **M81** `.htaccess`: `<Files "nixie-clock.html">` already matches both `de/proj/` and `en/proj/`; keep, but document it.
+- [ ] **M81** `.htaccess`: `<Files "nixie-clock.html">` matches the flasher page in every language folder as long as the name is not mapped; a renamed flasher page needs its name added (e.g. `<FilesMatch>`), M46 warns otherwise.
 - [ ] **M82** Deployment note: delete the old `/html/` folder on the server after the first upload of the new tree (README → Deployment step 4).
 
 ### Phase M9 — Tests (`scripts/lib/*.test.mjs`)
@@ -354,4 +360,5 @@ Order matters: data and pipeline first with only `de` configured, then the move,
 - **Cache busting**: unaffected; assets stay at the root and are referenced via `{{root}}`.
 - **CSP**: unaffected; the flasher exception is detected per page content and works in every language folder.
 - **Anchors and ids**: translated pages must keep unique ids; `checkAnchors` covers this.
-- **Scope**: the build extension (new tokens, directive, `pages.json`, checks, redirect) needs the user's explicit approval per AGENTS.md (L32).
+- **Scope**: the build extension (new tokens, directive, `pages.json`, checks, redirect) is approved (L32); anything beyond this plan needs a new approval.
+- **Mapped project pages** (L31): the flasher CSP exception in `.htaccess`, `serve.mjs` and `dev.mjs` is keyed by file name today; renamed flasher pages must be covered (M46, M74, M81).
