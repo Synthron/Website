@@ -324,9 +324,9 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 
 ### Phase M8 — Server and deployment
 
-- [ ] **M80** `.htaccess`: `Accept-Language` redirect for the exact path `/` only (L4, L23, L24): `RewriteCond %{REQUEST_URI} ^/$` + `RewriteCond %{HTTP:Accept-Language} ^en` → `/en/` and `^de` → `/de/` with `[R=302,L]`; `Vary: Accept-Language` on the root response; no match → `index.html` (landing). No `/html/` redirects (L17). `ErrorDocument` stays `/404.html`.
-- [ ] **M81** `.htaccess`: `<Files "nixie-clock.html">` matches the flasher page in every language folder as long as the name is not mapped; a renamed flasher page needs its name added (e.g. `<FilesMatch>`), M46 warns otherwise.
-- [ ] **M82** Deployment note: delete the old `/html/` folder on the server after the first upload of the new tree (README → Deployment step 4).
+- [x] **M80** (also `Vary: Accept-Language` on the response for `/`, set with an `<If>` block; matching uses the first entry's primary subtag, same as the preview servers) `.htaccess`: `Accept-Language` redirect for the exact path `/` only (L4, L23, L24): `RewriteCond %{REQUEST_URI} ^/$` + `RewriteCond %{HTTP:Accept-Language} ^en` → `/en/` and `^de` → `/de/` with `[R=302,L]`; `Vary: Accept-Language` on the root response; no match → `index.html` (landing). No `/html/` redirects (L17). `ErrorDocument` stays `/404.html`.
+- [x] **M81** (the `<Files>` block is now a `<FilesMatch "^(nixie-clock)\.html$">`, so more names are added to the alternation; a test guards the real file) `.htaccess`: `<Files "nixie-clock.html">` matches the flasher page in every language folder as long as the name is not mapped; a renamed flasher page needs its name added (e.g. `<FilesMatch>`), M46 warns otherwise.
+- [x] **M82** (README → Deployment step 4 and the verification list; deleting the folder on the server is U10) Deployment note: delete the old `/html/` folder on the server after the first upload of the new tree (README → Deployment step 4).
 
 ### Phase M9 — Tests (`scripts/lib/*.test.mjs`)
 
@@ -364,12 +364,12 @@ Everything the agents cannot do (texts, decisions, server work). Agents never in
 - [ ] **U07** (L16) English legal pages (`impressum`, `privacy`, `rechtliches`) or keep the German ones: until translated, the build warns "no counterpart in en" for these three pages and the English footer links to the German pages (`"lang": "de"`).
 - [ ] **U08** (M60) Review the language selector in the browser (flags, UK flag proportions, highlighted language, 320px) and request style changes if needed.
 - [ ] **U09** Before deploying: decide how to handle the placeholder pages in `en/` (they are built and listed in `sitemap.xml`): finish U03 first, or ask for `noindex` on them.
-- [ ] **U10** (M82, M115) On the server after the first upload: delete the old `/html/` folder, then run the M115 checks. The `Accept-Language` redirect (M80) still has to be implemented before the root redirect works.
+- [ ] **U10** (M82, M115) On the server after the first upload: delete the old `/html/` folder, then run the M115 checks. The `Accept-Language` redirect (M80) is implemented in `.htaccess` but untested on the real server: verify it with the commands in README → Deployment.
 - [ ] **U11** Existing, not language-specific: the de pages `about.html` and the `placeholder-project-*` pages still contain "Placeholder paragraph" text (build warnings), and `assets/img/og-default.png` is missing.
 
 ### Open follow-ups caused by the move
 
-README sections beyond the outline, the script documentation and the file paths, and `AGENTS.md` beyond the script rows and file paths, follow in M100/M101. The preview servers already mirror the root redirect; the production rule (M80) is still open. Known, not caused by the move: a page created from the template contains the dummy web flasher section (`assets/firmware/dummy` is not deployed), so `npm run build` reports a broken link until that section is deleted.
+README sections beyond the outline, the script documentation and the file paths, and `AGENTS.md` beyond the script rows and file paths, follow in M100/M101. The preview servers and `.htaccess` both mirror the root redirect; the latter is untested on the real server (U10). Known, not caused by the move: a page created from the template contains the dummy web flasher section (`assets/firmware/dummy` is not deployed), so `npm run build` reports a broken link until that section is deleted.
 
 ---
 

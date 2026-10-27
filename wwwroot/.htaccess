@@ -17,6 +17,20 @@ DirectoryIndex index.html
     RewriteEngine On
     RewriteCond %{HTTPS} off
     RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+    # Nur für den Pfad "/": nach dem ersten Eintrag von Accept-Language (Haupt-
+    # Sprachtag, z. B. de-AT -> de) auf die Sprachstartseite weiterleiten. 302,
+    # damit Browser und Caches keine Sprache an "/" festhalten. Alle anderen
+    # oder fehlende Sprachen (die meisten Crawler) bekommen die Landingpage
+    # index.html. Neue Sprache: hier eine weitere Regel ergänzen (README ->
+    # Add a language).
+    RewriteCond %{REQUEST_URI} ^/$
+    RewriteCond %{HTTP:Accept-Language} ^\s*de(-|;|,|$) [NC]
+    RewriteRule ^ /de/ [R=302,L]
+
+    RewriteCond %{REQUEST_URI} ^/$
+    RewriteCond %{HTTP:Accept-Language} ^\s*en(-|;|,|$) [NC]
+    RewriteRule ^ /en/ [R=302,L]
 </IfModule>
 
 # HTML lacks a charset header; send UTF-8 explicitly.
@@ -55,11 +69,20 @@ AddDefaultCharset UTF-8
     # zuerst; später erhöhen, sobald der Header live bestätigt ist.
     Header always set Strict-Transport-Security "max-age=86400"
 
+    # Die Antwort auf "/" (Weiterleitung oder Landingpage) hängt von
+    # Accept-Language ab; Vary verhindert, dass Caches eine Sprache festhalten.
+    <If "%{REQUEST_URI} == '/'">
+        Header always append Vary Accept-Language
+    </If>
+
     # Der Web-Flasher (ESP Web Tools) injiziert Inline-Styles, daher braucht die
-    # Flasher-Seite style-src 'self' 'unsafe-inline' in ihrer CSP. Neue Flasher-
-    # Seiten hier ergänzen; das <meta>-CSP in partials/head.html trägt dieselbe
-    # Ausnahme bereits.
-    <Files "nixie-clock.html">
+    # Flasher-Seite style-src 'self' 'unsafe-inline' in ihrer CSP. Der Block gilt
+    # nach Dateiname in jedem Sprachordner (de/proj/nixie-clock.html und
+    # en/proj/nixie-clock.html). Heißt eine Flasher-Seite in einer Sprache anders
+    # (pages.json), ihren Namen in die Alternative eintragen, z. B.
+    # "^(nixie-clock|clock-en)\.html$"; der Build warnt, wenn ein Name fehlt.
+    # Das <meta>-CSP in partials/head.html trägt dieselbe Ausnahme bereits.
+    <FilesMatch "^(nixie-clock)\.html$">
         Header always set Content-Security-Policy "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
-    </Files>
+    </FilesMatch>
 </IfModule>

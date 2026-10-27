@@ -3,10 +3,10 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { errors, warnings } from './util.mjs';
+import { errors, SRC, warnings } from './util.mjs';
 import {
   checkAnchors, checkFlasherHtaccess, checkHtmlLang, checkLanguageLinks, checkLinks, checkOrphanPages,
   checkTranslationCoverage,
@@ -156,3 +156,15 @@ test('checkFlasherHtaccess warns when a flasher page is not covered by the CSP e
   checkFlasherHtaccess([['en/proj/clock-en.html', button]], '<FilesMatch "^(nixie-clock|clock-en)\\.html$">\nHeader set CSP "unsafe-inline"\n</FilesMatch>');
   assert.deepEqual(warnings, []);
 });
+
+test('the real .htaccess covers the flasher page in every language folder', async () => {
+  reset();
+  const htaccess = await readFile(path.join(SRC, '.htaccess'), 'utf8');
+  const button = '<esp-web-install-button manifest="m.json">';
+  checkFlasherHtaccess([['de/proj/nixie-clock.html', button], ['en/proj/nixie-clock.html', button]], htaccess);
+  assert.deepEqual(warnings, []);
+  checkFlasherHtaccess([['en/proj/renamed.html', button]], htaccess);
+  assert.equal(warnings.length, 1);
+  reset();
+});
+
