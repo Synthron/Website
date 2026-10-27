@@ -160,7 +160,7 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | `npm run lint:css` | Stylelint over `wwwroot/css/`. |
 | `npm run lint:html` | Builds, then runs html-validate over `dist/**/*.html`. |
 | `npm run images [-- --dry-run]` | WebP next to raster originals in `assets/img/` (skipped when not smaller), creates `assets/img/og-default.png` if missing, optimises SVGs in place. Never overwrites existing outputs or originals. |
-| `npm run test:e2e` | Builds, then runs the Playwright specs in `scripts/e2e/` against `scripts/serve.mjs` on port 8010. |
+| `npm run test:e2e` | Builds, then runs the Playwright specs in `scripts/e2e/` against `scripts/serve.mjs` on port 8010: every page at 320/768/1280 px (`pages.spec.mjs`) and the language setup of the built site (`language.spec.mjs`: `<html lang>`, canonical, `og:locale`, hreflang alternates, selector targets and `aria-current`, hidden projects, sitemap, root redirect, keyboard use of the selector). |
 | `npm run lighthouse` | Builds, then runs Lighthouse CI against `scripts/serve.mjs` on port 8020; reports go to `.lighthouseci/` (never uploaded). |
 | `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` and `HOST` env vars override) with `Cache-Control: no-store` and the same security headers as production (mirrors `.htaccess`, flasher CSP exception detected from the served page); redirects directory requests to add the trailing slash and mirrors the root redirect (`/` → `/de/` or `/en/` by the first `Accept-Language` entry, `302` + `Vary: Accept-Language`; other languages get the landing page). `HOST=0.0.0.0` works for phone testing on the LAN, but WebSerial needs a secure context, so the web flasher will not work there. |
 | `npm start` | Build, then serve. |

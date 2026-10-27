@@ -344,11 +344,11 @@ The structure of every data file is validated by the JSON Schemas in `scripts/sc
 
 ### Phase M11 — Verification
 
-- [ ] **M110** `npm run build`, `npm run check`, `npm test` pass.
-- [ ] **M111** Every page at 320px, 768px, 1280px in both languages; language selector usable by keyboard with visible focus.
-- [ ] **M112** Language switch on every page lands on the paired page (or the home per L9); no link leads into the wrong language (except declared cross-language links); the current language is highlighted.
-- [ ] **M113** `<html lang>`, `hreflang` alternates, `og:locale`, canonical and `sitemap.xml` correct for sample pages of each language; `TODO` projects hidden in `en`.
-- [ ] **M114** DevTools: no console errors, no external requests, no cookies/storage.
+- [x] **M110** (`npm run check`, `npm test` 61 tests, `lint:js`, `lint:css`, `html-validate`, `npm run test:e2e` 100 tests) `npm run build`, `npm run check`, `npm test` pass.
+- [x] **M111** (`pages.spec.mjs` covers all pages in both languages at 320/768/1280 px; `language.spec.mjs` adds keyboard use of the selector with a visible focus ring; screenshots checked: at 320px the menu button now fits next to the selector after tightening the header spacing) Every page at 320px, 768px, 1280px in both languages; language selector usable by keyboard with visible focus.
+- [x] **M112** (`language.spec.mjs`: every selector link exists, has the right `<html lang>`, points to the paired page or the language home; the current language is marked, common pages mark none) Language switch on every page lands on the paired page (or the home per L9); no link leads into the wrong language (except declared cross-language links); the current language is highlighted.
+- [x] **M113** (`language.spec.mjs`, incl. sitemap and hidden projects; checked for every built page, not only samples) `<html lang>`, `hreflang` alternates, `og:locale`, canonical and `sitemap.xml` correct for sample pages of each language; `TODO` projects hidden in `en`.
+- [x] **M114** (`pages.spec.mjs`: console errors, external requests, cookies and storage on every page) DevTools: no console errors, no external requests, no cookies/storage.
 - [ ] **M115** After deploy: root redirect (`Accept-Language: de` → `/de/`, `en-GB` → `/en/`, `fr` or none → landing page), `/de/` and `/en/` directory index, 404 page at a deep path (`/en/does-not-exist`), flasher page CSP in both languages, old `/html/` folder gone.
 
 ### Phase M20 — User actions

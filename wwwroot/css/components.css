@@ -27,6 +27,7 @@
 }
 
 .nav-toggle {
+  padding-inline: var(--space-3);
   font-size: var(--text-sm);
 }
 
