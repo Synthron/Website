@@ -4,7 +4,7 @@ Remaining open work after completing the step-by-step plan (S01–S73) from the 
 
 Priority: **P1** = fixes inconsistencies / prevents bugs, **P2** = clear workflow gain, **P3** = nice to have.
 
-> Note: `todo.md` is intentionally kept outside the README outline (D17) and will be deleted at the user's discretion. The decision record (D1–D26) below is kept because the README "Decisions" section and the open steps reference it. Dropped or deferred steps are struck through; their IDs stay reserved. Build-scope extensions listed in D9 are approved (Node built-ins only, no npm dependencies).
+> Note: `todo.md` is intentionally kept outside the README outline (D17) and will be deleted at the user's discretion. The decision record (D1–D27) below is kept because the README "Decisions" section and the open steps reference it. Dropped or deferred steps are struck through; their IDs stay reserved. Build-scope extensions listed in D9 are approved; the original “Node built-ins only, no npm dependencies” rule was lifted for tooling by D27.
 
 ### Remaining open work
 
@@ -13,7 +13,7 @@ Priority: **P1** = fixes inconsistencies / prevents bugs, **P2** = clear workflo
 
 ---
 
-## Decision Record (D1–D26)
+## Decision Record (D1–D27)
 
 D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Recommended option in **bold**. New questions that come up during implementation get the next free ID (D27 …).
 
@@ -45,6 +45,7 @@ D1–D17 answered on 2026-10-23, follow-ups D18–D26 answered on 2026-10-23. Re
 | D24 | Source for `sitemap.xml` `lastmod` of non-project pages (S63)?                                                                                                 | **Last git commit date of the source file** · File mtime (changes on every checkout) · None                                                                                  | Last git commit date of the source file, should be updated on npm run build automatically              |
 | D25 | Default Open Graph share image (S64)? OG images must be raster (PNG/JPG), SVG is not supported by most platforms.                                              | **Create a 1200×630 PNG with the logo in GIMP** · Project image only, no image for other pages                                                                               | Create a 1200×630 PNG with the logo in GIMP                                                            |
 | D26 | Dark mode toggle (README "Open Decisions", S58)?                                                                                                               | **No, follow the system preference** · Add a toggle (no persistence, or `localStorage` for the preference only)                                                              | No, follow the system preference                                                                       |
+| D27 | May npm packages be installed and used (2026-10-27)? | Keep the build dependency-free · Allow packages for build and tooling | Allowed; “dependency-free” now refers to the built site only: no tracking, no cookies, no external services |
 
 ---
 

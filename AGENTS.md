@@ -15,7 +15,7 @@ This repository contains a personal project website built with **pure HTML, CSS 
 ## Hard Constraints
 
 - Use only HTML5, CSS3 and vanilla JavaScript (ES2020+).
-- The project is an npm project (Node.js ≥ 22) with a dependency-free build script. Do not add npm dependencies, frameworks, libraries, bundlers or other build tools without explicit user approval. Runtime code in the browser stays vanilla.
+- The project is an npm project (Node.js ≥ 22). npm packages may be installed and used for the build and tooling; declare them in `package.json` (preferably as `devDependencies`). The “dependency-free” rule applies to the built site in `dist/`: it uses no tracking, no cookies and no external services. Runtime code in the browser stays vanilla.
 - Do not set cookies, and do not use `localStorage`, `sessionStorage`, or `IndexedDB` for user tracking.
 - Do not add third-party scripts, trackers, analytics, fonts, or CDN assets. The site must render with no external requests. **Only exception:** the vendored, self-hosted ESP Web Tools in `js/vendor/esp-web-tools/` (approved, see Protected Files).
 - Content Security Policy: never write a CSP by hand. Every page gets it from `{{csp}}` in `partials/head.html`. Pages containing `<esp-web-install-button>` automatically get `style-src 'self' 'unsafe-inline'` (required by ESP Web Tools); never add `'unsafe-inline'` anywhere else.
@@ -39,7 +39,7 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | Path | Contents | Rules |
 | --- | --- | --- |
 | `scripts/build.mjs` | Build CLI | Orchestration only. Put logic into `scripts/lib/`. |
-| `scripts/lib/` | Build modules: `util` (paths, `fail()`, escaping), `data` (load/validate JSON), `render` (HTML renderers), `pipeline` (`@raw`, includes, tokens, directives), `checks` (output checks) | Node built-ins only. Keep the build deterministic and failing loudly on bad data. New checks go into `checks.mjs`, new renderers into `render.mjs`. |
+| `scripts/lib/` | Build modules: `util` (paths, `fail()`, escaping), `data` (load/validate JSON), `render` (HTML renderers), `pipeline` (`@raw`, includes, tokens, directives), `checks` (output checks) | Node built-ins or npm packages declared in `package.json`. Keep the build deterministic and failing loudly on bad data. New checks go into `checks.mjs`, new renderers into `render.mjs`. |
 | `scripts/create.mjs` | `npm run create` | Scaffolds a project page from the template and registers it in `projects.json` (flags: `--tags`, `--featured`, `--status`, `--repo`, `--dry-run`). |
 | `scripts/dev.mjs` | `npm run dev` | Build once, then rebuild on changes in `wwwroot/`/`scripts/`; serves `dist/` with SSE live reload and the production security headers (dev-only). |
 | `scripts/firmware.mjs` | `npm run firmware` | Scaffolds `assets/firmware/<suite>/manifest.json` for the given `--chip` families and prints the flasher button snippet. |
@@ -67,7 +67,7 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 
 ## Build and Templating
 
-Commands: `npm run build` (wwwroot → dist), `npm run serve`, `npm start` (both), `npm run clean`, `npm run create -- "Name" "Brief"`. The full reference of includes, `{{tokens}}`, `@directives` and `@raw` is in [README → Build-time Templating](README.md#build-time-templating); do not duplicate it here.
+Commands: `npm install` (once after cloning and whenever `package.json` changes), `npm run build` (wwwroot → dist), `npm run serve`, `npm start` (both), `npm run clean`, `npm run create -- "Name" "Brief"`. The full reference of includes, `{{tokens}}`, `@directives` and `@raw` is in [README → Build-time Templating](README.md#build-time-templating); do not duplicate it here.
 
 - Never hard-code generated content (site name, year, footer note, email, nav, CSP, project titles/summaries/cards). Use the tokens, includes and directives.
 - Every page `<head>` starts with `<!-- @include head -->` and adds only its own `meta description` and `title` (plus e.g. `robots` where needed). Use `{{name}}` in every `title` and `meta description`.
@@ -113,7 +113,7 @@ Commands: `npm run build` (wwwroot → dist), `npm run serve`, `npm start` (both
 - No `document.cookie`, no storage APIs for tracking.
 
 ### Node scripts (`scripts/`)
-- Node built-ins only, ES modules (`.mjs`).
+- Node built-ins or npm packages declared in `package.json`; ES modules (`.mjs`).
 - Match the existing style: single quotes, 2-space indent, semicolons, long lines allowed. Do not run a formatter over existing files; it would rewrite every line.
 
 ### Data
@@ -169,6 +169,6 @@ The main development machine runs Windows with PowerShell 5.1.
 - Do not invent project data or page text. Use placeholders clearly marked as such, or ask the user.
 - Do not add tracking, analytics, or consent banners (there are no cookies to consent to).
 - Do not replace the system font stack with custom or web fonts.
-- Do not add npm dependencies or extend the build pipeline beyond its documented scope without user approval.
+- Do not extend the build pipeline beyond its documented scope without user approval. npm packages for tooling are allowed, but nothing they produce may add tracking, cookies or external requests to `dist/`.
 - Do not edit files in `dist/` or any other protected file (see Protected Files).
 - Do not write long prose in code comments; keep comments short and technical.
