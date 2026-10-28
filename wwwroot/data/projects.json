@@ -50,25 +50,5 @@
     },
     "image": "assets/img/sy317_render.png",
     "featured": true
-  },
-  {
-    "id": "placeholder-project-two",
-    "title": { "de": "Placeholder Project Two", "en": "TODO" },
-    "summary": { "de": "Placeholder entry — Test 2.", "en": "TODO" },
-    "tags": {
-      "de": [
-        "css",
-        "layout"
-      ],
-      "en": []
-    },
-    "status": "in Arbeit",
-    "date": "2026-09",
-    "links": {
-      "repo": null,
-      "demo": null
-    },
-    "image": "assets/img/placeholder.svg",
-    "featured": false
   }
 ]

@@ -1,3 +1,5 @@
 [
-  { "de": "rechtliches.html", "en": "disclaimers.html" }
+  { "de": "rechtliches.html", "en": "disclaimers.html" },
+  { "de": "projekte.html", "en": "projects.html" },
+  { "de": "datenschutz.html", "en": "privacy.html" }
 ]

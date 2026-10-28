@@ -2,7 +2,7 @@
   "de": [
     { "label": "Start", "href": "index.html" },
     { "label": "Über mich", "href": "about.html" },
-    { "label": "Projekte", "href": "projects.html" },
+    { "label": "Projekte", "href": "projekte.html" },
     { "label": "Amateurfunk", "href": "hamradio.html" }
   ],
   "en": [
