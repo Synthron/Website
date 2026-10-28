@@ -1,17 +1,17 @@
 [
   {
-    "id": "t2lt-antenna",
-    "title": { "de": "T2LT Antenne", "en": "T2LT Antenna" },
-    "summary": { "de": "DIY T2LT Dualband Antenne für 2m/70cm", "en": "DIY T2LT dual-band antenna for 2m/70cm" },
+    "id": "t2lt",
+    "title": {
+      "de": "T2LT 2m/70cm Antenne",
+      "en": "T2LT 2m/70cm Antenna"
+    },
+    "summary": {
+      "de": "T2LT Dualband 7m/70cm Antenne aus dem Baumarkt",
+      "en": "T2LT dual-band 2m/70cm antenna from the hardware store"
+    },
     "tags": {
-      "de": [
-        "antenne",
-        "diy"
-      ],
-      "en": [
-        "antenna",
-        "diy"
-      ]
+      "de": ["antenne", "diy"],
+      "en": ["antenna", "diy"]
     },
     "date": "2026-10"
   }
