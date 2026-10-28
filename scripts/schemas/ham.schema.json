@@ -16,7 +16,24 @@
       },
       "title": { "$ref": "projects.schema.json#/definitions/localizedText" },
       "summary": { "$ref": "projects.schema.json#/definitions/localizedText" },
-      "tags": { "$ref": "projects.schema.json#/items/properties/tags" },
+      "tags": {
+        "description": "R9: fixed tag vocabulary per language; a new language needs its own list here.",
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "de": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "enum": ["antenne", "transceiver", "contest", "funkbetrieb", "messtechnik", "diy"] }
+          },
+          "en": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "enum": ["antenna", "transceiver", "contest", "operating", "measurement", "diy"] }
+          }
+        },
+        "additionalProperties": false
+      },
       "date": { "$ref": "projects.schema.json#/items/properties/date" },
       "status": { "$ref": "projects.schema.json#/items/properties/status" },
       "links": { "$ref": "projects.schema.json#/items/properties/links" },

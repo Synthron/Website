@@ -254,7 +254,7 @@ test('loadHam accepts slim entries, uses ham/ pages and mapped names', async () 
   const entry = { id: 'h', title: { de: 'H', en: 'H' }, summary: { de: 'S', en: 'S' }, tags: { de: ['antenne'], en: ['antenna'] }, date: '2026-10' };
   const src = await fixture({
     ...BASE_FILES, 'de/ham/h.html': '', 'en/ham/h-en.html': '', 'en/ham/orphan.html': '', 'de/ham/x.html': '', 'en/proj/x.html': '',
-    'data/ham.json': [entry, { ...entry, id: 'nopage', status: 'unbekannt', image: 'x.svg' }],
+    'data/ham.json': [entry, { ...entry, id: 'nopage', status: 'unbekannt', image: 'x.svg', tags: { de: ['antenne', 'kurzwelle'] } }],
     'data/pages.json': [{ de: 'ham/h.html', en: 'ham/h-en.html' }, { de: 'ham/x.html', en: 'proj/x.html' }],
   });
   const pages = await loadPages(SITE, { src });
@@ -265,6 +265,8 @@ test('loadHam accepts slim entries, uses ham/ pages and mapped names', async () 
   assert.match(text, /\[1\]: a group with ham\/ pages may only contain ham\/ pages/);
   assert.match(text, /ham\.json\[1\]\.status: must be equal to one of the allowed values/);
   assert.match(text, /ham\.json\[1\]: must NOT have additional properties "image"/);
+  assert.match(text, /ham\.json\[1\]\.tags\.de\[1\]: must be equal to one of the allowed values: antenne, /);
+  assert.doesNotMatch(text, /tags\.de\[0\]/);
   assert.match(warnings.join('\n'), /en\/ham\/orphan\.html: page without a data\/ham\.json entry/);
   reset();
 });

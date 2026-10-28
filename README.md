@@ -139,7 +139,7 @@ The site is multi-language; the decisions behind it are recorded in [`language.m
 
 1. `data/site.json`: add the language to `languages` (code, name, `locale` such as `fr_FR`, `flag` path; put the flag SVG into `assets/icons/`) and add `footerNote.<code>`.
 2. `data/strings.json`, `data/nav.json`, `data/footer-nav.json`: add a block for the code (copy the default block; `TODO_<label>` until translated). Footer entries that point to pages that only exist in another language get `"lang": "<code>"`.
-3. `data/projects.json`: add the code to `title` and `summary` (`"TODO"`) and `tags` (`[]`) of every project.
+3. `data/projects.json`: add the code to `title` and `summary` (`"TODO"`) and `tags` (`[]`) of every project. Same for `data/ham.json`; its tag vocabulary for the code goes into `scripts/schemas/ham.schema.json` (`tags.properties.<code>`, R9).
 4. Create `wwwroot/<code>/` with `index.html`, `projects.html`, `about.html` and `proj/{id}.html` (copy the German pages and mark the texts `TODO`, or use the existing `en/` skeletons as a model). `npm run create:project`, `npm run create:afu` and `npm run page` create new pages in the new language automatically.
 5. `wwwroot/.htaccess`: add a rewrite rule for the code next to the `de`/`en` rules; the preview servers read the codes from `site.json`.
 6. `npm run build` (check the warnings), `npm test`, `npm run test:e2e`; add the new pages to `lighthouserc.json` if wanted.
@@ -492,9 +492,10 @@ A second collection next to the projects: `wwwroot/<lang>/hamradio.html` lists t
 ```
 
 - Required: `id`, `title`, `summary`, `tags`, `date` (same rules as in `projects.json`, schema [`scripts/schemas/ham.schema.json`](scripts/schemas/ham.schema.json)). Optional: `status`, `links`, `draft`. No `image` and no `featured` (the list shows no images).
+- Tags come from a fixed vocabulary per language (R9), defined in `ham.schema.json` (`tags.properties.<lang>.items.enum`): `de` = `antenne`, `transceiver`, `contest`, `funkbetrieb`, `messtechnik`, `diy`; `en` = `antenna`, `transceiver`, `contest`, `operating`, `measurement`, `diy`. The build and `npm run create:afu -- … --tags` reject other tags; a new tag or language is added to that list first.
 - Pages live at `<lang>/ham/{id}.html` (or a mapped name from `data/pages.json`; a group with `ham/` pages may only contain `ham/` pages). The default-language page is required; a `TODO` or missing translation hides the entry in that language, like projects.
 - A ham page uses the same structure as a project page (`{{projectTitle}}`, `{{projectSummary}}`, `@project-header`, layouts from the project template) with the back link `<a href="{{langRoot}}hamradio.html">{{t:backToHam}}</a>`.
-- Ham entries do not appear on `projects.html`, the home page or in the project tag filter.
+- Ham entries do not appear on `projects.html`, the home page (R10) or in the project tag filter.
 - Adding a ham page: `npm run create:afu -- "Name" "Brief" --tags a,b` (entry plus pages in all languages), replace the placeholder body, run `npm run build`.
 
 ### Other Data Files

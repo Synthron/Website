@@ -33,7 +33,8 @@ Plan and decision record for the ham radio section (`hamradio.html` and its sub-
 
 - [x] **R7/R8** Scaffolding: `npm run create:afu` writes `<lang>/ham/{id}.html` (project template, ham back link) and the `ham.json` entry.
 - [x] Removal: `npm run remove:afu` deletes a ham entry and its pages; projects use `npm run remove:project`, `npm run remove` is gone.
-- [ ] **R10** Home page list, if wanted (`limit=` option for `@ham-list`).
+- [x] **R9** Fixed tag vocabulary per language in `ham.schema.json` (`de`: antenne, transceiver, contest, funkbetrieb, messtechnik, diy; `en`: antenna, transceiver, contest, operating, measurement, diy); `create:afu --tags` checks it too.
+- [x] **R10** No home page list (decided: no; nothing to build).
 - [ ] Optional: e2e check that the ham filter hides and shows list items (`scripts/e2e/`).
 
 ### User

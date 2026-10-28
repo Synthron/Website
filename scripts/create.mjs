@@ -15,7 +15,7 @@
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { STATUS_VALUES } from './lib/data.mjs';
+import { HAM_TAGS, STATUS_VALUES } from './lib/data.mjs';
 import { loadSetup, readPages, projectPagePath, writeJson } from './lib/scaffold.mjs';
 import { slugify } from './lib/util.mjs';
 
@@ -104,6 +104,14 @@ async function main() {
   }
 
   const { languages, defaultLang } = await loadSetup();
+  if (options.ham) {
+    const allowed = HAM_TAGS[defaultLang] ?? [];
+    const unknown = options.tags.filter((tag) => !allowed.includes(tag));
+    if (unknown.length > 0) {
+      console.error(`Unknown ham tag(s) ${unknown.join(', ')}; allowed (R9, ham.schema.json): ${allowed.join(', ')}`);
+      process.exit(1);
+    }
+  }
   const pages = await readPages();
   const dataRel = `data/${path.basename(kind.file)}`;
   const entries = JSON.parse(await readFile(kind.file, 'utf8'));
