@@ -1,17 +1,22 @@
 [
   {
     "id": "nixie-clock",
-    "title": { "de": "Nixie Uhr", "en": "TODO" },
-    "summary": { "de": "Nixie-Uhr mit ESP32, Z5600M Nixie-Röhren und RTC.", "en": "TODO" },
+    "title": { "de": "Nixie Uhr", "en": "Nixie Clock" },
+    "summary": { "de": "Nixie-Uhr mit ESP32, Z5600M Nixie-Röhren und RTC.",
+                 "en": "Nixie clock with ESP32, Z5600M Nixie tubes and RTC." },
     "tags": {
       "de": [
-        "hardware",
+        "elektronik",
+        "software",
+        "roehren",
+        "esp32"
+      ],
+      "en": [
         "electronics",
         "software",
         "tubes",
         "esp32"
-      ],
-      "en": []
+      ]
     },
     "status": "in Arbeit",
     "date": "2026-09",
@@ -24,15 +29,18 @@
   },
   {
     "id": "sy317",
-    "title": { "de": "SY317 - 78xx Spannungsregler-Ersatz", "en": "TODO" },
-    "summary": { "de": "Drop-In Schaltregler-Replacement für 78xx Spannungsregler, mit einstellbarer Ausgangsspannung und höherem Ausgangsstrom.", "en": "TODO" },
+    "title": { "de": "SY317 - 78xx Spannungsregler-Ersatz", "en": "SY317 - 78xx Voltage Regulator Replacement" },
+    "summary": { "de": "Drop-In Schaltregler-Replacement für 78xx Spannungsregler, mit einstellbarer Ausgangsspannung und höherem Ausgangsstrom.",
+                 "en": "Drop-In switch-mode replacement for 78xx voltage regulators, with adjustable output voltage and higher output current." },
     "tags": {
       "de": [
-        "hardware",
+        "elektronik",
+        "stromversorgung"
+      ],
+      "en": [
         "electronics",
         "power-supply"
-      ],
-      "en": []
+      ]
     },
     "status": "fertig",
     "date": "2026-05",

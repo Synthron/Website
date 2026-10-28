@@ -37,9 +37,11 @@ export function renderLangSwitch(ctx, site, strings) {
 }
 
 // The label is translated; data-status keeps the German key for CSS hooks.
+// Ham entries may have no status (R2); then only the date is shown.
 export function renderMeta(project, strings) {
-  return `<p class="project-meta">
-  <span class="status" data-status="${esc(project.status)}">${esc(strings.status?.[project.status] ?? project.status)}</span>
+  const status = project.status === undefined ? '' : `
+  <span class="status" data-status="${esc(project.status)}">${esc(strings.status?.[project.status] ?? project.status)}</span>`;
+  return `<p class="project-meta">${status}
   <time datetime="${esc(project.date)}">${esc(formatDate(project.date, strings.lang))}</time>
 </p>`;
 }
@@ -108,6 +110,27 @@ export function renderProjectList(projects, args, ctx, strings) {
     ? selection.map((project) => renderCard(project, ctx, level, strings)).join('\n')
     : `<p class="message">${esc(strings.noProjects)}</p>`;
   return `<div class="project-grid"${id}>\n${inner}\n</div>`;
+}
+
+// R3: compact list for the ham radio pages (title link, meta, summary, tags),
+// newest first. Items carry data-tags for js/projects.js like the cards.
+export function renderEntryList(entries, args, ctx, strings) {
+  const options = Object.fromEntries(args.map((arg) => arg.split('=')));
+  const tag = options.level === '3' ? 'h3' : 'h2';
+  const id = options.id ? ` id="${esc(options.id)}"` : '';
+  const visible = published(entries);
+  if (visible.length === 0) return `<p class="message"${id}>${esc(strings.noHamPages)}</p>`;
+  const items = visible.map((entry) => {
+    const page = ctx.pages.projectPage(ctx.lang, entry.id, 'ham') ?? `ham/${entry.id}.html`;
+    const href = `${ctx.root}${ctx.pages.dir(ctx.lang)}/${page}`;
+    return `<li class="entry-list__item" data-tags="${esc(JSON.stringify(entry.tags))}">
+  <${tag} class="entry-list__title"><a class="entry-list__link" href="${esc(href)}">${esc(entry.title)}</a></${tag}>
+  ${renderMeta(entry, strings)}
+  <p class="entry-list__summary">${esc(entry.summary)}</p>
+  ${renderTags(entry.tags, strings)}
+</li>`;
+  });
+  return `<ul class="entry-list"${id}>\n${items.join('\n')}\n</ul>`;
 }
 
 // Starts hidden; js/projects.js reveals it. Without JS the full list shows.

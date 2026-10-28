@@ -91,14 +91,16 @@ export async function checkFirmwareManifests() {
 }
 
 // --- Page-level diagnostics (S31-S35) ---------------------------------------
-// S31/M40: warn about project pages without project data in their language.
-// `infoByRel` maps built page paths to { lang, pagePath, isCommon } (see build.mjs).
-export function checkOrphanPages(infoByRel, pageIndex, byId) {
+// S31/M40: warn about project (and ham) pages without data in their language.
+// `infoByRel` maps built page paths to { lang, pagePath, isCommon } (see build.mjs);
+// `byFolder` maps a collection folder (proj, ham) to its entries by id.
+export function checkOrphanPages(infoByRel, pageIndex, byFolder) {
   for (const [rel, info] of infoByRel) {
-    if (!info.pagePath?.startsWith('proj/')) continue;
-    const project = byId.get(pageIndex.projectId(info.lang, info.pagePath));
-    if (!project) warn(`wwwroot/${rel}: project page without a data/projects.json entry`);
-    else if (!Object.hasOwn(project.title, info.lang)) warn(`wwwroot/${rel}: project "${project.id}" has no "${info.lang}" data`);
+    const folder = info.pagePath?.split('/')[0];
+    if (!info.pagePath?.includes('/') || !(folder in byFolder)) continue;
+    const project = byFolder[folder].get(pageIndex.projectId(info.lang, info.pagePath));
+    if (!project) warn(`wwwroot/${rel}: ${folder}/ page without a data entry`);
+    else if (!Object.hasOwn(project.title, info.lang)) warn(`wwwroot/${rel}: entry "${project.id}" has no "${info.lang}" data`);
   }
 }
 
@@ -114,8 +116,8 @@ export function checkHtmlLang(rel, html, info) {
 
 // M42: every page of a non-default language needs a default-language
 // counterpart (fail); default-language pages without a counterpart are
-// reported (warn). Project pages are covered by the project data warnings.
-export function checkTranslationCoverage(site, pageIndex) {
+// reported (warn). Entry pages (proj/, ham/) are covered by the data warnings.
+export function checkTranslationCoverage(site, pageIndex, entryFolders = ['proj', 'ham']) {
   const { defaultLang, languages } = site;
   if (languages.length < 2) return;
   const seen = new Set();
@@ -127,7 +129,7 @@ export function checkTranslationCoverage(site, pageIndex) {
       seen.add(key);
       if (!counterparts.has(defaultLang)) {
         fail(`wwwroot/${pageIndex.dir(code)}/${file}: page has no "${defaultLang}" counterpart (required)`);
-      } else if (!file.startsWith('proj/') && counterparts.size < languages.length) {
+      } else if (!entryFolders.some((folder) => file.startsWith(`${folder}/`)) && counterparts.size < languages.length) {
         const missing = languages.filter(({ code: other }) => !counterparts.has(other)).map(({ code: other }) => other);
         warn(`wwwroot/${pageIndex.dir(defaultLang)}/${counterparts.get(defaultLang)}: no counterpart in ${missing.map((other) => `"${other}"`).join(', ')}`);
       }

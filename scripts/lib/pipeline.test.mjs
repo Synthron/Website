@@ -55,6 +55,20 @@ test('applyTokens fails on an unknown or non-text UI string', () => {
 test('applyDirectives renders no @nav on common pages', () => {
   const ctx = { rel: 'index.html', lang: 'de', root: '', isCommon: true, site, pages: { base: () => '' } };
   const nav = [{ label: 'Start', href: 'index.html', external: false }];
-  assert.equal(applyDirectives('<!-- @nav -->', ctx, [], nav, nav, {}), '');
-  assert.match(applyDirectives('<!-- @nav -->', { ...ctx, isCommon: false }, [], nav, nav, {}), /<ul class="site-nav__list">/);
+  assert.equal(applyDirectives('<!-- @nav -->', ctx, {}, nav, nav, {}), '');
+  assert.match(applyDirectives('<!-- @nav -->', { ...ctx, isCommon: false }, {}, nav, nav, {}), /<ul class="site-nav__list">/);
+});
+
+test('applyDirectives @tag-filter uses the list and count words of from=', () => {
+  errors.length = 0;
+  const ctx = { rel: 'de/hamradio.html', lang: 'de', root: '../', site };
+  const lists = { projects: [], ham: [{ id: 'a', tags: ['antenne'] }, { id: 'b', tags: ['contest'] }] };
+  const strings = { all: 'Alle', countSingular: 'Projekt', countPlural: 'Projekte', hamCountSingular: 'Seite', hamCountPlural: 'Seiten' };
+  const html = applyDirectives('<!-- @tag-filter ham-list from=ham -->', ctx, lists, [], [], strings);
+  assert.match(html, /data-tag-filter="ham-list"/);
+  assert.match(html, /data-tag="contest"/);
+  assert.match(html, />2 Seiten<\/p>/);
+  assert.equal(applyDirectives('<!-- @tag-filter x from=nope -->', ctx, lists, [], [], strings), '');
+  assert.equal(errors.length, 1);
+  errors.length = 0;
 });

@@ -6,7 +6,7 @@
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DIST, ROOT, SRC, errors, exists, gitLastModified, posix, shortHash, walk, warn, warnings } from './lib/util.mjs';
-import { loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
+import { COLLECTIONS, collectionOf, loadHam, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
 import { ogImageRel, renderOpenGraph, renderSitemap } from './lib/render.mjs';
 import {
   applyCacheBusting, applyDirectives, applyIncludes, applyTokens, classifyPage, isFlasherPage,
@@ -67,21 +67,23 @@ async function build({ check = false } = {}) {
   const { defaultLang } = site;
   const pageIndex = await loadPages(site);
   const pageDir = pageIndex.dir;
-  const allProjects = await loadProjects(site, pageIndex);
+  const collections = { projects: await loadProjects(site, pageIndex), ham: await loadHam(site, pageIndex) };
   const navs = await loadNav('nav.json', site);
   const footerNavs = await loadNav('footer-nav.json', site);
   const stringsByLang = await loadStrings(site);
   // Everything a page needs in its own language; `lang` is merged into the
   // strings for formatDate().
   const perLang = Object.fromEntries(site.languages.map(({ code }) => [code, {
-    projects: allProjects.map((project) => localize(project, code)).filter(Boolean),
+    lists: Object.fromEntries(Object.entries(collections).map(([name, entries]) => [name, entries.map((entry) => localize(entry, code)).filter(Boolean)])),
     nav: navs[code] ?? [],
     footerNav: footerNavs[code] ?? [],
     strings: { ...stringsByLang[code], lang: code },
   }]));
   await checkFirmwareManifests();
-  const byId = new Map(allProjects.map((project) => [project.id, project]));
-  const projectByRel = new Map(); // page path -> localized project
+  // Collection name -> id -> entry; the orphan check keys the maps by page folder.
+  const byId = Object.fromEntries(Object.entries(collections).map(([name, entries]) => [name, new Map(entries.map((entry) => [entry.id, entry]))]));
+  const byFolder = Object.fromEntries(Object.entries(COLLECTIONS).map(([name, { folder }]) => [folder, byId[name]]));
+  const projectByRel = new Map(); // page path -> localized project or ham entry
   const infoByRel = new Map(); // page path -> { lang, pagePath, isCommon }
 
   const partials = {};
@@ -116,8 +118,9 @@ async function build({ check = false } = {}) {
     const source = await readFile(from, 'utf8');
     const page = classifyPage(rel, source, root, site, pageDir);
     const { lang } = page;
-    const projectId = page.pagePath?.startsWith('proj/') ? pageIndex.projectId(lang, page.pagePath) : undefined;
-    const rawProject = projectId === undefined ? undefined : byId.get(projectId);
+    const collection = collectionOf(page.pagePath);
+    const projectId = collection === undefined ? undefined : pageIndex.projectId(lang, page.pagePath);
+    const rawProject = projectId === undefined ? undefined : byId[collection].get(projectId);
     const project = rawProject ? localize(rawProject, lang) ?? undefined : undefined;
     // A project page whose project is hidden in this language (TODO or missing
     // data, already warned about by the loader) is not built.
@@ -141,14 +144,14 @@ async function build({ check = false } = {}) {
       root,
       project,
     };
-    const { projects, nav, footerNav, strings } = perLang[lang];
+    const { lists, nav, footerNav, strings } = perLang[lang];
     const raw = [];
     let output = protectRaw(source, raw, rel);
     // Second pass protects raw blocks that came in through partials.
     output = protectRaw(applyIncludes(output, partials, rel), raw, rel);
     ctx.flasher = isFlasherPage(output);
     output = applyTokens(output, ctx);
-    output = applyDirectives(output, ctx, projects, nav, footerNav, strings);
+    output = applyDirectives(output, ctx, lists, nav, footerNav, strings);
     // Cache busting before raw blocks are restored, so code samples stay as-is.
     output = applyCacheBusting(output, rel, versions);
     output = restoreRaw(output, raw);
@@ -180,8 +183,8 @@ async function build({ check = false } = {}) {
   const base = check ? SRC : DIST;
   for (const [rel, html] of pages) await checkLinks(rel, html, base);
 
-  checkOrphanPages(infoByRel, pageIndex, byId);
-  checkTranslationCoverage(site, pageIndex);
+  checkOrphanPages(infoByRel, pageIndex, byFolder);
+  checkTranslationCoverage(site, pageIndex, Object.keys(byFolder));
   checkLanguageLinks(pages, infoByRel, site, pageDir);
   await checkUnusedAssets(pages);
   checkPlaceholderText(pages);

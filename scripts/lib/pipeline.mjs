@@ -2,7 +2,7 @@
 
 import path from 'node:path';
 import { esc, fail, ref } from './util.mjs';
-import { renderLangSwitch, renderNav, renderProjectHeader, renderProjectList, renderTagFilter } from './render.mjs';
+import { renderEntryList, renderLangSwitch, renderNav, renderProjectHeader, renderProjectList, renderTagFilter } from './render.mjs';
 
 const RAW_BLOCK = /<!--\s*@raw\s*-->([\s\S]*?)<!--\s*@endraw\s*-->/g;
 const RAW_MARKER = /<!--\s*@(?:raw|endraw)\s*-->/g;
@@ -92,7 +92,8 @@ export function applyTokens(text, ctx) {
   });
 }
 
-export function applyDirectives(html, ctx, projects, nav, footerNav, strings) {
+// `lists` holds the localized entries per collection ({ projects, ham }).
+export function applyDirectives(html, ctx, lists, nav, footerNav, strings) {
   return html.replace(/<!--\s*@([\w-]+)([^>]*?)-->/g, (match, name, rawArgs, offset) => {
     const args = rawArgs.trim().split(/\s+/).filter(Boolean);
     switch (name) {
@@ -104,9 +105,19 @@ export function applyDirectives(html, ctx, projects, nav, footerNav, strings) {
       case 'footer-nav':
         return renderNav(footerNav, ctx, { list: 'site-footer__list', link: 'site-footer__link' });
       case 'projects':
-        return renderProjectList(projects, args, ctx, strings);
-      case 'tag-filter':
-        return renderTagFilter(projects, args, ctx.lang, strings);
+        return renderProjectList(lists.projects, args, ctx, strings);
+      case 'ham-list':
+        return renderEntryList(lists.ham, args, ctx, strings);
+      case 'tag-filter': {
+        const from = args.find((arg) => arg.startsWith('from='))?.slice(5) ?? 'projects';
+        if (!Array.isArray(lists[from])) {
+          fail(`${ref(ctx.rel, html, offset)}: @tag-filter: unknown list "from=${from}"`);
+          return '';
+        }
+        // Count words of the ham list ("3 Seiten") differ from the project ones.
+        const words = from === 'ham' ? { countSingular: strings.hamCountSingular, countPlural: strings.hamCountPlural } : {};
+        return renderTagFilter(lists[from], args, ctx.lang, { ...strings, ...words });
+      }
       case 'project-header':
         if (!ctx.project) {
           fail(`${ref(ctx.rel, html, offset)}: @project-header needs a project with id "${path.basename(ctx.rel, '.html')}"`);

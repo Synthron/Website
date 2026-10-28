@@ -3,7 +3,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ogImageRel, renderCard, renderLangSwitch, renderLinks, renderMeta, renderNav, renderOpenGraph, renderSitemap } from './render.mjs';
+import { ogImageRel, renderCard, renderEntryList, renderLangSwitch, renderLinks, renderMeta, renderNav, renderOpenGraph, renderSitemap } from './render.mjs';
 
 // --- renderNav --------------------------------------------------------------
 
@@ -90,6 +90,23 @@ test('renderMeta shows the translated status label and keeps the German key as h
 
 test('renderLinks uses the translated connector word', () => {
   assert.match(renderLinks(PROJECT, '', STRINGS), /<span class="visually-hidden"> for A &lt;b&gt;<\/span>/);
+});
+
+test('renderMeta omits the status of entries without one', () => {
+  const html = renderMeta({ date: '2026-05' }, STRINGS);
+  assert.doesNotMatch(html, /class="status"/);
+  assert.match(html, /<time datetime="2026-05">/);
+});
+
+test('renderEntryList renders tagged list items, skips drafts and shows a message when empty', () => {
+  const entry = { id: 't2lt', title: 'T2LT', summary: 'S', tags: ['antenne'], date: '2026-10' };
+  const ctx = ctxFor('html/hamradio.html', '../', { pages: { ...pageIndex, projectPage: (code, id, folder) => `${folder}/${id}.html` } });
+  const html = renderEntryList([entry, { ...entry, id: 'draft', draft: true }], ['level=2', 'id=ham-list'], ctx, STRINGS);
+  assert.match(html, /^<ul class="entry-list" id="ham-list">/);
+  assert.match(html, /<li class="entry-list__item" data-tags="\[&quot;antenne&quot;\]">/);
+  assert.match(html, /<h2 class="entry-list__title"><a class="entry-list__link" href="\.\.\/html\/ham\/t2lt\.html">T2LT<\/a><\/h2>/);
+  assert.doesNotMatch(html, /draft/);
+  assert.equal(renderEntryList([], ['id=ham-list'], ctx, { ...STRINGS, noHamPages: 'Leer' }), '<p class="message" id="ham-list">Leer</p>');
 });
 
 test('renderCard links the project page of the page language', () => {

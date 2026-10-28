@@ -20,6 +20,7 @@ Website/
 ├── README.md              # This file: directives, outline, todos
 ├── AGENTS.md              # Instructions for AI agents / contributors (AGENTS.md)
 ├── language.md            # Multi-language plan, decision record (L1–L32), work log (M-steps) and open user tasks (Phase M20)
+├── radio.md               # Ham radio section: decision record (R1–…), open questions and next steps
 ├── todo.md                # Remaining work and decision record (kept outside the outline, may be deleted)
 ├── .gitignore             # Ignore OS/editor junk, node_modules/, dist/
 ├── .gitattributes         # LF line endings for text; binary for .bin/.jpg/.png/.webp
@@ -45,7 +46,7 @@ Website/
 │   │   ├── scaffold.mjs   # Shared helpers of create/page/remove (languages, pages.json)
 │   │   ├── preview.mjs    # Shared helpers of serve/dev (root redirect, flasher detection)
 │   │   └── *.test.mjs     # Unit tests (node --test): util, data, render, pipeline, checks, preview
-│   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects, pages)
+│   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects, ham, pages)
 │   ├── e2e/               # Playwright specs (*.spec.mjs)
 │   │   └── pages.spec.mjs # Every built page: 320/768/1280 px, console, requests, storage, focus
 │   ├── create.mjs         # Scaffold a new project page + projects.json entry
@@ -74,16 +75,19 @@ Website/
     ├── de/                # German pages (default language)
     │   ├── index.html     # German home (intro, featured projects)
     │   ├── projects.html  # Project listing page with tag filter
+    │   ├── hamradio.html  # Ham radio page list with tag filter (see Ham Radio Pages)
     │   ├── about.html     # About and contact page
     │   ├── impressum.html # Legal: imprint
     │   ├── privacy.html   # Legal: privacy policy
     │   ├── rechtliches.html # Legal: legal notes
+    │   ├── ham/           # Ham radio pages (one per data/ham.json entry, named by `id`)
+    │   │   └── t2lt-antenna.html  # Placeholder ham page (from the project template)
     │   └── proj/          # Individual project pages (one per project, named by `id`)
     │       ├── sy317.html # Static project page (from template)
     │       ├── nixie-clock.html  # Static project page (from template)
     │       └── placeholder-project-*.html  # Static project pages (from template)
     ├── en/                # English pages (placeholders marked TODO until translated)
-    │   ├── index.html, projects.html, about.html
+    │   ├── index.html, projects.html, hamradio.html, about.html
     │   └── proj/          # Skeletons; hidden while the project data in projects.json is TODO
     ├── css/
     │   ├── base.css       # Reset, custom properties, typography, colour schemes
@@ -101,6 +105,7 @@ Website/
     │   ├── footer-nav.json # Footer navigation entries per language (label + href)
     │   ├── pages.json      # Pages with different file names per language (empty: pair by identical path)
     │   ├── projects.json   # Project entries (single source of truth)
+    │   ├── ham.json        # Ham radio page entries (list on hamradio.html)
     │   ├── site.json       # Shared site info (languages, defaultLang, name, copyright, email, footerNote per language)
     │   └── strings.json    # UI strings per language (count labels, buttons, aria, status labels)
     └── assets/
@@ -264,10 +269,11 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `<!-- @nav -->` | Nav list built from `data/nav.json` for the page language; sets `aria-current="page"` on the entry whose `href` is the current page. Renders nothing on common pages (brand only). Used in `partials/header.html`. |
 | `<!-- @footer-nav -->` | Footer nav list built from `data/footer-nav.json` for the page language; same `aria-current="page"` handling as `@nav`. Entries with `lang` pointing to another language get `lang`/`hreflang`. Used in `partials/footer.html`. |
 | `<!-- @lang-switch -->` | Language selector: one link per language (flag, code, language name as `aria-label`) to the same page in that language, else to that language's home; `aria-current="true"` on the current language of a language page. Renders nothing with a single configured language. Cards, status labels and the link hint word use the page language. |
-| `{{projectTitle}}`, `{{projectSummary}}` | Title/summary (in the page language) of the project whose page this is: `<lang>/proj/{id}.html` or the mapped name from `data/pages.json`. |
-| `<!-- @project-header -->` | Project page header (h1, summary, status/date, tags, links) from `data/projects.json`. |
+| `{{projectTitle}}`, `{{projectSummary}}` | Title/summary (in the page language) of the project whose page this is: `<lang>/proj/{id}.html` or the mapped name from `data/pages.json`. On ham pages (`<lang>/ham/{id}.html`) the same tokens hold the ham entry's title/summary. |
+| `<!-- @project-header -->` | Project page header (h1, summary, status/date, tags, links) from `data/projects.json`; on ham pages from `data/ham.json` (status and links only when set). |
 | `<!-- @projects all\|featured level=2\|3 id=list-id -->` | Pre-rendered project card grid, newest first. |
-| `<!-- @tag-filter list-id -->` | Tag filter buttons and status line for the list with that `id` (hidden until `js/projects.js` runs). |
+| `<!-- @ham-list level=2\|3 id=list-id -->` | Pre-rendered list of the ham pages from `data/ham.json` (title link, date, status if set, summary, tags), newest first; drafts are skipped; `strings.noHamPages` when empty. |
+| `<!-- @tag-filter list-id [from=projects\|ham] -->` | Tag filter buttons and status line for the list with that `id`. `from` selects the data (default `projects`); `from=ham` uses the ham tags and the count words `hamCountSingular`/`hamCountPlural`. Hidden until `js/projects.js` runs. |
 | `<!-- @raw -->` … `<!-- @endraw -->` | Everything in between is output verbatim: no includes, tokens or directives. Use it for code samples that show `{{…}}` or `<!-- @… -->`. The markers are removed; HTML-escape the content yourself (e.g. `&lt;` inside `<pre><code>`). Unmatched markers fail the build. |
 
 All inserted values are HTML-escaped. Use `{{name}}` (not a hard-coded name) in every `<title>` and `meta[name="description"]`. Source files in `wwwroot/` are templates and are not meant to be opened directly in a browser; open the built files in `dist/`.
@@ -350,7 +356,7 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 
 | Attribute | Effect |
 | --- | --- |
-| `data-tag-filter="<list-id>"` | Filter host for the list with that `id`; `js/projects.js` reveals it and toggles cards via their `data-tags`. |
+| `data-tag-filter="<list-id>"` | Filter host for the list with that `id`; `js/projects.js` reveals it and toggles the cards (or ham list items) via their `data-tags`. |
 | `data-filter-status="<list-id>"` | Live status text with the result count. |
 | `data-count-singular` / `data-count-plural` / `data-with-tag` / `data-quote-open` / `data-quote-close` / `data-lang` | Count words, the "mit Tag" connector and the quote marks of the page language, rendered from `data/strings.json` so `js/projects.js` never hard-codes labels. |
 
@@ -466,11 +472,32 @@ Field validation (enforced by the build, failures abort `npm run build`). The st
 
 Adding a project means `npm run create` (entry plus pages in all languages). Cards, filter, page title and page header are generated by the build. The project header's **Source** button (from `links.repo`) renders with the Github mark (`assets/icons/GitHub_Invertocat_White.svg`) as a leading badge; the **Demo** button (from `links.demo`) stays a plain text button. Omit the link to hide its button.
 
+### Ham Radio Pages (`data/ham.json`)
+
+A second collection next to the projects: `wwwroot/<lang>/hamradio.html` lists the ham radio pages (antennas, transceivers, contests, …) as a compact list with a tag filter instead of cards. Decisions and open steps: [`radio.md`](radio.md).
+
+```json
+{
+  "id": "t2lt-antenna",
+  "title": { "de": "T2LT Antenne", "en": "TODO" },
+  "summary": { "de": "Ein Satz.", "en": "TODO" },
+  "tags": { "de": ["antenne"], "en": [] },
+  "date": "2026-10"
+}
+```
+
+- Required: `id`, `title`, `summary`, `tags`, `date` (same rules as in `projects.json`, schema [`scripts/schemas/ham.schema.json`](scripts/schemas/ham.schema.json)). Optional: `status`, `links`, `draft`. No `image` and no `featured` (the list shows no images).
+- Pages live at `<lang>/ham/{id}.html` (or a mapped name from `data/pages.json`; a group with `ham/` pages may only contain `ham/` pages). The default-language page is required; a `TODO` or missing translation hides the entry in that language, like projects.
+- A ham page uses the same structure as a project page (`{{projectTitle}}`, `{{projectSummary}}`, `@project-header`, layouts from the project template) with the back link `<a href="{{langRoot}}hamradio.html">{{t:backToHam}}</a>`.
+- Ham entries do not appear on `projects.html`, the home page or in the project tag filter.
+- Adding a ham page (until `npm run create` supports it, see `radio.md`): copy a page from `de/ham/` to `de/ham/{id}.html`, add the entry to `data/ham.json` (other languages `"TODO"`), replace the placeholder body, run `npm run build`.
+
 ### Other Data Files
 
 | File | Content |
 | --- | --- |
-| `data/strings.json` | `{ "<lang>": { … } }`: UI strings per language (count words, labels, skip link, menu, aria labels, the connector word `projectLinkFor`, quote marks, `status` labels). Every language needs every key; `status` needs one label per status value. Rendered via `{{t:key}}` and the directives. |
+| `data/strings.json` | `{ "<lang>": { … } }`: UI strings per language (count words, labels, skip link, menu, aria labels, the connector word `projectLinkFor`, quote marks, `status` labels, ham list strings `hamCountSingular`/`hamCountPlural`/`noHamPages`/`backToHam`). Every language needs every key; `status` needs one label per status value. Rendered via `{{t:key}}` and the directives. |
+| `data/ham.json` | Ham radio page entries, see [Ham Radio Pages](#ham-radio-pages-datahamjson). |
 | `data/nav.json`, `data/footer-nav.json` | See [Navigation](#navigation-datanavjson). |
 | `data/pages.json` | Groups of the same page under different file names per language, see [Languages](#languages). `[]` when all pages pair by identical path. |
 | `data/site.json` | See [Site Config](#site-config-datasitejson). |
@@ -560,6 +587,12 @@ Plan, decisions and work log: [`language.md`](language.md).
 - [x] Unit tests for loaders, renderers, pipeline and checks
 - [ ] English texts and the final landing page (owner, `language.md` Phase M20)
 - [ ] Verification in the browser and on the server (`language.md`, Phase M11)
+
+### Phase 8 — Ham Radio Section
+Plan, decisions and open steps: [`radio.md`](radio.md).
+
+- [x] `data/ham.json` + schema, loader, `<lang>/ham/` pages, `@ham-list`, `@tag-filter … from=ham`, list styles, tests
+- [ ] Scaffolding (`npm run create --ham`, `npm run remove`) and remaining steps in `radio.md`
 
 ## Decisions
 

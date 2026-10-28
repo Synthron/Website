@@ -17,6 +17,10 @@
     "languageLabel": "Sprache",
     "projectLinkFor": "für",
     "backToProjects": "← Alle Projekte",
+    "hamCountSingular": "Seite",
+    "hamCountPlural": "Seiten",
+    "noHamPages": "Noch keine Seiten",
+    "backToHam": "← Alle Amateurfunk-Seiten",
     "quoteOpen": "“",
     "quoteClose": "”",
     "status": {
@@ -45,6 +49,10 @@
     "languageLabel": "Language",
     "projectLinkFor": "for",
     "backToProjects": "← All projects",
+    "hamCountSingular": "TODO_Seite",
+    "hamCountPlural": "TODO_Seiten",
+    "noHamPages": "TODO_Noch keine Seiten",
+    "backToHam": "TODO_← Alle Amateurfunk-Seiten",
     "quoteOpen": "“",
     "quoteClose": "”",
     "status": {

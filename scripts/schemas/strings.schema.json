@@ -19,6 +19,7 @@
       "required": [
         "countSingular", "countPlural", "withTag", "tagFilterLabel", "tagsLabel", "all", "noProjects", "repo", "demo",
         "skipLink", "menu", "mainNavLabel", "footerNavLabel", "languageLabel", "projectLinkFor", "backToProjects",
+        "hamCountSingular", "hamCountPlural", "noHamPages", "backToHam",
         "quoteOpen", "quoteClose", "status"
       ],
       "additionalProperties": false,
@@ -39,6 +40,10 @@
         "languageLabel": { "$ref": "#/definitions/text" },
         "projectLinkFor": { "description": "Word between a link label and the project title (screen readers), without spaces.", "$ref": "#/definitions/text" },
         "backToProjects": { "$ref": "#/definitions/text" },
+        "hamCountSingular": { "$ref": "#/definitions/text" },
+        "hamCountPlural": { "$ref": "#/definitions/text" },
+        "noHamPages": { "$ref": "#/definitions/text" },
+        "backToHam": { "$ref": "#/definitions/text" },
         "quoteOpen": { "$ref": "#/definitions/text" },
         "quoteClose": { "$ref": "#/definitions/text" },
         "status": {

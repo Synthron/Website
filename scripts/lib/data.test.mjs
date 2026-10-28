@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { isTodo, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './data.mjs';
+import { collectionOf, isTodo, loadHam, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './data.mjs';
 import { SRC, errors, warnings } from './util.mjs';
 
 const reset = () => { errors.length = 0; warnings.length = 0; };
@@ -227,7 +227,7 @@ test('loadProjects needs the default page, hides projects without another page a
   assert.match(errors.join('\n'), /\[1\]: missing page wwwroot\/de\/proj\/nodepage\.html/);
   const text = warnings.join('\n');
   assert.match(text, /\(nodepage\): no "en" page \(wwwroot\/en\/proj\/nodepage\.html\); project hidden in "en"/);
-  assert.match(text, /en\/proj\/orphan\.html: project page without a data\/projects\.json entry/);
+  assert.match(text, /en\/proj\/orphan\.html: page without a data\/projects\.json entry/);
   assert.equal(projects.length, 2);
   reset();
 });
@@ -237,5 +237,34 @@ test('loadProjects checks pages.json groups against the project ids', async () =
   const { src, pages } = await withProjects([PROJECT], [{ de: 'proj/ghost.html', en: 'proj/ghost-en.html' }], { 'de/proj/ghost.html': '', 'en/proj/ghost-en.html': '' });
   await loadProjects(SITE, pages, { src });
   assert.match(errors.join('\n'), /data\/pages\.json\[0\]: no project with id "ghost"/);
+  reset();
+});
+
+// --- loadHam -----------------------------------------------------------------
+
+test('collectionOf maps page folders to collections', () => {
+  assert.equal(collectionOf('proj/a.html'), 'projects');
+  assert.equal(collectionOf('ham/a.html'), 'ham');
+  assert.equal(collectionOf('hamradio.html'), undefined);
+  assert.equal(collectionOf(undefined), undefined);
+});
+
+test('loadHam accepts slim entries, uses ham/ pages and mapped names', async () => {
+  reset();
+  const entry = { id: 'h', title: { de: 'H', en: 'H' }, summary: { de: 'S', en: 'S' }, tags: { de: ['antenne'], en: ['antenna'] }, date: '2026-10' };
+  const src = await fixture({
+    ...BASE_FILES, 'de/ham/h.html': '', 'en/ham/h-en.html': '', 'en/ham/orphan.html': '', 'de/ham/x.html': '', 'en/proj/x.html': '',
+    'data/ham.json': [entry, { ...entry, id: 'nopage', status: 'unbekannt', image: 'x.svg' }],
+    'data/pages.json': [{ de: 'ham/h.html', en: 'ham/h-en.html' }, { de: 'ham/x.html', en: 'proj/x.html' }],
+  });
+  const pages = await loadPages(SITE, { src });
+  assert.equal(pages.projectPage('en', 'h', 'ham'), 'ham/h-en.html');
+  const ham = await loadHam(SITE, pages, { src });
+  assert.equal(localize(ham.find((item) => item.id === 'h'), 'en').title, 'H');
+  const text = errors.join('\n');
+  assert.match(text, /\[1\]: a group with ham\/ pages may only contain ham\/ pages/);
+  assert.match(text, /ham\.json\[1\]\.status: must be equal to one of the allowed values/);
+  assert.match(text, /ham\.json\[1\]: must NOT have additional properties "image"/);
+  assert.match(warnings.join('\n'), /en\/ham\/orphan\.html: page without a data\/ham\.json entry/);
   reset();
 });

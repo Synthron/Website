@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ham.schema.json",
+  "title": "wwwroot/data/ham.json",
+  "description": "Ham radio pages listed on hamradio.html (R1, R2). See README -> Ham Radio Pages.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "title", "summary", "tags", "date"],
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "description": "Lowercase, hyphenated; equals the default-language page name ham/{id}.html.",
+        "type": "string",
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+      },
+      "title": { "$ref": "projects.schema.json#/definitions/localizedText" },
+      "summary": { "$ref": "projects.schema.json#/definitions/localizedText" },
+      "tags": { "$ref": "projects.schema.json#/items/properties/tags" },
+      "date": { "$ref": "projects.schema.json#/items/properties/date" },
+      "status": { "$ref": "projects.schema.json#/items/properties/status" },
+      "links": { "$ref": "projects.schema.json#/items/properties/links" },
+      "draft": {
+        "description": "Optional: page is built but hidden from the list, tag filter and sitemap.",
+        "type": "boolean"
+      }
+    }
+  }
+}

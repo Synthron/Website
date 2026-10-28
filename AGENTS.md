@@ -4,7 +4,7 @@ Instructions for AI agents and contributors working in this repository.
 
 ## Project Summary
 
-This repository contains a personal project website built with **pure HTML, CSS and vanilla JavaScript**. See [`README.md`](README.md) for the full outline, data model, templating reference and todo list. Treat the core directives in the README as binding. If [`todo.md`](todo.md) exists, it tracks the remaining open work and records the decisions already made with the user. The multi-language setup is recorded in [`language.md`](language.md) (decisions L1–L32, work log, open owner tasks in Phase M20).
+This repository contains a personal project website built with **pure HTML, CSS and vanilla JavaScript**. See [`README.md`](README.md) for the full outline, data model, templating reference and todo list. Treat the core directives in the README as binding. If [`todo.md`](todo.md) exists, it tracks the remaining open work and records the decisions already made with the user. The multi-language setup is recorded in [`language.md`](language.md) (decisions L1–L32, work log, open owner tasks in Phase M20). The ham radio section is planned in [`radio.md`](radio.md) (decisions R1–…, open steps).
 
 ## Language
 
@@ -61,11 +61,12 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | `wwwroot/partials/` | `head.html`, `header.html` (language pages), `header-common.html` (landing page, 404), `footer.html` | Single copy of the shared markup; texts via `{{t:key}}`. Not copied to `dist/`. |
 | `wwwroot/de/`, `wwwroot/en/` | Language pages (incl. legal pages in `de/`; `de/index.html` and `en/index.html` are the language homes) | One page per file. Use the `head`, `header` and `footer` includes and `<html lang="{{lang}}">`. New languages: see README → Languages → Add a language. |
 | `wwwroot/<lang>/proj/` | Project pages | One page per project, `{id}.html` matching the `id` in `data/projects.json` (e.g. `sy317.html`). |
+| `wwwroot/<lang>/ham/` | Ham radio pages | One page per entry, `{id}.html` matching the `id` in `data/ham.json`; listed on `hamradio.html` (see [`radio.md`](radio.md)). |
 | `wwwroot/templates/project-template.html` | Master project write-up template | Reference for every supported layout (not built). Append new layouts here. |
 | `wwwroot/css/` | Stylesheets | Split by concern: `base`, `layout`, `components`, `responsive`. Use CSS custom properties for all colours and spacing. |
 | `wwwroot/js/` | Scripts | One module per concern (`nav`, `projects`, `main`). Use `type="module"` and no global variables. |
 | `wwwroot/js/vendor/` | Vendored third-party JS | See Protected Files. |
-| `wwwroot/data/` | JSON content (build input) | `projects.json` is the single source of truth for projects (`title`, `summary`, `tags` per language); `site.json` holds shared site info (`languages`, `defaultLang`, name, copyright, email, `footerNote` per language); `strings.json` holds the UI strings per language; `nav.json`/`footer-nav.json` drive the navs per language; `pages.json` pairs pages with different file names per language. Keep all valid JSON. Not copied to `dist/`. |
+| `wwwroot/data/` | JSON content (build input) | `projects.json` is the single source of truth for projects (`title`, `summary`, `tags` per language); `ham.json` holds the ham radio pages (same rules, slimmer fields); `site.json` holds shared site info (`languages`, `defaultLang`, name, copyright, email, `footerNote` per language); `strings.json` holds the UI strings per language; `nav.json`/`footer-nav.json` drive the navs per language; `pages.json` pairs pages with different file names per language. Keep all valid JSON. Not copied to `dist/`. |
 | `wwwroot/assets/img/` | Images | Prefer SVG; raster images preferably WebP (no hard size limit); always provide `alt` text. |
 | `wwwroot/assets/icons/` | SVG icons | e.g. the GitHub mark used by the Source button. |
 | `wwwroot/assets/firmware/<suite>/` | Web-flasher suites | One folder per firmware variant: `manifest.json` plus the binaries it references. |
@@ -100,6 +101,7 @@ The `devDependencies`, their jobs, planned scripts and config files are listed i
 | --- | --- |
 | Add a project | `npm run create -- "Name" "Brief"` (creates the page in every language, other languages as `TODO`) → set `tags`, `links`, `image` in `data/projects.json` → replace the placeholder body in `de/proj/{id}.html` (German text from the user, never invented; other languages only on the user's texts) → `npm run build`. |
 | Remove a project | `npm run remove -- <id>` → `npm run build` → delete the now-stale files on the server. |
+| Add a ham radio page | Copy a page from `de/ham/` to `de/ham/{id}.html` → add the entry to `data/ham.json` (other languages `TODO`) → body text from the user → `npm run build`. See README → Ham Radio Pages and `radio.md`. |
 | Add a page | `npm run page -- "Title" [--title-en "…"] [--nav\|--footer]` (creates the page in every language) → replace the placeholder text (user content) → add it to the README outline → `npm run build`. Without the script: copy the head/include structure of an existing page into every language folder and add nav entries per language. |
 | Add a language | Follow README → Languages → Add a language (`site.json`, `strings.json`, nav files, `projects.json`, `wwwroot/<code>/`, `.htaccess` rule) with `TODO` placeholders; the translations come from the user. |
 | Add a firmware suite | Create `assets/firmware/<suite>/` with `manifest.json` and the binaries from the user (see README → Firmware / Web Flasher for offsets) → add `<esp-web-install-button manifest="{{root}}assets/firmware/<suite>/manifest.json">` and the vendored script tag to the project page. The CSP exception is added automatically. |

@@ -85,19 +85,22 @@ test('checkLinks and checkAnchors work across language folders', async () => {
   reset();
 });
 
-test('checkOrphanPages warns about project pages without data in their language', () => {
+test('checkOrphanPages warns about project and ham pages without data in their language', () => {
   reset();
   const byId = new Map([['a', { id: 'a', title: { de: 'A' } }]]);
   const info = new Map([
     ['de/proj/a.html', { lang: 'de', pagePath: 'proj/a.html' }],
     ['en/proj/a.html', { lang: 'en', pagePath: 'proj/a.html' }],
     ['de/proj/b.html', { lang: 'de', pagePath: 'proj/b.html' }],
+    ['de/ham/a.html', { lang: 'de', pagePath: 'ham/a.html' }],
     ['de/about.html', { lang: 'de', pagePath: 'about.html' }],
+    ['de/other/x.html', { lang: 'de', pagePath: 'other/x.html' }],
   ]);
-  checkOrphanPages(info, indexOf({}), byId);
-  assert.equal(warnings.length, 2);
-  assert.match(warnings[0], /en\/proj\/a\.html: project "a" has no "en" data/);
-  assert.match(warnings[1], /de\/proj\/b\.html: project page without a data\/projects\.json entry/);
+  checkOrphanPages(info, indexOf({}), { proj: byId, ham: new Map() });
+  assert.equal(warnings.length, 3);
+  assert.match(warnings[0], /en\/proj\/a\.html: entry "a" has no "en" data/);
+  assert.match(warnings[1], /de\/proj\/b\.html: proj\/ page without a data entry/);
+  assert.match(warnings[2], /de\/ham\/a\.html: ham\/ page without a data entry/);
   reset();
 });
 
@@ -113,10 +116,10 @@ test('checkHtmlLang requires the folder language on language pages', () => {
 
 test('checkTranslationCoverage fails without a default counterpart and warns about missing translations', () => {
   reset();
-  checkTranslationCoverage(site, indexOf({ de: ['a.html', 'b.html', 'proj/p.html'], en: ['a.html', 'only-en.html'] }));
+  checkTranslationCoverage(site, indexOf({ de: ['a.html', 'b.html', 'proj/p.html', 'ham/h.html'], en: ['a.html', 'only-en.html'] }));
   assert.equal(errors.length, 1);
   assert.match(errors[0], /en\/only-en\.html: page has no "de" counterpart/);
-  assert.equal(warnings.length, 1); // b.html; proj/ pages are covered by the project data warnings
+  assert.equal(warnings.length, 1); // b.html; proj/ and ham/ pages are covered by the data warnings
   assert.match(warnings[0], /de\/b\.html: no counterpart in "en"/);
   reset();
   checkTranslationCoverage({ ...site, languages: [{ code: 'de' }] }, indexOf({ de: ['a.html'] }));

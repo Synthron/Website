@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="Amateurfunk-Themen von {{name}}.">
+  <title>Amateurfunk — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <header class="page-header">
+        <h1>Amateurfunk</h1>
+        <p class="page-header__lead">Alle meine Amateurfunk-Projekte und Themen.</p>
+      </header>
+
+      <!-- @tag-filter ham-list from=ham -->
+
+      <!-- @ham-list level=2 id=ham-list -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

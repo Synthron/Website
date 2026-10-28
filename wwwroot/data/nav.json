@@ -2,11 +2,13 @@
   "de": [
     { "label": "Start", "href": "index.html" },
     { "label": "Über mich", "href": "about.html" },
-    { "label": "Projekte", "href": "projects.html" }
+    { "label": "Projekte", "href": "projects.html" },
+    { "label": "Amateurfunk", "href": "hamradio.html" }
   ],
   "en": [
     { "label": "Home", "href": "index.html" },
     { "label": "About me", "href": "about.html" },
-    { "label": "Projects", "href": "projects.html" }
+    { "label": "Projects", "href": "projects.html" },
+    { "label": "Ham Radio", "href": "hamradio.html" }
   ]
 }

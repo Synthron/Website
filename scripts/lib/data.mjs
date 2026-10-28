@@ -9,9 +9,21 @@ import { ROOT, SRC, exists, fail, readJson, safeExternalUrl, walk, warn } from '
 const SCHEMA_DIR = path.join(ROOT, 'scripts', 'schemas');
 const ajv = new Ajv({ allErrors: true, verbose: true });
 const schemas = {};
-for (const name of ['site', 'strings', 'nav', 'projects', 'pages']) {
+for (const name of ['site', 'strings', 'nav', 'projects', 'ham', 'pages']) {
   schemas[name] = ajv.compile(await readJson(path.join(SCHEMA_DIR, `${name}.schema.json`)));
 }
+
+// Content collections: entries in data/<file>, one page per entry and language
+// at <lang>/<folder>/{id}.html (R1). `noun` is used in messages.
+export const COLLECTIONS = {
+  projects: { file: 'projects.json', schema: 'projects', folder: 'proj', noun: 'project' },
+  ham: { file: 'ham.json', schema: 'ham', folder: 'ham', noun: 'ham page' },
+};
+const FOLDERS = Object.values(COLLECTIONS).map(({ folder }) => folder);
+
+// Collection name of a page path inside a language folder, or undefined.
+export const collectionOf = (pagePath) => Object.keys(COLLECTIONS)
+  .find((name) => pagePath?.startsWith(`${COLLECTIONS[name].folder}/`));
 
 // D10: allowed status values, defined once in projects.schema.json. Values
 // contain spaces and capitals; slugify one before using it as a CSS class hook.
@@ -210,13 +222,17 @@ export async function loadPages(site, { pageDir = langDir, langBase = (code) => 
         groupOf.set(key, group);
       }
     }
-    const projectPaths = Object.values(paths).filter((file) => file.startsWith('proj/'));
-    if (projectPaths.length > 0) {
-      if (projectPaths.length !== Object.keys(paths).length) {
-        fail(`${label}: a group with proj/ pages may only contain proj/ pages`);
+    const values = Object.values(paths);
+    const inFolder = (name) => (file) => file.startsWith(`${name}/`);
+    // The folder of the default-language page decides; else the first one found.
+    const folder = FOLDERS.find((name) => inFolder(name)(paths[defaultLang] ?? ''))
+      ?? FOLDERS.find((name) => values.some(inFolder(name)));
+    if (folder !== undefined) {
+      if (!values.every(inFolder(folder))) {
+        fail(`${label}: a group with ${folder}/ pages may only contain ${folder}/ pages`);
         valid = false;
-      } else if (!/^proj\/[a-z0-9]+(-[a-z0-9]+)*\.html$/.test(paths[defaultLang] ?? '')) {
-        fail(`${label}: a proj/ group needs "${defaultLang}": "proj/{id}.html"`);
+      } else if (!new RegExp(`^${folder}/[a-z0-9]+(-[a-z0-9]+)*\\.html$`).test(paths[defaultLang] ?? '')) {
+        fail(`${label}: a ${folder}/ group needs "${defaultLang}": "${folder}/{id}.html"`);
         valid = false;
       }
     }
@@ -242,9 +258,9 @@ export async function loadPages(site, { pageDir = langDir, langBase = (code) => 
       }
       return found;
     },
-    // Page path of a project in a language, or null when the page does not exist.
-    projectPage(code, id) {
-      const standard = `proj/${id}.html`;
+    // Page path of a collection entry (default: project) in a language, or null when the page does not exist.
+    projectPage(code, id, folder = 'proj') {
+      const standard = `${folder}/${id}.html`;
       const group = groupOf.get(`${defaultLang}:${standard}`);
       const file = group?.paths[code] ?? standard;
       return files.get(code)?.has(file) ? file : null;
@@ -260,11 +276,17 @@ export async function loadPages(site, { pageDir = langDir, langBase = (code) => 
 // Loads data/projects.json. `title`, `summary` and `tags` of the result are
 // objects holding only the languages in which the project is available (data
 // complete, no TODO, page exists); use localize() for a flat per-language view.
-export async function loadProjects(site, pages, { src = SRC } = {}) {
-  const rel = 'data/projects.json';
+export const loadProjects = (site, pages, options) => loadCollection('projects', site, pages, options);
+
+// Loads data/ham.json (R1); same rules as projects, fewer required fields.
+export const loadHam = (site, pages, options) => loadCollection('ham', site, pages, options);
+
+async function loadCollection(name, site, pages, { src = SRC } = {}) {
+  const { file, schema, folder, noun } = COLLECTIONS[name];
+  const rel = `data/${file}`;
   const data = await readJson(path.join(src, rel));
   if (!Array.isArray(data)) throw new Error(`${rel}: expected an array`);
-  const invalid = validate('projects', rel, data);
+  const invalid = validate(schema, rel, data);
   const codes = codesOf(site);
   const { defaultLang } = site;
   const seen = new Set();
@@ -276,29 +298,29 @@ export async function loadProjects(site, pages, { src = SRC } = {}) {
     if (seen.has(project.id)) fail(`${label}: duplicate id "${project.id}"`);
     seen.add(project.id);
     for (const key of ['repo', 'demo']) {
-      const value = project.links[key];
+      const value = project.links?.[key];
       if (value !== null && value !== undefined && !safeExternalUrl(value)) {
         fail(`${label}.links.${key}: must be null or a valid http(s) URL`);
       }
     }
-    if (!await exists(path.join(src, project.image))) fail(`${label}: image not found: ${project.image}`);
+    if (project.image !== undefined && !await exists(path.join(src, project.image))) fail(`${label}: image not found: ${project.image}`);
     checkLangKeys(`${label}.title`, project.title, codes, [defaultLang]);
     checkLangKeys(`${label}.summary`, project.summary, codes, [defaultLang]);
     checkLangKeys(`${label}.tags`, project.tags, codes, [defaultLang]);
 
     const entry = { ...project, title: {}, summary: {}, tags: {} };
     for (const code of codes) {
-      const hasPage = pages.projectPage(code, project.id) !== null;
-      const pageRel = `wwwroot/${pages.dir(code)}/proj/${project.id}.html`;
+      const hasPage = pages.projectPage(code, project.id, folder) !== null;
+      const pageRel = `wwwroot/${pages.dir(code)}/${folder}/${project.id}.html`;
       const complete = isFilled(project.title[code]) && isFilled(project.summary[code]);
       if (code === defaultLang) {
         if (!hasPage) fail(`${label}: missing page ${pageRel}`);
         if (!complete) fail(`${label}: "${code}" title and summary are required and must not be TODO`);
       } else if (!complete) {
-        warn(`${label} (${project.id}): "${code}" title/summary missing or TODO; project hidden in "${code}"`);
+        warn(`${label} (${project.id}): "${code}" title/summary missing or TODO; ${noun} hidden in "${code}"`);
         continue;
       } else if (!hasPage) {
-        warn(`${label} (${project.id}): no "${code}" page (${pageRel}); project hidden in "${code}"`);
+        warn(`${label} (${project.id}): no "${code}" page (${pageRel}); ${noun} hidden in "${code}"`);
         continue;
       }
       if (!complete) continue;
@@ -310,14 +332,15 @@ export async function loadProjects(site, pages, { src = SRC } = {}) {
   }
 
   const ids = new Set(projects.map((project) => project.id));
+  const groupRe = new RegExp(`^${folder}/(.+)\\.html$`);
   for (const group of pages.groups) {
-    const id = /^proj\/(.+)\.html$/.exec(group.paths[defaultLang] ?? '')?.[1];
-    if (id !== undefined && !ids.has(id)) fail(`data/pages.json[${group.index}]: no project with id "${id}"`);
+    const id = groupRe.exec(group.paths[defaultLang] ?? '')?.[1];
+    if (id !== undefined && !ids.has(id)) fail(`data/pages.json[${group.index}]: no ${noun} with id "${id}"`);
   }
   for (const code of codes.filter((known) => known !== defaultLang)) {
-    for (const file of pages.files(code).filter((name) => name.startsWith('proj/'))) {
-      if (!ids.has(pages.projectId(code, file))) {
-        warn(`wwwroot/${pages.dir(code)}/${file}: project page without a data/projects.json entry`);
+    for (const page of pages.files(code).filter((name) => name.startsWith(`${folder}/`))) {
+      if (!ids.has(pages.projectId(code, page))) {
+        warn(`wwwroot/${pages.dir(code)}/${page}: page without a ${rel} entry`);
       }
     }
   }
