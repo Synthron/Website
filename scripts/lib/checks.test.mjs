@@ -8,8 +8,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { errors, SRC, warnings } from './util.mjs';
 import {
-  checkAnchors, checkFlasherHtaccess, checkHtmlLang, checkLanguageLinks, checkLinks, checkOrphanPages,
-  checkTranslationCoverage,
+  checkAnchors, checkFirmwareManifests, checkFlasherHtaccess, checkHtmlLang, checkLanguageLinks, checkLinks, checkOrphanPages,
+  checkPlaceholderText, checkTranslationCoverage,
 } from './checks.mjs';
 
 let base;
@@ -168,6 +168,41 @@ test('the real .htaccess covers the flasher page in every language folder', asyn
   assert.deepEqual(warnings, []);
   checkFlasherHtaccess([['en/proj/renamed.html', button]], htaccess);
   assert.equal(warnings.length, 1);
+  reset();
+});
+
+test('checkAnchors fails on aria-labelledby/aria-describedby references to unknown ids', () => {
+  reset();
+  checkAnchors([['de/a.html', '<section aria-labelledby="t"><h2 id="t">T</h2></section><div aria-describedby="t  gone"></div><section aria-labelledby="x"></section>']]);
+  assert.equal(errors.length, 2);
+  assert.match(errors[0], /de\/a\.html:1:\d+: aria-describedby references unknown id "gone"/);
+  assert.match(errors[1], /aria-labelledby references unknown id "x"/);
+  reset();
+});
+
+test('checkPlaceholderText warns about TODO markers outside comments, once per page', () => {
+  reset();
+  checkPlaceholderText([
+    ['en/a.html', '<!-- TODO: not counted -->\n<title>TODO_Start</title>\n<p>TODO: text</p><h2>TODO</h2>'],
+    ['de/b.html', '<p>TODOS, todo and MYTODO are fine</p><!-- TODO -->'],
+  ]);
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /^wwwroot\/en\/a\.html: 3 leftover TODO marker\(s\)/);
+  reset();
+});
+
+test('checkFirmwareManifests rejects part paths outside the suite folder', async () => {
+  reset();
+  const suite = path.join(base, 'assets', 'firmware', 'demo');
+  await mkdir(suite, { recursive: true });
+  await writeFile(path.join(suite, 'firmware.bin'), '');
+  await writeFile(path.join(base, 'assets', 'outside.bin'), '');
+  const paths = ['firmware.bin', '../../outside.bin', '/abs.bin', 'C:/x.bin', 'https://example.com/f.bin', 'sub\\f.bin'];
+  const manifest = { builds: [{ chipFamily: 'ESP32', parts: paths.map((file) => ({ path: file, offset: 0x10000 })) }] };
+  await writeFile(path.join(suite, 'manifest.json'), JSON.stringify(manifest));
+  await checkFirmwareManifests(base);
+  assert.equal(errors.length, 5);
+  for (const error of errors) assert.match(error, /must be a relative path inside the suite folder/);
   reset();
 });
 

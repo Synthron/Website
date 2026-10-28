@@ -160,8 +160,9 @@ export const ogImageRel = (project) => (project && /\.(png|jpe?g|webp)$/i.test(p
 export function renderOpenGraph(rel, html, site, imageUrl, { lang = site.defaultLang, versions = [] } = {}) {
   const pageUrl = `${site.url}/${rel === 'index.html' ? '' : rel}`;
   const localeOf = (code) => site.languages.find((language) => language.code === code)?.locale ?? code;
+  // Decode the entities esc() writes (&amp; last), so esc() below does not double-escape.
   const text = (value) => (value ?? '')
-    .replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"');
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0*39;/g, "'").replace(/&amp;/g, '&');
   const title = text(/<title>([^<]*)<\/title>/i.exec(html)?.[1]) || site.name;
   const description = text(/<meta[^>]+name="description"[^>]*content="([^"]*)"/i.exec(html)?.[1]);
   const others = versions.filter((version) => version.lang !== lang);
@@ -193,7 +194,7 @@ export function renderSitemap(pages, baseUrl, projectByRel, lastmodByRel = new M
     const project = projectByRel.get(rel);
     if (project?.draft) continue;
     const loc = rel === 'index.html' ? `${baseUrl}/` : `${baseUrl}/${rel}`;
-    const lines = [`    <loc>${loc}</loc>`];
+    const lines = [`    <loc>${esc(loc)}</loc>`];
     // Project pages use their date; other pages use the last git
     // commit date of the source file (computed by the build, omitted when git
     // is unavailable or the file is untracked).

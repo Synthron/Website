@@ -107,8 +107,9 @@ test('projects with TODO or missing texts are hidden in that language, the other
       const built = html.has(`${code}/proj/${project.id}.html`);
       expect(built, `${code}/proj/${project.id}.html built`).toBe(visible.includes(project));
     }
-    const cards = (html.get(`${code}/projects.html`)?.match(/class="project-card"/g) ?? []).length;
-    expect(cards, `project cards on ${code}/projects.html`).toBe(visible.filter((project) => !project.draft).length);
+    const listing = `${code}/${groups.find((entry) => Object.values(entry).includes('projects.html'))?.[code] ?? 'projects.html'}`;
+    const cards = (html.get(listing)?.match(/class="project-card"/g) ?? []).length;
+    expect(cards, `project cards on ${listing}`).toBe(visible.filter((project) => !project.draft).length);
   }
 });
 

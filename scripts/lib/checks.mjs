@@ -43,13 +43,13 @@ const APP_OFFSET = 0x10000;
 const FILE_OFFSETS = { 'bootloader.bin': CHIP_BOOTLOADER_OFFSETS, 'partitions.bin': PARTITIONS_OFFSET, 'firmware.bin': APP_OFFSET };
 
 // Every assets/firmware/<suite>/manifest.json must be valid JSON that references
-// real binaries next to it; offsets must be integers.
-export async function checkFirmwareManifests() {
-  const suites = path.join(SRC, 'assets/firmware');
+// real binaries inside its suite folder; offsets must be integers.
+export async function checkFirmwareManifests(src = SRC) {
+  const suites = path.join(src, 'assets/firmware');
   for (const rel of await readdir(suites, { withFileTypes: true })) {
     if (!rel.isDirectory()) continue;
     const manifestRel = `assets/firmware/${rel.name}/manifest.json`;
-    const manifestFile = path.join(SRC, manifestRel);
+    const manifestFile = path.join(src, manifestRel);
     let manifest;
     try {
       manifest = JSON.parse(await readFile(manifestFile, 'utf8'));
@@ -71,6 +71,11 @@ export async function checkFirmwareManifests() {
         const label = `${manifestRel}: builds[${buildIndex}].parts[${partIndex}]`;
         if (typeof part?.path !== 'string' || part.path === '') {
           fail(`${label}.path must be a non-empty string`);
+          continue;
+        }
+        const normalized = path.posix.normalize(part.path);
+        if (SCHEME.test(part.path) || part.path.includes('\\') || path.posix.isAbsolute(normalized) || normalized === '..' || normalized.startsWith('../')) {
+          fail(`${label}.path must be a relative path inside the suite folder (is "${part.path}")`);
           continue;
         }
         if (!Number.isInteger(part.offset)) {
@@ -202,10 +207,16 @@ export function checkPlaceholderText(pages) {
     if (html.includes('Placeholder paragraph')) {
       warn(`wwwroot/${rel}: contains leftover "Placeholder paragraph" text`);
     }
+    // Rendered offsets do not match the source lines, so report per page only.
+    const todos = html.replace(/<!--[\s\S]*?-->/g, '').match(/\bTODO(?![A-Za-z0-9])/g) ?? [];
+    if (todos.length > 0) {
+      warn(`wwwroot/${rel}: ${todos.length} leftover TODO marker(s) (TODO, TODO_…, TODO:)`);
+    }
   }
 }
 
-// Same-page and cross-page anchor targets must exist; ids must be unique.
+// Same-page and cross-page anchor targets and aria-labelledby/aria-describedby
+// references must exist; ids must be unique.
 function collectIds(html) {
   return [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
 }
@@ -230,6 +241,13 @@ export function checkAnchors(pages) {
       if (target.startsWith('..')) continue; // broken page link reported by checkLinks
       if (!idsByRel.get(target)?.includes(id)) {
         fail(`${ref(rel, html, match.index)}: unknown anchor "${pagePart}#${id}" (no id="${id}" in ${target})`);
+      }
+    }
+    for (const match of html.matchAll(/\baria-(labelledby|describedby)="([^"]*)"/g)) {
+      for (const id of match[2].split(/\s+/).filter(Boolean)) {
+        if (!idsByRel.get(rel).includes(id)) {
+          fail(`${ref(rel, html, match.index)}: aria-${match[1]} references unknown id "${id}"`);
+        }
       }
     }
     const seen = new Set();

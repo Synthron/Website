@@ -145,6 +145,11 @@ test('renderSitemap maps pages, lastmod for projects and git pages, skips 404 an
   assert.doesNotMatch(xml, /404\.html/);
 });
 
+test('renderSitemap XML-escapes the URLs', () => {
+  const xml = renderSitemap([['de/a.html', '<html>']], 'https://example.com/x?a=1&b=2', new Map());
+  assert.match(xml, /<loc>https:\/\/example\.com\/x\?a=1&amp;b=2\/de\/a\.html<\/loc>/);
+});
+
 // --- Open Graph / canonical --------------------------------------------------
 
 const SITE = {
@@ -178,6 +183,13 @@ test('renderOpenGraph falls back to the site name and omits og:image when empty'
   assert.match(og, /<meta property="og:title" content="DM7WB">/);
   assert.match(og, /<link rel="canonical" href="https:\/\/dm7wb\.de\/">/);
   assert.doesNotMatch(og, /og:image/);
+});
+
+test('renderOpenGraph escapes the page title and description exactly once', () => {
+  const html = '<title>R&amp;D &lt;Test&gt; — DM7WB</title><meta name="description" content="&quot;A&quot; &amp; B">';
+  const og = renderOpenGraph('de/a.html', html, SITE, '');
+  assert.match(og, /<meta property="og:title" content="R&amp;D &lt;Test&gt; — DM7WB">/);
+  assert.match(og, /<meta property="og:description" content="&quot;A&quot; &amp; B">/);
 });
 
 test('renderOpenGraph emits no alternates for a single language version', () => {

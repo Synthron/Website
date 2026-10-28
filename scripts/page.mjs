@@ -11,7 +11,7 @@ import { access, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DATA_DIR, loadSetup, PAGES_FILE, readPages, writeJson } from './lib/scaffold.mjs';
-import { slugify } from './lib/util.mjs';
+import { esc, slugify } from './lib/util.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const NAV_FILE = path.join(DATA_DIR, 'nav.json');
@@ -27,8 +27,8 @@ function template(title, description, text) {
     '<html lang="{{lang}}">',
     '<head>',
     '  <!-- @include head -->',
-    `  <meta name="description" content="${description}">`,
-    `  <title>${title} — {{name}}</title>`,
+    `  <meta name="description" content="${esc(description)}">`,
+    `  <title>${esc(title)} — {{name}}</title>`,
     '</head>',
     '<body>',
     '  <!-- @include header -->',
@@ -36,10 +36,10 @@ function template(title, description, text) {
     '  <main class="site-main" id="main">',
     '    <div class="container">',
     '      <header class="page-header">',
-    `        <h1>${title}</h1>`,
+    `        <h1>${esc(title)}</h1>`,
     '      </header>',
     '      <div class="prose">',
-    `        <p>${text}</p>`,
+    `        <p>${esc(text)}</p>`,
     '      </div>',
     '    </div>',
     '  </main>',

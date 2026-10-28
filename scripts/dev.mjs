@@ -115,10 +115,9 @@ async function send(res, status, file, extraHeaders = {}) {
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
-  const pathname = decodeURIComponent(url.pathname);
 
   // SSE stream for live reload.
-  if (pathname === '/__reload') {
+  if (url.pathname === '/__reload') {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': NO_STORE,
@@ -132,13 +131,15 @@ const server = createServer(async (req, res) => {
   }
 
   // Dev-only reload client (same origin, so the CSP 'self' still holds).
-  if (pathname === '/__reload.js') {
+  if (url.pathname === '/__reload.js') {
     res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': NO_STORE, ...SECURITY_HEADERS });
     res.end(RELOAD_JS);
     return;
   }
 
   try {
+    // Throws on malformed percent-encoding; the catch serves the 404 page.
+    const pathname = decodeURIComponent(url.pathname);
     // Mirrors the .htaccess redirect for "/" (302, Vary: Accept-Language).
     if (pathname === '/') {
       const target = rootRedirect(req.headers['accept-language'], await languageCodes());

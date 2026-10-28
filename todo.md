@@ -22,20 +22,7 @@ Agents never write or translate site content. The build warns about every leftov
 
 ## Fixes (code analysis 2026-10-28)
 
-- [ ] **A01** `npm run lint:html` fails (and with it `npm run lint` and the pre-commit hook): two unlabelled `<aside class="callout">` per page violate `unique-landmark`. Source: `templates/project-template.html` section 6, copied into `de/ham/t2lt.html` and `en/ham/t2lt.html`. Fix the template (e.g. `aria-label` per callout or a non-landmark element) and the two pages.
-- [ ] **A02** `scripts/e2e/language.spec.mjs` (line 110) counts cards on `${code}/projects.html`, ignoring `data/pages.json` (`de/projekte.html`): the test fails for `de` (expected 2, received 0).
-- [ ] **A03** `lighthouserc.json`: stale URLs `de/projects.html`, `de/privacy.html` and `de/proj/placeholder-project-two.html` (do not exist; use `de/projekte.html`, `de/datenschutz.html`); English pages, `hamradio.html` and `ham/t2lt.html` are not audited.
-- [ ] **A04** `de/proj/sy317.html` line 20: `aria-labelledby="layout-split"` points to a missing id (the `h2` has `id="layout-small"`). Add a build check in `scripts/lib/checks.mjs` that `aria-labelledby`/`aria-describedby` reference existing ids (README → Language Checks / templating docs).
 - [ ] **A05** `de/proj/sy317.html`: the schematic `img` has no `width`/`height` (layout shift); `npm run images` would create `sy317_render.webp` (73.6 KB → 36.3 KB), then switch the reference.
-- [ ] **A06** Leftover-placeholder check (`scripts/lib/checks.mjs` line 202) only matches "Placeholder paragraph"; `TODO` / `TODO_…` markers in pages (e.g. `en/index.html`, `en/projects.html`, `en/hamradio.html`) are not reported, contrary to README → Placeholders.
-- [ ] **A07** `scripts/lib/render.mjs` line 163: `text()` in `renderOpenGraph` replaces each character by itself (entity decoding lost), so a title or description containing `&`, `<`, `>` or `"` ends up double-escaped (`&amp;amp;`) in `og:title`/`og:description`. Decode the entities and add a unit test.
-- [ ] **A08** `scripts/dev.mjs` line 118: `decodeURIComponent` runs outside the `try`; a malformed URL (`/%E0%A4%A`) rejects the request handler and can crash the dev server (`serve.mjs` handles it).
-- [ ] **A09** `scripts/page.mjs` lines 29–39: title and description from the CLI are inserted into the HTML unescaped; use `esc()`.
-- [ ] **A10** `scripts/lib/checks.mjs` line 86: firmware `parts[].path` may contain `../` or be absolute and still pass; restrict it to the suite folder.
-- [ ] **A11** `scripts/lib/render.mjs` `renderSitemap`: `<loc>` values are not XML-escaped (the `url` schema allows `&`).
-- [ ] **A12** `scripts/lib/scaffold.mjs` has no unit tests (`AGENTS.md`: every `scripts/lib/` module has `*.test.mjs`).
-- [ ] **A13** README outline: `scripts/e2e/language.spec.mjs` and `wwwroot/assets/img/og-default.png` are missing.
-- [ ] **A14** README → Tooling Packages says the JSON schemas are mapped in `.vscode/settings.json`, but `.gitignore` excludes that file, so the mapping is not shared. Un-ignore it or adjust the README.
 
 ## Release Checks
 

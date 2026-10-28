@@ -8,6 +8,7 @@ desktop.ini
 !.vscode/tasks.json
 !.vscode/extensions.json
 !.vscode/launch.json
+!.vscode/settings.json
 .idea/
 *.swp
 *~
