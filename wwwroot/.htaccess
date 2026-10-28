@@ -1,7 +1,7 @@
 # Eigene Fehlerseiten
 ErrorDocument 404 /404.html
 # 403 zeigt vorerst auf die (gestylte) 404-Seite; eine eigene Styled-Seite
-# kann später ergänzt werden (S69).
+# kann später ergänzt werden.
 ErrorDocument 403 /404.html
 
 # Verzeichnisauflistung deaktivieren
