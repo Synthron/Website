@@ -45,7 +45,7 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | `scripts/dev.mjs` | `npm run dev` | Build once, then rebuild on changes in `wwwroot/`/`scripts/`; serves `dist/` with SSE live reload, the production security headers and the root `Accept-Language` redirect (dev-only). |
 | `scripts/firmware.mjs` | `npm run firmware` | Scaffolds `assets/firmware/<suite>/manifest.json` for the given `--chip` families and prints the flasher button snippet. |
 | `scripts/page.mjs` | `npm run page` | Scaffolds a minimal secondary page in every language folder (optionally `--title-<lang>`, `--nav` / `--footer`). |
-| `scripts/remove.mjs` | `npm run remove` | Deletes a project entry and its pages in all languages (with confirmation / `--yes`). |
+| `scripts/remove.mjs` | `npm run remove:project`, `npm run remove:afu` | Deletes a project (`projects.json`, `proj/`) or ham radio entry (`ham.json`, `ham/`, `--ham`) and its pages in all languages (with confirmation / `--yes`). |
 | `scripts/report.mjs` | `npm run report` | Prints a `dist/` size report: total, largest files, non-WebP raster images, unused assets. |
 | `scripts/check-external.mjs` | `npm run check:external` | Manual HEAD checks of external links (never part of `build`). |
 | `scripts/serve.mjs` | `npm run serve` | Local preview of `dist/` only (`PORT`/`HOST` overrides; mirrors the production security headers, the root `Accept-Language` redirect and `Cache-Control: no-store`). |
@@ -100,7 +100,7 @@ The `devDependencies`, their jobs, planned scripts and config files are listed i
 | Task | Steps |
 | --- | --- |
 | Add a project | `npm run create:project -- "Name" "Brief"` (creates the page in every language, other languages as `TODO`) → set `tags`, `links`, `image` in `data/projects.json` → replace the placeholder body in `de/proj/{id}.html` (German text from the user, never invented; other languages only on the user's texts) → `npm run build`. |
-| Remove a project | `npm run remove -- <id>` → `npm run build` → delete the now-stale files on the server. |
+| Remove a project | `npm run remove:project -- <id>` (ham page: `npm run remove:afu -- <id>`) → `npm run build` → delete the now-stale files on the server. |
 | Add a ham radio page | `npm run create:afu -- "Name" "Brief" --tags a,b` (creates the page in every language, other languages as `TODO`) → body text from the user → `npm run build`. See README → Ham Radio Pages and `radio.md`. |
 | Add a page | `npm run page -- "Title" [--title-en "…"] [--nav\|--footer]` (creates the page in every language) → replace the placeholder text (user content) → add it to the README outline → `npm run build`. Without the script: copy the head/include structure of an existing page into every language folder and add nav entries per language. |
 | Add a language | Follow README → Languages → Add a language (`site.json`, `strings.json`, nav files, `projects.json`, `wwwroot/<code>/`, `.htaccess` rule) with `TODO` placeholders; the translations come from the user. |

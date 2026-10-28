@@ -54,7 +54,7 @@ Website/
 │   ├── firmware.mjs       # Scaffold an assets/firmware/<suite>/manifest.json
 │   ├── images.mjs         # WebP conversion, OG default image, SVG optimisation
 │   ├── page.mjs           # Scaffold a minimal secondary page in every language folder
-│   ├── remove.mjs         # Delete a project entry and its pages in all languages (npm run remove)
+│   ├── remove.mjs         # Delete a project / ham entry and its pages in all languages (npm run remove:project / remove:afu)
 │   ├── report.mjs         # Report dist/ size, largest files, unused assets
 │   ├── check-external.mjs # Manual HEAD checks of external links
 │   └── serve.mjs          # Local preview server for dist/
@@ -155,7 +155,8 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | `npm run create:project -- "Name" "Brief" [flags]` | Scaffolds a new project: copies `templates/project-template.html` to `<lang>/proj/{id}.html` for every language and registers the project in `data/projects.json` (other languages as `TODO`). Flags: `--tags a,b`, `--featured`, `--status <value>`, `--repo <url>`, `--dry-run` (validate only). |
 | `npm run create:afu -- "Name" "Brief" [flags]` | Same for a ham radio page: `<lang>/ham/{id}.html` (back link to `hamradio.html`) and an entry in `data/ham.json`. Flags: `--tags a,b`, `--status <value>` (optional), `--repo <url>` (optional), `--dry-run`. |
 | `npm run page -- "Title" [--title-<lang> "…"] [--nav\|--footer]` | Scaffolds a minimal secondary page (shared head with CSP/`{{name}}` title/description, header, `h1`, one prose section, footer) at `<lang>/{slug}.html` for every language; refuses to overwrite; pairs differently named pages in `data/pages.json`; optionally appends nav entries to `data/nav.json` / `data/footer-nav.json`. |
-| `npm run remove -- <id>` | Deletes a project from `data/projects.json`, its pages in every language folder and its `pages.json` group; asks for confirmation (`--yes` skips the prompt). The image file is left in place. |
+| `npm run remove:project -- <id>` | Deletes a project from `data/projects.json`, its pages in every language folder and its `pages.json` group; asks for confirmation (`--yes` skips the prompt). The image file is left in place. |
+| `npm run remove:afu -- <id>` | Same for a ham radio page: entry in `data/ham.json`, `<lang>/ham/{id}.html` pages and `pages.json` group. |
 | `npm run report` | Prints a size report of `dist/` (run `npm run build` first): total size, largest files, page sizes (overall and per language), raster images not converted to WebP, unused images. |
 | `npm run check:external` | Sends a HEAD request to every external link found in `wwwroot/` (pages, partials, template, `data/*.json`) and reports the status. Manual only — never part of `build` or `check`. |
 | `npm run firmware -- <suite> --chip <family> [--chip …]` | Creates `assets/firmware/<suite>/manifest.json` with a `builds` entry per `--chip` and prints the `<esp-web-install-button>` snippet. Supported chips: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 (see Firmware section for offsets). |
@@ -408,12 +409,12 @@ The command:
 
 After scaffolding, replace the placeholder body text and add the page to the README outline, then run `npm run build`.
 
-### Removing a Project (`npm run remove`)
+### Removing a Project or Ham Page (`npm run remove:project` / `remove:afu`)
 
-`npm run remove -- <id>` removes a project you no longer want to publish:
+`npm run remove:project -- <id>` removes a project you no longer want to publish; `npm run remove:afu -- <id>` does the same for a ham radio page (`data/ham.json`, `<lang>/ham/`):
 
-- Validates `<id>` (lowercase, hyphenated) and looks it up in `data/projects.json`.
-- Asks for a confirmation prompt (listing the files) and deletes the entry plus its page in every language folder (`<lang>/proj/{id}.html` or the mapped name) and its group in `data/pages.json`; pass `--yes` to skip the prompt.
+- Validates `<id>` (lowercase, hyphenated) and looks it up in `data/projects.json` (or `data/ham.json`); if the id belongs to the other collection, the error names the right script.
+- Asks for a confirmation prompt (listing the files) and deletes the entry plus its page in every language folder (`<lang>/proj/{id}.html` / `<lang>/ham/{id}.html` or the mapped name) and its group in `data/pages.json`; pass `--yes` to skip the prompt.
 - The project's image file is left in place — images can be shared between projects. Delete it manually if nothing references it anymore (`npm run report` lists unused images).
 - Run `npm run build` afterwards and remove the now-stale files from the server on the next deploy.
 
@@ -597,7 +598,8 @@ Plan, decisions and open steps: [`radio.md`](radio.md).
 
 - [x] `data/ham.json` + schema, loader, `<lang>/ham/` pages, `@ham-list`, `@tag-filter … from=ham`, list styles, tests
 - [x] Scaffolding: `npm run create:afu` (ham pages), `npm run create:project` (projects)
-- [ ] `npm run remove` for ham entries and remaining steps in `radio.md`
+- [x] Removal: `npm run remove:afu` (ham pages), `npm run remove:project` (projects)
+- [ ] Remaining steps in `radio.md`
 
 ## Decisions
 
