@@ -28,7 +28,7 @@ const LANGS = [{ code: 'de', name: 'Deutsch', locale: 'de_DE', flag: 'assets/ico
 const SITE = { languages: LANGS, defaultLang: 'de' };
 const BASE_FILES = { 'assets/icons/de.svg': '', 'assets/icons/en.svg': '', 'assets/img/p.svg': '' };
 const PROJECT = {
-  id: 'a', title: { de: 'Titel', en: 'Title' }, summary: { de: 'Text', en: 'Text' }, tags: { de: ['hardware'], en: ['hw'] },
+  id: 'a', title: { de: 'Titel', en: 'Title' }, summary: { de: 'Text', en: 'Text' }, tags: { de: ['elektronik'], en: ['electronics'] },
   status: 'fertig', date: '2026-05', links: { repo: null, demo: null }, image: 'assets/img/p.svg', featured: false,
 };
 const PAGES = { 'de/proj/a.html': '', 'en/proj/a.html': '', 'de/about.html': '', 'en/about.html': '' };
@@ -176,7 +176,7 @@ test('loadProjects keeps complete languages and localizes them', async () => {
   const projects = await loadProjects(SITE, pages, { src });
   assert.deepEqual(errors, []);
   assert.deepEqual(warnings, []);
-  assert.deepEqual(localize(projects[0], 'en').tags, ['hw']);
+  assert.deepEqual(localize(projects[0], 'en').tags, ['electronics']);
   assert.equal(localize(projects[0], 'de').title, 'Titel');
 });
 
@@ -211,11 +211,12 @@ test('loadProjects fails without default-language texts, with TODO there and wit
 
 test('loadProjects applies the tag rules per language', async () => {
   reset();
-  const upper = { ...PROJECT, tags: { de: ['Hardware'], en: ['a', 'a'] } };
+  const upper = { ...PROJECT, tags: { de: ['elektronik', 'Hardware'], en: ['esp32', 'esp32'] } };
   const { src, pages } = await withProjects([upper]);
   await loadProjects(SITE, pages, { src });
   const text = errors.join('\n');
-  assert.match(text, /tags\.de\[0\]: must match pattern/);
+  assert.match(text, /tags\.de\[1\]: must be equal to one of the allowed values: elektronik, /);
+  assert.doesNotMatch(text, /tags\.de\[0\]/);
   assert.match(text, /tags\.en: must NOT have duplicate items/);
   reset();
 });

@@ -131,7 +131,7 @@ The site is multi-language; the decisions behind it are recorded in [`language.m
 - **Pages**: `wwwroot/<lang>/…` per language (`de/` is complete, `en/` holds placeholders). Two common pages live at the root: the landing page `index.html` (`lang="de"`, text blocks marked with their own `lang`) and `404.html` (English). Both use `partials/header-common.html` (brand and language selector, no nav). The legal pages exist in German only.
 - **Root redirect**: `.htaccess` (and the preview servers) redirect `/` to `/de/` or `/en/` by the first `Accept-Language` entry (`302`, `Vary: Accept-Language`); everything else gets the landing page.
 - **Page pairs**: a page pairs with the page of the same path in another language. Pages with different file names per language are listed in `data/pages.json` (`[{ "de": "ueber-mich.html", "en": "about.html" }]`; project groups must contain `"de": "proj/{id}.html"`). The language selector, the `hreflang` alternates and `npm run create:project`/`create:afu`/`page`/`remove` use these pairs; a missing counterpart leads to that language's home.
-- **Localized data**: `strings.json`, `nav.json`, `footer-nav.json` hold one block per language; in `projects.json` `title`, `summary` and `tags` are objects per language (tag lists are independent, not translations, ASCII lowercase-hyphenated). `status` stays a German key; its label per language is `strings.<lang>.status`.
+- **Localized data**: `strings.json`, `nav.json`, `footer-nav.json` hold one block per language; in `projects.json` `title`, `summary` and `tags` are objects per language (tag lists are independent, not translations, from a fixed vocabulary per language in the schema). `status` stays a German key; its label per language is `strings.<lang>.status`.
 - **Missing translations**: the default language is required, other languages are optional. A project whose `title`/`summary` is missing or starts with `TODO` in a language (or whose page is missing) is hidden there (lists, filter, sitemap, alternates; its page is not built) and the build warns. Placeholders follow two conventions: `TODO` for project texts, `TODO_<German label>` for labels (navigation, strings, footer note).
 - **Translations are written by the owner.** Agents only create structure and clearly marked placeholders unless asked to translate.
 
@@ -139,7 +139,7 @@ The site is multi-language; the decisions behind it are recorded in [`language.m
 
 1. `data/site.json`: add the language to `languages` (code, name, `locale` such as `fr_FR`, `flag` path; put the flag SVG into `assets/icons/`) and add `footerNote.<code>`.
 2. `data/strings.json`, `data/nav.json`, `data/footer-nav.json`: add a block for the code (copy the default block; `TODO_<label>` until translated). Footer entries that point to pages that only exist in another language get `"lang": "<code>"`.
-3. `data/projects.json`: add the code to `title` and `summary` (`"TODO"`) and `tags` (`[]`) of every project. Same for `data/ham.json`; its tag vocabulary for the code goes into `scripts/schemas/ham.schema.json` (`tags.properties.<code>`, R9).
+3. `data/projects.json` and `data/ham.json`: add the code to `title` and `summary` (`"TODO"`) and `tags` (`[]`) of every entry. Add the tag vocabulary for the code to `scripts/schemas/projects.schema.json` and `scripts/schemas/ham.schema.json` (`tags.properties.<code>`).
 4. Create `wwwroot/<code>/` with `index.html`, `projects.html`, `about.html` and `proj/{id}.html` (copy the German pages and mark the texts `TODO`, or use the existing `en/` skeletons as a model). `npm run create:project`, `npm run create:afu` and `npm run page` create new pages in the new language automatically.
 5. `wwwroot/.htaccess`: add a rewrite rule for the code next to the `de`/`en` rules; the preview servers read the codes from `site.json`.
 6. `npm run build` (check the warnings), `npm test`, `npm run test:e2e`; add the new pages to `lighthouserc.json` if wanted.
@@ -454,7 +454,7 @@ Name, copyright and email come from `data/site.json`. Still to replace with real
   "id": "example-project",
   "title": { "de": "Beispielprojekt", "en": "Example Project" },
   "summary": { "de": "Ein Satz.", "en": "One-sentence description." },
-  "tags": { "de": ["software", "werkzeug"], "en": ["javascript", "tool"] },
+  "tags": { "de": ["elektronik", "software"], "en": ["electronics", "software"] },
   "status": "fertig",
   "date": "2026-01",
   "links": { "repo": "https://example.com/repo", "demo": null },
@@ -471,7 +471,7 @@ Field validation (enforced by the build, failures abort `npm run build`). The st
 - `featured` is a boolean.
 - `draft` (optional) is a boolean when present. Draft projects keep their page built and their `<lang>/proj/{id}.html` link working, but are excluded from project lists, the tag filter and `sitemap.xml` — useful for projects that are not ready to be shown yet.
 - `links` is an object; `repo` and `demo` are `null` or a valid http(s) URL (anything else fails the build).
-- `tags` are lowercase and hyphenated (same rule as `id`) and must not repeat within a language.
+- `tags` come from a fixed vocabulary per language, defined in `projects.schema.json` (`tags.properties.<lang>.items.enum`): `de` = `elektronik`, `software`, `roehren`, `esp32`, `stromversorgung`; `en` = `electronics`, `software`, `tubes`, `esp32`, `power-supply`. They must not repeat within a language. The build and `npm run create:project -- … --tags` reject other tags; a new tag or language is added to that list first.
 - `image` is a relative path that resolves inside `wwwroot/`; `../` segments and absolute paths are rejected.
 - Every project needs the page `de/proj/{id}.html`; other languages use `<lang>/proj/{id}.html` or the mapped name from `data/pages.json`.
 

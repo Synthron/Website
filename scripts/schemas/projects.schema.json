@@ -17,14 +17,19 @@
       "title": { "$ref": "#/definitions/localizedText" },
       "summary": { "$ref": "#/definitions/localizedText" },
       "tags": {
-        "description": "Tag list per language (independent lists, not translations).",
+        "description": "Fixed tag vocabulary per language (independent lists, not translations); a new language needs its own list here.",
         "type": "object",
         "minProperties": 1,
-        "patternProperties": {
-          "^[a-z]{2,3}$": {
+        "properties": {
+          "de": {
             "type": "array",
             "uniqueItems": true,
-            "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }
+            "items": { "enum": ["elektronik", "software", "roehren", "esp32", "stromversorgung"] }
+          },
+          "en": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "enum": ["electronics", "software", "tubes", "esp32", "power-supply"] }
           }
         },
         "additionalProperties": false

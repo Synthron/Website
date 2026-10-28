@@ -29,9 +29,11 @@ export const collectionOf = (pagePath) => Object.keys(COLLECTIONS)
 // contain spaces and capitals; slugify one before using it as a CSS class hook.
 export const STATUS_VALUES = schemas.projects.schema.items.properties.status.enum;
 
-// R9: allowed ham tags per language, defined once in ham.schema.json.
-export const HAM_TAGS = Object.fromEntries(Object.entries(schemas.ham.schema.items.properties.tags.properties)
+// R9: allowed tags per language, defined once in the collection's schema.
+const tagVocabulary = (name) => Object.fromEntries(Object.entries(schemas[name].schema.items.properties.tags.properties)
   .map(([code, list]) => [code, list.items.enum]));
+export const PROJECT_TAGS = tagVocabulary('projects');
+export const HAM_TAGS = tagVocabulary('ham');
 
 // "/0/links/repo" -> "[0].links.repo"
 const pointer = (instancePath) => instancePath.split('/').slice(1)

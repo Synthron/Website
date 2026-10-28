@@ -6,7 +6,7 @@
 //
 // Usage: npm run create:project -- "Project Name" "One-sentence brief" [flags]
 //        npm run create:afu -- "Page Name" "One-sentence brief" [flags]
-//   --tags a,b        comma-separated tags of the default language (lowercase, hyphenated)
+//   --tags a,b        comma-separated tags of the default language (from the schema vocabulary)
 //   --featured        mark the project as featured (projects only)
 //   --status <value>  one of the D10 enum values (projects: default "in Arbeit"; ham: optional)
 //   --repo <url>      http(s) source repository URL
@@ -15,15 +15,15 @@
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { HAM_TAGS, STATUS_VALUES } from './lib/data.mjs';
+import { HAM_TAGS, PROJECT_TAGS, STATUS_VALUES } from './lib/data.mjs';
 import { loadSetup, readPages, projectPagePath, writeJson } from './lib/scaffold.mjs';
 import { slugify } from './lib/util.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TEMPLATE = path.join(ROOT, 'wwwroot', 'templates', 'project-template.html');
 const KINDS = {
-  project: { script: 'create:project', noun: 'project', folder: 'proj', file: path.join(ROOT, 'wwwroot', 'data', 'projects.json') },
-  ham: { script: 'create:afu', noun: 'ham page', folder: 'ham', file: path.join(ROOT, 'wwwroot', 'data', 'ham.json') },
+  project: { script: 'create:project', noun: 'project', folder: 'proj', file: path.join(ROOT, 'wwwroot', 'data', 'projects.json'), schema: 'projects.schema.json', tags: PROJECT_TAGS },
+  ham: { script: 'create:afu', noun: 'ham page', folder: 'ham', file: path.join(ROOT, 'wwwroot', 'data', 'ham.json'), schema: 'ham.schema.json', tags: HAM_TAGS },
 };
 const PROJECT_BACK_LINK = '<a href="{{langRoot}}projects.html">{{t:backToProjects}}</a>';
 const HAM_BACK_LINK = '<a href="{{langRoot}}hamradio.html">{{t:backToHam}}</a>';
@@ -104,13 +104,11 @@ async function main() {
   }
 
   const { languages, defaultLang } = await loadSetup();
-  if (options.ham) {
-    const allowed = HAM_TAGS[defaultLang] ?? [];
-    const unknown = options.tags.filter((tag) => !allowed.includes(tag));
-    if (unknown.length > 0) {
-      console.error(`Unknown ham tag(s) ${unknown.join(', ')}; allowed (R9, ham.schema.json): ${allowed.join(', ')}`);
-      process.exit(1);
-    }
+  const allowed = kind.tags[defaultLang] ?? [];
+  const unknown = options.tags.filter((tag) => !allowed.includes(tag));
+  if (unknown.length > 0) {
+    console.error(`Unknown ${kind.noun} tag(s) ${unknown.join(', ')}; allowed (${kind.schema}): ${allowed.join(', ')}`);
+    process.exit(1);
   }
   const pages = await readPages();
   const dataRel = `data/${path.basename(kind.file)}`;
