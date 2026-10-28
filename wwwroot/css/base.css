@@ -81,6 +81,11 @@
   margin: 0;
 }
 
+/* Reserve scrollbar space so centred layouts don't shift between short and long pages */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   min-height: 100vh;
   font-family: var(--font-sans);
