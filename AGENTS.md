@@ -154,7 +154,7 @@ The `devDependencies`, their jobs, planned scripts and config files are listed i
 ## Workflow for Agents
 
 1. Read `README.md` and this file before making changes.
-2. Pick the work: do what the user asks. Otherwise take the next open step in [`todo.md`](todo.md). Skip steps marked **User** and anything that needs real content from the user (texts, images, project data); ask instead.
+2. Pick the work: do what the user asks. Otherwise take the next open step in [`todo.md`](todo.md). Skip user steps (`Uxx` IDs) and anything that needs real content from the user (texts, images, project data); ask instead.
 3. When a step is completed, delete it from `todo.md` (the file lists open work only; do not keep ticked items). New open work found along the way goes into `todo.md`.
 4. Keep changes scoped: one step or concern per change. Do not refactor unrelated files.
 5. When you create a file, add it to the README outline in the same change.
