@@ -16,12 +16,70 @@
         <!-- @project-header -->
 
         <div class="project-content">
-          <section class="project-section" aria-labelledby="overview">
-            <h2 id="overview">TODO</h2>
-            <div class="prose">
-              <p>TODO: English write-up (translate de/proj/sy317.html, including figure captions and alt texts).</p>
+
+            <section class="project-section" aria-labelledby="layout-small">
+            <h2 id="layout-small">Overview</h2>
+            <div class="split">
+              <div class="prose">
+              <p>The SY317, inspired by the LM317 with the first letters of my maker username, is an adjustable fixed-voltage regulator, pin-compatible with the well-known 78xx linear voltage regulators.</p>
+              <p>The goal was to create a cost-effective drop-in replacement with better efficiency and higher output current. This eliminates the need for heat sinks, potentially saving space on the board.</p>
+              </div>
+
+              <figure class="figure figure--small">
+                <img src="{{root}}assets/img/sy317_render.png" alt="3D-Render SY317" width="400" height="400" loading="lazy" decoding="async">
+                <figcaption>3D-Render SY317 from KiCad</figcaption>
+              </figure>
+
             </div>
           </section>
+
+          <section class="project-section" aria-labelledby="screenshot">
+            <h2 id="screenshot">Schematic</h2>
+            <figure class="figure figure--full">
+              <img src="{{root}}assets/img/sy317_sch.png" alt="Placeholder: wide project screenshot" width="1600" height="1086" loading="lazy" decoding="async">
+              <figcaption>Schematic of the module</figcaption>
+            </figure>
+            <div class="prose">
+              <p>The schematic is comparatively simple and minimalist in design. A 2.54mm pin header with the same pinout as the 78xx series serves as the connection point. The core component of the module is the TPS56339 switching regulator IC from Texas Instruments.</p>
+              <p>The resulting circuit around it is the example circuit from the datasheet with the difference that a potentiometer is built into the feedback path. This serves to adjust the output voltage. The inductance is slightly higher than the recommended value for better filtering.</p>
+              <p>Notable are the two DNP (Do Not Populate) resistors. These are intended for an optional undervoltage lock-out function, but were not implemented in my case for cost reasons. The regulator has an internal pull-up that pulls this pin to Vin when not populated, thus deactivating the function.</p>
+              <p>All components except the pin header are SMD. To keep the PCB costs low, a 2-layer board was also aimed for, with a solid GND plane on the bottom layer and the VCC trace on the top layer.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="platine">
+            <h2 id="platine">PCB</h2>
+            <div class="prose">
+              <p>The PCB itself was created in KiCad. A very small form factor was aimed for and ultimately achieved. When placing the modules next to a classic TO-220 78xx IC, the PCB is nearly exactly the same size, including the pins from the ICs.</p>
+            </div>
+            <figure class="figure figure--full">
+              <img src="{{root}}assets/img/sy317_pic.webp" alt="Module neben 7812 IC" width="1600" height="1086" loading="lazy" decoding="async">
+              <figcaption>Soldered Modules next to 7812 TO-220</figcaption>
+            </figure>
+            <div class="prose">
+            <p>To reduce costs even further, the PCBs were created as a panel. Since each module is 10mm wide and 25mm long, a 10x4 grid could be used, resulting in a 100x100mm PCB that has the exact maximum dimensions for the lowest price at JLCPCB.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="layout-lists">
+            <h2 id="layout-lists">Technical Data</h2>
+            <div class="prose">
+              <p>Here are the technical data. For comparison: the 78xx-ICs have a maximum input voltage of 25-38V depending on the model and a maximum current of 1.5A.</p>
+              <h3>SY317 Data</h3>
+              <ul>
+                <li>Input Voltage:  4,5V ... 24V</li>
+                <li>Output Voltage: 0,8V ... 16V</li>
+                <li>Output Current: 3A</li>
+                <li>Switching Frequency: 500kHz</li>
+                <li>Efficiency: 80% to over 90%</li>
+                <li>Dropout Voltage: min. Vout * 0,03</li>
+              </ul>
+              <p>You can see, the data speaks for itself. The maximum input voltage is slightly lower than with the 78xx-ICs, but the maximum output current is twice as high and the efficiency is significantly better.</p>
+              <p>The Dropout Voltage is also significantly lower, which means that even with a lower input voltage, a stable output voltage can be achieved.</p>
+              <p>By ordering the PCBs as a panel and placing bulk orders for components, a module can cost around 3€, depending on the quantity. Of course, this is much more than the 25 cents of the 78xx-ICs, but for applications that require high efficiency, little space, or higher current, these modules offer a very convincing solution.</p>
+            </div>
+          </section>
+
         </div>
       </article>
     </div>
