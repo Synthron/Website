@@ -2,7 +2,7 @@
   "de": [
     { "label": "Impressum", "href": "impressum.html" },
     { "label": "Datenschutz", "href": "privacy.html" },
-    { "label": "Rechtliche Hinweise", "href": "disclaimers.html" }
+    { "label": "Rechtliche Hinweise", "href": "rechtliches.html" }
   ],
   "en": [
     { "label": "Legal Notices", "href": "impressum.html" },
