@@ -9,7 +9,7 @@ import path from 'node:path';
 import { errors, SRC, warnings } from './util.mjs';
 import {
   checkAnchors, checkFirmwareManifests, checkFlasherHtaccess, checkHtmlLang, checkLanguageLinks, checkLinks, checkOrphanPages,
-  checkPlaceholderText, checkTranslationCoverage,
+  checkPlaceholderText, checkTranslationCoverage, isPlaceholderImg,
 } from './checks.mjs';
 
 let base;
@@ -204,5 +204,13 @@ test('checkFirmwareManifests rejects part paths outside the suite folder', async
   assert.equal(errors.length, 5);
   for (const error of errors) assert.match(error, /must be a relative path inside the suite folder/);
   reset();
+});
+
+test('isPlaceholderImg matches the reserved placeholder SVGs only', () => {
+  assert.equal(isPlaceholderImg('assets/img/placeholder.svg'), true);
+  assert.equal(isPlaceholderImg('assets/img/placeholder-square.svg'), true);
+  assert.equal(isPlaceholderImg('assets/img/placeholder-portrait.svg'), true);
+  assert.equal(isPlaceholderImg('assets/img/sy317_pic.webp'), false);
+  assert.equal(isPlaceholderImg('assets/img/photo-placeholder.svg'), false);
 });
 

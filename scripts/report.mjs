@@ -9,6 +9,9 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
 const TOP = 10;
+// Placeholder SVGs (assets/img/placeholder*.svg) are reserved for the master
+// template and the scaffold default image; never list them as unused.
+const PLACEHOLDER_IMG = /^placeholder.*\.svg$/;
 
 // Language folders from data/site.json; root pages (landing, 404) count as "common".
 async function languageCodes() {
@@ -76,9 +79,9 @@ async function main() {
   console.log('\nRaster images not converted to WebP:');
   if (rasterImages.length === 0) console.log('  (none — all raster images use WebP)');
   else print(rasterImages);
-  console.log('\nUnused assets in assets/img/ (not referenced by any built page):');
+  console.log('\nUnused assets in assets/img/ (not referenced by any built page; placeholder*.svg excluded):');
   const pageText = (await Promise.all(pages.map(({ rel }) => readFile(path.join(DIST, rel), 'utf8')))).join('\n');
-  const unused = imgAssets.filter(({ rel }) => !pageText.includes(`assets/img/${path.posix.basename(rel)}`));
+  const unused = imgAssets.filter(({ rel }) => !PLACEHOLDER_IMG.test(path.posix.basename(rel)) && !pageText.includes(`assets/img/${path.posix.basename(rel)}`));
   print(unused);
 }
 

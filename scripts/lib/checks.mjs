@@ -191,11 +191,19 @@ export function checkFlasherHtaccess(pages, htaccess) {
   }
 }
 
-// Warn about unused images in assets/img/ and leftover placeholder text.
+// The placeholder SVGs (assets/img/placeholder*.svg) are reserved: they serve
+// the master template and as the scaffold default image, so the build never
+// flags them as unused.
+const PLACEHOLDER_IMG = /^placeholder.*\.svg$/;
+export const isPlaceholderImg = (rel) => PLACEHOLDER_IMG.test(path.posix.basename(rel));
+
+// Warn about unused images in assets/img/ (placeholder*.svg are reserved and
+// always ignored) and leftover placeholder text.
 export async function checkUnusedAssets(pages) {
   const imgFiles = (await walk(SRC)).filter((rel) => rel.startsWith('assets/img/'));
   const pageText = pages.map(([, html]) => html).join('\n');
   for (const rel of imgFiles) {
+    if (isPlaceholderImg(rel)) continue;
     if (!pageText.includes(`assets/img/${path.posix.basename(rel)}`)) {
       warn(`wwwroot/${rel}: not referenced by any built page`);
     }
