@@ -71,6 +71,7 @@ async function rebuild() {
     return;
   }
   building = true;
+  console.log('Change detected, rebuilding ...');
   const ok = await runBuild();
   building = false;
   if (ok) {

@@ -13,7 +13,7 @@
         {
           "owner": "build",
           "pattern": {
-            "regexp": "^(.+):(\\d+):(\\d+): (.*)$",
+            "regexp": "^\\s*-\\s+(.+?):(\\d+):(\\d+): (.*)$",
             "file": 1,
             "line": 2,
             "column": 3,
@@ -32,10 +32,11 @@
           "owner": "dev",
           "background": {
             "activeOnStart": true,
-            "beginsPattern": "Dev server: http://localhost:\\d+/ \\(live reload\\)"
+            "beginsPattern": "^Change detected, rebuilding",
+            "endsPattern": "^(Dev server: http|Build ok|Build failed; the server keeps running)"
           },
           "pattern": {
-            "regexp": "^(.+):(\\d+):(\\d+): (.*)$",
+            "regexp": "^\\s*-\\s+(.+?):(\\d+):(\\d+): (.*)$",
             "file": 1,
             "line": 2,
             "column": 3,
@@ -54,10 +55,11 @@
           "owner": "serve",
           "background": {
             "activeOnStart": true,
-            "beginsPattern": "Serving dist/ at http://localhost:\\d+/"
+            "beginsPattern": "^> node scripts/serve\\.mjs",
+            "endsPattern": "^Serving dist/ at http"
           },
           "pattern": {
-            "regexp": "^(.+):(\\d+):(\\d+): (.*)$",
+            "regexp": "^\\s*-\\s+(.+?):(\\d+):(\\d+): (.*)$",
             "file": 1,
             "line": 2,
             "column": 3,
