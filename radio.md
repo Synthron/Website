@@ -12,8 +12,8 @@ Plan and decision record for the ham radio section (`hamradio.html` and its sub-
 | R4  | What does a list item show? | **Title (link), date, summary, tags** · Without summary · Title and date only | Title (link), date (and status if set), summary, tags |
 | R5  | Count word of the filter status? | Beitrag · Eintrag · Thema · Seite | „Seite / Seiten“ (`hamCountSingular` / `hamCountPlural`) |
 | R6  | Test page `de/ham/placeholder-project-two.html`? | **Rename to `ham/t2lt-antenna.html` and register** · Keep · Delete | Renamed to `ham/t2lt-antenna.html`, registered in `ham.json`; texts stay placeholders |
-| R7  | Scaffolding for ham pages? | **`npm run create -- "Name" "Brief" --ham`** (same script, ham template/back link) · Separate `npm run ham` · Manual only | open |
-| R8  | Template of a new ham page? | **Project template with the ham back link** · Own, smaller `templates/ham-template.html` | open |
+| R7  | Scaffolding for ham pages? | **`npm run create -- "Name" "Brief" --ham`** (same script, ham template/back link) · Separate `npm run ham` · Manual only | `npm run create:afu` (same script with `--ham`); projects use `npm run create:project`, `npm run create` is gone |
+| R8  | Template of a new ham page? | **Project template with the ham back link** · Own, smaller `templates/ham-template.html` | Project template with the ham back link (set by `create:afu`) |
 | R9  | Tag vocabulary? | **Free tags, suggested list in this file** (e.g. `antenne`, `transceiver`, `contest`, `funkbetrieb`, `messtechnik`) · Fixed list enforced by the schema | open |
 | R10 | Show the latest ham pages on the home page? | **No** · Yes, the newest 3 (`@ham-list limit=3`) | open |
 
@@ -31,7 +31,8 @@ Plan and decision record for the ham radio section (`hamradio.html` and its sub-
 
 ### Agent
 
-- [ ] **R7/R8** Scaffolding: `npm run create … --ham` (or the chosen variant) writes `<lang>/ham/{id}.html` and the `ham.json` entry; `npm run remove` handles ham ids. Wait for the answers.
+- [x] **R7/R8** Scaffolding: `npm run create:afu` writes `<lang>/ham/{id}.html` (project template, ham back link) and the `ham.json` entry.
+- [ ] `npm run remove` handles ham ids.
 - [ ] **R10** Home page list, if wanted (`limit=` option for `@ham-list`).
 - [ ] Optional: e2e check that the ham filter hides and shows list items (`scripts/e2e/`).
 
@@ -40,4 +41,4 @@ Plan and decision record for the ham radio section (`hamradio.html` and its sub-
 - [ ] Intro text of `de/hamradio.html` (currently „Alle meine Amateurfunk-Projekte und Themen.“) — keep or rewrite.
 - [ ] `de/ham/t2lt-antenna.html`: real text instead of the template placeholders; in `data/ham.json` a German title/summary (currently „T2LT Antenna“ / „Placeholder entry — Test 2.“) and the tags.
 - [ ] English: `en/hamradio.html` texts, the four `TODO_` strings in `data/strings.json`, and per entry `title`/`summary`/`tags` in `ham.json` plus a page `en/ham/{id}.html` (until then the entry is hidden in English).
-- [ ] Answer R7–R10.
+- [ ] Answer R9–R10.

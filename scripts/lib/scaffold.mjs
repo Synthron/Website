@@ -27,10 +27,10 @@ export async function readPages() {
   return pages;
 }
 
-// Page path of a project in a language (relative to the language folder):
-// the mapped name from pages.json, else proj/{id}.html.
-export function projectPagePath(pages, defaultLang, lang, id) {
-  const standard = `proj/${id}.html`;
+// Page path of a project (or ham page, folder "ham") in a language, relative
+// to the language folder: the mapped name from pages.json, else <folder>/{id}.html.
+export function projectPagePath(pages, defaultLang, lang, id, folder = 'proj') {
+  const standard = `${folder}/${id}.html`;
   const group = pages.find((entry) => entry[defaultLang] === standard);
   return group?.[lang] ?? standard;
 }

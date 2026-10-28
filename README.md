@@ -130,7 +130,7 @@ The site is multi-language; the decisions behind it are recorded in [`language.m
 - **Configuration** (`data/site.json`): `languages` (`code`, `name`, `locale`, `flag`), `defaultLang` (`de`, also the `x-default` and fallback language) and `footerNote` per language. The code is the folder name below `wwwroot/`.
 - **Pages**: `wwwroot/<lang>/…` per language (`de/` is complete, `en/` holds placeholders). Two common pages live at the root: the landing page `index.html` (`lang="de"`, text blocks marked with their own `lang`) and `404.html` (English). Both use `partials/header-common.html` (brand and language selector, no nav). The legal pages exist in German only.
 - **Root redirect**: `.htaccess` (and the preview servers) redirect `/` to `/de/` or `/en/` by the first `Accept-Language` entry (`302`, `Vary: Accept-Language`); everything else gets the landing page.
-- **Page pairs**: a page pairs with the page of the same path in another language. Pages with different file names per language are listed in `data/pages.json` (`[{ "de": "ueber-mich.html", "en": "about.html" }]`; project groups must contain `"de": "proj/{id}.html"`). The language selector, the `hreflang` alternates and `npm run create`/`page`/`remove` use these pairs; a missing counterpart leads to that language's home.
+- **Page pairs**: a page pairs with the page of the same path in another language. Pages with different file names per language are listed in `data/pages.json` (`[{ "de": "ueber-mich.html", "en": "about.html" }]`; project groups must contain `"de": "proj/{id}.html"`). The language selector, the `hreflang` alternates and `npm run create:project`/`create:afu`/`page`/`remove` use these pairs; a missing counterpart leads to that language's home.
 - **Localized data**: `strings.json`, `nav.json`, `footer-nav.json` hold one block per language; in `projects.json` `title`, `summary` and `tags` are objects per language (tag lists are independent, not translations, ASCII lowercase-hyphenated). `status` stays a German key; its label per language is `strings.<lang>.status`.
 - **Missing translations**: the default language is required, other languages are optional. A project whose `title`/`summary` is missing or starts with `TODO` in a language (or whose page is missing) is hidden there (lists, filter, sitemap, alternates; its page is not built) and the build warns. Placeholders follow two conventions: `TODO` for project texts, `TODO_<German label>` for labels (navigation, strings, footer note).
 - **Translations are written by the owner.** Agents only create structure and clearly marked placeholders unless asked to translate.
@@ -140,7 +140,7 @@ The site is multi-language; the decisions behind it are recorded in [`language.m
 1. `data/site.json`: add the language to `languages` (code, name, `locale` such as `fr_FR`, `flag` path; put the flag SVG into `assets/icons/`) and add `footerNote.<code>`.
 2. `data/strings.json`, `data/nav.json`, `data/footer-nav.json`: add a block for the code (copy the default block; `TODO_<label>` until translated). Footer entries that point to pages that only exist in another language get `"lang": "<code>"`.
 3. `data/projects.json`: add the code to `title` and `summary` (`"TODO"`) and `tags` (`[]`) of every project.
-4. Create `wwwroot/<code>/` with `index.html`, `projects.html`, `about.html` and `proj/{id}.html` (copy the German pages and mark the texts `TODO`, or use the existing `en/` skeletons as a model). `npm run create` and `npm run page` create new pages in the new language automatically.
+4. Create `wwwroot/<code>/` with `index.html`, `projects.html`, `about.html` and `proj/{id}.html` (copy the German pages and mark the texts `TODO`, or use the existing `en/` skeletons as a model). `npm run create:project`, `npm run create:afu` and `npm run page` create new pages in the new language automatically.
 5. `wwwroot/.htaccess`: add a rewrite rule for the code next to the `de`/`en` rules; the preview servers read the codes from `site.json`.
 6. `npm run build` (check the warnings), `npm test`, `npm run test:e2e`; add the new pages to `lighthouserc.json` if wanted.
 
@@ -152,7 +152,8 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | --- | --- |
 | `npm run build` | Deletes `dist/` and rebuilds it from `wwwroot/`. Exits non-zero on invalid data, unknown tokens/includes or broken internal links. |
 | `npm run check` | Validation only: runs every build check (data, firmware manifests, tokens/includes/directives, links) and **writes nothing**. Fast pre-commit check; used by the git hook. |
-| `npm run create -- "Name" "Brief" [flags]` | Scaffolds a new project: copies `templates/project-template.html` to `<lang>/proj/{id}.html` for every language and registers the project in `data/projects.json` (other languages as `TODO`). Flags: `--tags a,b`, `--featured`, `--status <value>`, `--repo <url>`, `--dry-run` (validate only). |
+| `npm run create:project -- "Name" "Brief" [flags]` | Scaffolds a new project: copies `templates/project-template.html` to `<lang>/proj/{id}.html` for every language and registers the project in `data/projects.json` (other languages as `TODO`). Flags: `--tags a,b`, `--featured`, `--status <value>`, `--repo <url>`, `--dry-run` (validate only). |
+| `npm run create:afu -- "Name" "Brief" [flags]` | Same for a ham radio page: `<lang>/ham/{id}.html` (back link to `hamradio.html`) and an entry in `data/ham.json`. Flags: `--tags a,b`, `--status <value>` (optional), `--repo <url>` (optional), `--dry-run`. |
 | `npm run page -- "Title" [--title-<lang> "…"] [--nav\|--footer]` | Scaffolds a minimal secondary page (shared head with CSP/`{{name}}` title/description, header, `h1`, one prose section, footer) at `<lang>/{slug}.html` for every language; refuses to overwrite; pairs differently named pages in `data/pages.json`; optionally appends nav entries to `data/nav.json` / `data/footer-nav.json`. |
 | `npm run remove -- <id>` | Deletes a project from `data/projects.json`, its pages in every language folder and its `pages.json` group; asks for confirmation (`--yes` skips the prompt). The image file is left in place. |
 | `npm run report` | Prints a size report of `dist/` (run `npm run build` first): total size, largest files, page sizes (overall and per language), raster images not converted to WebP, unused images. |
@@ -364,28 +365,31 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 
 [`wwwroot/templates/project-template.html`](wwwroot/templates/project-template.html) is the master template for writing about a project. It is a reference page that is not built into `dist/`; it demonstrates every supported layout pattern with placeholder body content. Its header, title and description are generated from `data/projects.json` like any project page.
 
-- To write a new project page, run `npm run create` (it adds the project to `data/projects.json` and copies the template to `<lang>/proj/{id}.html` for every language), keep the includes and `@project-header`, and replace the placeholder body content.
+- To write a new project page, run `npm run create:project` (it adds the project to `data/projects.json` and copies the template to `<lang>/proj/{id}.html` for every language; `npm run create:afu` does the same for ham pages), keep the includes and `@project-header`, and replace the placeholder body content.
 - Each numbered section shows one layout pattern: pure text, text with a small image, full-width image, text/image side by side, image gallery, callout, code block, lists, and table.
 - The styles for all patterns live in `css/components.css` (base) and `css/responsive.css` (breakpoints at 640px and 960px). Do not add inline styles.
 - To add a NEW layout pattern, append a new numbered section to the template, add its styles to `css/components.css` (and `css/responsive.css` if it needs breakpoints), and note it here.
 - Placeholder images for different aspect ratios live in `assets/img/` (`placeholder.svg` wide, `placeholder-square.svg`, `placeholder-portrait.svg`).
-- Project cards link to a static page per project at `<lang>/proj/{id}.html` (e.g. `de/proj/sy317.html`; other languages may use a mapped name from `data/pages.json`). The template is never built; `npm run create` copies it.
+- Project cards link to a static page per project at `<lang>/proj/{id}.html` (e.g. `de/proj/sy317.html`; other languages may use a mapped name from `data/pages.json`). The template is never built; `npm run create:project` / `create:afu` copy it.
 
-### Scaffolding a New Project (`npm run create`)
+### Scaffolding a New Project or Ham Page (`npm run create:project`, `npm run create:afu`)
 
-`npm run create` scaffolds a new project from the master template so you do not have to copy files and hand-edit JSON. It takes two arguments: the project **name** and a one-sentence **brief** (used as the `summary`).
+`npm run create:project` scaffolds a new project, `npm run create:afu` a new ham radio page, both from the master template so you do not have to copy files and hand-edit JSON. Both take two arguments: the **name** and a one-sentence **brief** (used as the `summary`).
 
 ```sh
-npm run create -- "My Project" "One-sentence description of the project."
+npm run create:project -- "My Project" "One-sentence description of the project."
+npm run create:afu -- "T2LT Antenne" "One-sentence description." --tags antenne
 ```
 
 The command:
 
-- Derives a lowercase, hyphenated `id` from the name (e.g. `My Project` → `my-project`) and refuses to run if that `id` already exists in `data/projects.json` or as a page in any `<lang>/proj/` folder (mapped names from `data/pages.json` included).
-- Copies `templates/project-template.html` to `<lang>/proj/{id}.html` for **every** configured language (without the master-template instruction comment).
-- Appends an entry to `data/projects.json` with the required schema: `id`, `title` and `summary` per language (the default language gets the name/brief, every other language `"TODO"`), `tags` per language (the default language gets `--tags`, others start empty), `status: "in Arbeit"`, `date` (current `YYYY-MM`), `links` (`repo`/`demo` both `null`), the placeholder image, and `featured: false`. The project stays hidden in a language until its `TODO` texts are replaced.
+- Derives a lowercase, hyphenated `id` from the name (e.g. `My Project` → `my-project`) and refuses to run if that `id` already exists in the data file or as a page in any `<lang>/proj/` (`<lang>/ham/`) folder (mapped names from `data/pages.json` included). Unknown flags fail.
+- Copies `templates/project-template.html` to `<lang>/proj/{id}.html` (`<lang>/ham/{id}.html`) for **every** configured language (without the master-template instruction comment; ham pages get the back link to `hamradio.html`).
+- `create:project` appends an entry to `data/projects.json` with the required schema: `id`, `title` and `summary` per language (the default language gets the name/brief, every other language `"TODO"`), `tags` per language (the default language gets `--tags`, others start empty), `status` (`--status`, default `"in Arbeit"`), `date` (current `YYYY-MM`), `links` (`repo` from `--repo`, else `null`; `demo` `null`), the placeholder image, and `featured` (`--featured`). The project stays hidden in a language until its `TODO` texts are replaced.
+- `create:afu` appends the slim entry to `data/ham.json`: `id`, `title`, `summary`, `tags`, `date`; `status` and `links` only when `--status` / `--repo` are given. `--featured` is rejected.
+- `--dry-run` validates and prints the entry without writing anything.
 
-After scaffolding, replace the placeholder body on the new pages and set `tags`, `links` and `image` in `data/projects.json`, then run `npm run build`.
+After scaffolding, replace the placeholder body on the new pages and set `tags` (projects also `links` and `image`) in the data file, then run `npm run build`.
 
 ### Scaffolding a Secondary Page (`npm run page`)
 
@@ -460,7 +464,7 @@ Name, copyright and email come from `data/site.json`. Still to replace with real
 
 Field validation (enforced by the build, failures abort `npm run build`). The structure is defined in [`scripts/schemas/projects.schema.json`](scripts/schemas/projects.schema.json) and validated with `ajv`; language keys, unique ids, existing image and page files are checked in `scripts/lib/data.mjs`:
 
-- `title`, `summary` and `tags` are objects keyed by language code. The default language is required; other languages are optional. A value that is missing or starts with `TODO` hides the project in that language and the build warns (`npm run create` writes `"TODO"` for every other language).
+- `title`, `summary` and `tags` are objects keyed by language code. The default language is required; other languages are optional. A value that is missing or starts with `TODO` hides the project in that language and the build warns (`npm run create:project` writes `"TODO"` for every other language).
 - `title` and `summary` are non-empty strings; `tags` are independent lists per language (not translations).
 - `status` is one of the German keys: `in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`. Values contain spaces and capitals, so slugify before using one as a CSS hook. The label shown per language is `strings.<lang>.status[<key>]`; cards and headers carry the key as `data-status`.
 - `featured` is a boolean.
@@ -470,7 +474,7 @@ Field validation (enforced by the build, failures abort `npm run build`). The st
 - `image` is a relative path that resolves inside `wwwroot/`; `../` segments and absolute paths are rejected.
 - Every project needs the page `de/proj/{id}.html`; other languages use `<lang>/proj/{id}.html` or the mapped name from `data/pages.json`.
 
-Adding a project means `npm run create` (entry plus pages in all languages). Cards, filter, page title and page header are generated by the build. The project header's **Source** button (from `links.repo`) renders with the Github mark (`assets/icons/GitHub_Invertocat_White.svg`) as a leading badge; the **Demo** button (from `links.demo`) stays a plain text button. Omit the link to hide its button.
+Adding a project means `npm run create:project` (entry plus pages in all languages). Cards, filter, page title and page header are generated by the build. The project header's **Source** button (from `links.repo`) renders with the Github mark (`assets/icons/GitHub_Invertocat_White.svg`) as a leading badge; the **Demo** button (from `links.demo`) stays a plain text button. Omit the link to hide its button.
 
 ### Ham Radio Pages (`data/ham.json`)
 
@@ -490,7 +494,7 @@ A second collection next to the projects: `wwwroot/<lang>/hamradio.html` lists t
 - Pages live at `<lang>/ham/{id}.html` (or a mapped name from `data/pages.json`; a group with `ham/` pages may only contain `ham/` pages). The default-language page is required; a `TODO` or missing translation hides the entry in that language, like projects.
 - A ham page uses the same structure as a project page (`{{projectTitle}}`, `{{projectSummary}}`, `@project-header`, layouts from the project template) with the back link `<a href="{{langRoot}}hamradio.html">{{t:backToHam}}</a>`.
 - Ham entries do not appear on `projects.html`, the home page or in the project tag filter.
-- Adding a ham page (until `npm run create` supports it, see `radio.md`): copy a page from `de/ham/` to `de/ham/{id}.html`, add the entry to `data/ham.json` (other languages `"TODO"`), replace the placeholder body, run `npm run build`.
+- Adding a ham page: `npm run create:afu -- "Name" "Brief" --tags a,b` (entry plus pages in all languages), replace the placeholder body, run `npm run build`.
 
 ### Other Data Files
 
@@ -543,7 +547,7 @@ A second collection next to the projects: `wwwroot/<lang>/hamradio.html` lists t
 - [x] Footer nav generated from `data/footer-nav.json` (`@footer-nav` directive)
 - [x] Shared header/footer as partials; site.json content generated at build time
 - [x] Project lists, project headers and tag filter pre-rendered; runtime `fetch` removed
-- [x] `npm run create`: scaffold a new project page from the template and register it in `projects.json`
+- [x] `npm run create:project`: scaffold a new project page from the template and register it in `projects.json`
 - [x] Build logic split into `scripts/lib/` modules; `build.mjs` is a thin CLI
 - [x] `@raw` … `@endraw` escape block for literal `{{…}}` / `<!-- @… -->` in code samples
 - [x] Shared `<head>` partial with `{{csp}}` (flasher pages get the inline-style exception automatically)
@@ -592,7 +596,8 @@ Plan, decisions and work log: [`language.md`](language.md).
 Plan, decisions and open steps: [`radio.md`](radio.md).
 
 - [x] `data/ham.json` + schema, loader, `<lang>/ham/` pages, `@ham-list`, `@tag-filter … from=ham`, list styles, tests
-- [ ] Scaffolding (`npm run create --ham`, `npm run remove`) and remaining steps in `radio.md`
+- [x] Scaffolding: `npm run create:afu` (ham pages), `npm run create:project` (projects)
+- [ ] `npm run remove` for ham entries and remaining steps in `radio.md`
 
 ## Decisions
 

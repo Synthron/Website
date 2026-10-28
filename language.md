@@ -87,7 +87,7 @@ Condensed reading of the answers; the target structure and the M-steps implement
 - **Old URLs** (L17): no redirects; the old `/html/` folder is simply deleted on the server.
 - **Project pages** (L18): one source file per language.
 - **Template** (L19): `wwwroot/templates/project-template.html`, never built or deployed.
-- **`npm run create`** (L20, L30): non-default languages get `TODO` placeholder texts; the build warns, and a `TODO` counts as missing, so the project stays hidden in that language until the text is filled in.
+- **`npm run create:project` / `create:afu`** (L20, L30): non-default languages get `TODO` placeholder texts; the build warns, and a `TODO` counts as missing, so the project stays hidden in that language until the text is filled in.
 - **Sitemap** (L21): no alternates; `hreflang` only as head tags.
 - **Translations** (L22): the user provides all texts; agents translate only on explicit request.
 - **Build scope** (L32): all extensions in this plan are approved (`{{langRoot}}`, `{{t:key}}`, `@lang-switch`, head alternates, `data/pages.json`, new checks, `Accept-Language` redirect).
@@ -183,7 +183,7 @@ wwwroot/
 }
 ```
 
-`id`, `status`, `date`, `links`, `image`, `featured` and `draft` stay language-neutral. A fresh `npm run create` writes `"TODO"` for every non-default language (L20); such a value counts as missing (L30).
+`id`, `status`, `date`, `links`, `image`, `featured` and `draft` stay language-neutral. A fresh `npm run create:project` writes `"TODO"` for every non-default language (L20); such a value counts as missing (L30).
 
 `pages.json` (only pages whose names differ; everything else pairs by identical path; a project group must contain `"de": "proj/{id}.html"`, L31):
 

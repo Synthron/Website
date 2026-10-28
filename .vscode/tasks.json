@@ -69,7 +69,13 @@
     {
       "label": "create project",
       "type": "shell",
-      "command": "npm run create -- \"${input:name}\" \"${input:brief}\"",
+      "command": "npm run create:project -- \"${input:name}\" \"${input:brief}\"",
+      "problemMatcher": []
+    },
+    {
+      "label": "create ham page",
+      "type": "shell",
+      "command": "npm run create:afu -- \"${input:name}\" \"${input:brief}\"",
       "problemMatcher": []
     },
     {

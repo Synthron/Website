@@ -1,13 +1,17 @@
 [
   {
     "id": "t2lt-antenna",
-    "title": { "de": "T2LT Antenna", "en": "TODO" },
-    "summary": { "de": "Placeholder entry — Test 2.", "en": "TODO" },
+    "title": { "de": "T2LT Antenne", "en": "T2LT Antenna" },
+    "summary": { "de": "DIY T2LT Dualband Antenne für 2m/70cm", "en": "DIY T2LT dual-band antenna for 2m/70cm" },
     "tags": {
       "de": [
-        "antenne"
+        "antenne",
+        "diy"
       ],
-      "en": []
+      "en": [
+        "antenna",
+        "diy"
+      ]
     },
     "date": "2026-10"
   }

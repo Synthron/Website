@@ -41,7 +41,7 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | --- | --- | --- |
 | `scripts/build.mjs` | Build CLI | Orchestration only. Put logic into `scripts/lib/`. |
 | `scripts/lib/` | Build modules: `util` (paths, `fail()`, escaping), `data` (load/validate JSON, page index, `localize()`), `render` (HTML renderers), `pipeline` (`@raw`, includes, tokens, directives, page classification), `checks` (output checks), `scaffold` (helpers of create/page/remove), `preview` (helpers of serve/dev) | Node built-ins or npm packages declared in `package.json`. Keep the build deterministic and failing loudly on bad data. New checks go into `checks.mjs`, new renderers into `render.mjs`. Every module has unit tests (`*.test.mjs`). |
-| `scripts/create.mjs` | `npm run create` | Scaffolds a project page from the template in every language folder and registers it in `projects.json` (other languages as `TODO`; flags: `--tags`, `--featured`, `--status`, `--repo`, `--dry-run`). |
+| `scripts/create.mjs` | `npm run create:project`, `npm run create:afu` | Scaffolds a project page (`proj/`) or ham radio page (`ham/`, `--ham`) from the template in every language folder and registers it in `projects.json` / `ham.json` (other languages as `TODO`; flags: `--tags`, `--featured` (projects only), `--status`, `--repo`, `--dry-run`). |
 | `scripts/dev.mjs` | `npm run dev` | Build once, then rebuild on changes in `wwwroot/`/`scripts/`; serves `dist/` with SSE live reload, the production security headers and the root `Accept-Language` redirect (dev-only). |
 | `scripts/firmware.mjs` | `npm run firmware` | Scaffolds `assets/firmware/<suite>/manifest.json` for the given `--chip` families and prints the flasher button snippet. |
 | `scripts/page.mjs` | `npm run page` | Scaffolds a minimal secondary page in every language folder (optionally `--title-<lang>`, `--nav` / `--footer`). |
@@ -73,7 +73,7 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 
 ## Build and Templating
 
-Commands: `npm install` (once after cloning and whenever `package.json` changes), `npm run build` (wwwroot → dist), `npm run serve`, `npm start` (both), `npm run clean`, `npm run create -- "Name" "Brief"`. The full reference of includes, `{{tokens}}`, `@directives` and `@raw` is in [README → Build-time Templating](README.md#build-time-templating); do not duplicate it here.
+Commands: `npm install` (once after cloning and whenever `package.json` changes), `npm run build` (wwwroot → dist), `npm run serve`, `npm start` (both), `npm run clean`, `npm run create:project -- "Name" "Brief"`, `npm run create:afu -- "Name" "Brief"`. The full reference of includes, `{{tokens}}`, `@directives` and `@raw` is in [README → Build-time Templating](README.md#build-time-templating); do not duplicate it here.
 
 - Never hard-code generated content (site name, year, footer note, email, nav, CSP, project titles/summaries/cards). Use the tokens, includes and directives.
 - Every page `<head>` starts with `<!-- @include head -->` and adds only its own `meta description` and `title` (plus e.g. `robots` where needed). Use `{{name}}` in every `title` and `meta description`.
@@ -99,9 +99,9 @@ The `devDependencies`, their jobs, planned scripts and config files are listed i
 
 | Task | Steps |
 | --- | --- |
-| Add a project | `npm run create -- "Name" "Brief"` (creates the page in every language, other languages as `TODO`) → set `tags`, `links`, `image` in `data/projects.json` → replace the placeholder body in `de/proj/{id}.html` (German text from the user, never invented; other languages only on the user's texts) → `npm run build`. |
+| Add a project | `npm run create:project -- "Name" "Brief"` (creates the page in every language, other languages as `TODO`) → set `tags`, `links`, `image` in `data/projects.json` → replace the placeholder body in `de/proj/{id}.html` (German text from the user, never invented; other languages only on the user's texts) → `npm run build`. |
 | Remove a project | `npm run remove -- <id>` → `npm run build` → delete the now-stale files on the server. |
-| Add a ham radio page | Copy a page from `de/ham/` to `de/ham/{id}.html` → add the entry to `data/ham.json` (other languages `TODO`) → body text from the user → `npm run build`. See README → Ham Radio Pages and `radio.md`. |
+| Add a ham radio page | `npm run create:afu -- "Name" "Brief" --tags a,b` (creates the page in every language, other languages as `TODO`) → body text from the user → `npm run build`. See README → Ham Radio Pages and `radio.md`. |
 | Add a page | `npm run page -- "Title" [--title-en "…"] [--nav\|--footer]` (creates the page in every language) → replace the placeholder text (user content) → add it to the README outline → `npm run build`. Without the script: copy the head/include structure of an existing page into every language folder and add nav entries per language. |
 | Add a language | Follow README → Languages → Add a language (`site.json`, `strings.json`, nav files, `projects.json`, `wwwroot/<code>/`, `.htaccess` rule) with `TODO` placeholders; the translations come from the user. |
 | Add a firmware suite | Create `assets/firmware/<suite>/` with `manifest.json` and the binaries from the user (see README → Firmware / Web Flasher for offsets) → add `<esp-web-install-button manifest="{{root}}assets/firmware/<suite>/manifest.json">` and the vendored script tag to the project page. The CSP exception is added automatically. |
