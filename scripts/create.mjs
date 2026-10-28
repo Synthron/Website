@@ -8,7 +8,7 @@
 //        npm run create:afu -- "Page Name" "One-sentence brief" [flags]
 //   --tags a,b        comma-separated tags of the default language (from the schema vocabulary)
 //   --featured        mark the project as featured (projects only)
-//   --status <value>  one of the D10 enum values (projects: default "in Arbeit"; ham: optional)
+//   --status <value>  one of the schema status values (projects: default "in Arbeit"; ham: optional)
 //   --repo <url>      http(s) source repository URL
 //   --dry-run         validate only, write nothing
 

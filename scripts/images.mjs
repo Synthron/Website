@@ -1,6 +1,6 @@
 // Image processing (npm run images):
 // - raster images in assets/img/ -> WebP next to the original (originals untouched)
-// - assets/img/og-default.png (1200x630, D25) from favicon.svg, if missing
+// - assets/img/og-default.png (1200x630) from favicon.svg, if missing
 // - SVGs in assets/img/, assets/icons/ and favicon.svg optimised in place (svgo.config.mjs)
 // Existing outputs are never overwritten. --dry-run reports without writing.
 

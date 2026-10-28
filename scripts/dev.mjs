@@ -36,7 +36,7 @@ const TYPES = {
 };
 
 const NO_STORE = 'no-store';
-// Security headers mirrored from wwwroot/.htaccess (S60): the local preview
+// Security headers mirrored from wwwroot/.htaccess: the local preview
 // should behave like production. Flasher pages (detected from the served
 // HTML) get the style-src 'self' 'unsafe-inline' CSP exception, as in .htaccess.
 const SECURITY_HEADERS = {
@@ -191,7 +191,7 @@ if (!ok) console.error('Initial build failed; starting the dev server anyway.');
 
 server.listen(PORT, HOST, () => {
   console.log(`Dev server: http://${HOST}:${PORT}/ (live reload)`);
-  // S59: WebSerial needs a secure context; a LAN preview (non-loopback host)
+  // WebSerial needs a secure context; a LAN preview (non-loopback host)
   // is fine for layout testing, but not for the web flasher.
   if (HOST !== '127.0.0.1' && HOST !== '::1' && HOST !== 'localhost') {
     console.log('Note: non-loopback HOST — WebSerial needs a secure context, so the flasher will not work here.');

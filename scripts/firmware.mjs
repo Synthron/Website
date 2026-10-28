@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FIRMWARE_DIR = path.join(ROOT, 'wwwroot', 'assets', 'firmware');
 
-// D22 / README: bootloader offset for a plain Arduino/PlatformIO app build.
+// Bootloader offset for a plain Arduino/PlatformIO app build.
 // ESP32 and ESP32-S2 bootloaders sit at 0x1000; S3 and C3 at 0x0. Partitions
 // and the app are the same for all four.
 const CHIPS = {

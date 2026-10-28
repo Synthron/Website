@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "ham.schema.json",
   "title": "wwwroot/data/ham.json",
-  "description": "Ham radio pages listed on hamradio.html (R1, R2). See README -> Ham Radio Pages.",
+  "description": "Ham radio pages listed on hamradio.html. See README -> Ham Radio Pages.",
   "type": "array",
   "items": {
     "type": "object",
@@ -17,7 +17,7 @@
       "title": { "$ref": "projects.schema.json#/definitions/localizedText" },
       "summary": { "$ref": "projects.schema.json#/definitions/localizedText" },
       "tags": {
-        "description": "R9: fixed tag vocabulary per language; a new language needs its own list here.",
+        "description": "Fixed tag vocabulary per language; a new language needs its own list here.",
         "type": "object",
         "minProperties": 1,
         "properties": {

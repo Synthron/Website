@@ -91,7 +91,7 @@ export function formatDate(value, locale = 'en') {
 const execFileAsync = promisify(execFile);
 const isoDate = (date) => date.toISOString().slice(0, 10);
 
-// S63/D24: last git commit date (YYYY-MM-DD) of a wwwroot-relative source
+// Last git commit date (YYYY-MM-DD) of a wwwroot-relative source
 // file, used for the sitemap lastmod of non-project pages. Uncommitted changes
 // -> today; untracked files or an unavailable git -> null (lastmod omitted).
 export async function gitLastModified(rel) {

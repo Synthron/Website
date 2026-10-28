@@ -29,7 +29,7 @@ export async function checkLinks(rel, html, base = DIST) {
   }
 }
 
-// D22: the bootloader offset for a plain Arduino/PlatformIO app build differs
+// The bootloader offset for a plain Arduino/PlatformIO app build differs
 // by chip family; partitions and app offsets are the same for all supported
 // chips. Used to warn about mismatching manifest offsets.
 const CHIP_BOOTLOADER_OFFSETS = {
@@ -76,7 +76,7 @@ export async function checkFirmwareManifests() {
         if (!Number.isInteger(part.offset)) {
           fail(`${label}.offset must be an integer (is ${JSON.stringify(part.offset)})`);
         }
-        // S44/S11: warn when a known offset does not match its chip family.
+        // Warn when a known offset does not match its chip family.
         const fileName = path.posix.basename(part.path);
         const expected = FILE_OFFSETS[fileName];
         const chipExpected = expected && typeof expected === 'object' ? expected[build.chipFamily] : undefined;
@@ -90,8 +90,8 @@ export async function checkFirmwareManifests() {
   }
 }
 
-// --- Page-level diagnostics (S31-S35) ---------------------------------------
-// S31/M40: warn about project (and ham) pages without data in their language.
+// --- Page-level diagnostics -------------------------------------------------
+// Warn about project (and ham) pages without data in their language.
 // `infoByRel` maps built page paths to { lang, pagePath, isCommon } (see build.mjs);
 // `byFolder` maps a collection folder (proj, ham) to its entries by id.
 export function checkOrphanPages(infoByRel, pageIndex, byFolder) {
@@ -104,7 +104,7 @@ export function checkOrphanPages(infoByRel, pageIndex, byFolder) {
   }
 }
 
-// M41: <html lang> of a language page must be its language. Common pages are
+// <html lang> of a language page must be its language. Common pages are
 // validated against the configured languages when they are classified.
 export function checkHtmlLang(rel, html, info) {
   if (info.isCommon) return;
@@ -114,7 +114,7 @@ export function checkHtmlLang(rel, html, info) {
   }
 }
 
-// M42: every page of a non-default language needs a default-language
+// Every page of a non-default language needs a default-language
 // counterpart (fail); default-language pages without a counterpart are
 // reported (warn). Entry pages (proj/, ham/) are covered by the data warnings.
 export function checkTranslationCoverage(site, pageIndex, entryFolders = ['proj', 'ham']) {
@@ -137,7 +137,7 @@ export function checkTranslationCoverage(site, pageIndex, entryFolders = ['proj'
   }
 }
 
-// M43: links must stay inside the page's language folder. Exempt: the language
+// Links must stay inside the page's language folder. Exempt: the language
 // selector and declared cross-language entries (both carry hreflang) and
 // common pages. Links into a removed html/ folder fail once no language
 // lives there any more.
@@ -167,7 +167,7 @@ export function checkLanguageLinks(pages, infoByRel, site, pageDir) {
   }
 }
 
-// M46: flasher pages need the CSP exception in .htaccess (a <Files> or
+// Flasher pages need the CSP exception in .htaccess (a <Files> or
 // <FilesMatch> block that sets 'unsafe-inline'); the server matches by file name.
 export function checkFlasherHtaccess(pages, htaccess) {
   if (!htaccess) return;
@@ -186,7 +186,7 @@ export function checkFlasherHtaccess(pages, htaccess) {
   }
 }
 
-// S32: warn about unused images in assets/img/ and leftover placeholder text.
+// Warn about unused images in assets/img/ and leftover placeholder text.
 export async function checkUnusedAssets(pages) {
   const imgFiles = (await walk(SRC)).filter((rel) => rel.startsWith('assets/img/'));
   const pageText = pages.map(([, html]) => html).join('\n');
@@ -205,7 +205,7 @@ export function checkPlaceholderText(pages) {
   }
 }
 
-// S33: same-page and cross-page anchor targets must exist; ids must be unique.
+// Same-page and cross-page anchor targets must exist; ids must be unique.
 function collectIds(html) {
   return [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
 }
@@ -240,7 +240,7 @@ export function checkAnchors(pages) {
   }
 }
 
-// S34: HTML rule lint. Violations fail the build (D13). Runs on the rendered
+// HTML rule lint. Violations fail the build. Runs on the rendered
 // page, so project-page h1s (from @project-header) count correctly.
 export function checkHtmlRules(rel, html) {
   const h1s = (html.match(/<h1\b/g) || []).length;
@@ -259,7 +259,7 @@ export function checkHtmlRules(rel, html) {
   }
 }
 
-// S35: a page with <esp-web-install-button> must load the vendored script.
+// A page with <esp-web-install-button> must load the vendored script.
 export function checkFlasherScript(rel, html) {
   if (!/<esp-web-install-button\b/.test(html)) return;
   if (!/<script\b[^>]*src="[^"]*js\/vendor\/esp-web-tools\/install-button\.js[^"]*"/.test(html)) {

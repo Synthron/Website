@@ -23,8 +23,7 @@ const SKIP_DIRS = new Set(['partials', 'data', 'templates']);
 const SKIP_FILES = new Set(['.gitkeep']);
 // Whole sub-trees that are not copied to dist/ (checked by path prefix).
 const SKIP_PATHS = ['assets/firmware/dummy'];
-// S64: warn once per missing Open Graph image (the default PNG is a manual
-// GIMP step, D25).
+// Warn once per missing Open Graph image.
 const warnedOgImages = new Set();
 // Non-HTML files that also go through the token pass.
 const TEMPLATE_FILES = new Set(['robots.txt']);
@@ -155,9 +154,9 @@ async function build({ check = false } = {}) {
     // Cache busting before raw blocks are restored, so code samples stay as-is.
     output = applyCacheBusting(output, rel, versions);
     output = restoreRaw(output, raw);
-    // S64: canonical + Open Graph tags go into every built page except 404.html
-    // (never indexed). The default OG image is a manual GIMP step (D25); until
-    // it exists the image tag is omitted and the build warns once.
+    // Canonical + Open Graph tags go into every built page except 404.html
+    // (never indexed). Until the OG image exists the image tag is omitted and
+    // the build warns once.
     if (isHtml && rel !== '404.html') {
       const imageRel = ogImageRel(ctx.project);
       let imageUrl = '';
@@ -166,7 +165,7 @@ async function build({ check = false } = {}) {
         imageUrl = `${site.url}/${imageRel}${hash ? `?v=${hash}` : ''}`;
       } else if (!warnedOgImages.has(imageRel)) {
         warnedOgImages.add(imageRel);
-        warn(`S64: Open Graph image missing: wwwroot/${imageRel} (create the 1200×630 default PNG with the logo in GIMP — D25)`);
+        warn(`Open Graph image missing: wwwroot/${imageRel} (run \`npm run images\` to create the 1200×630 default PNG)`);
       }
       output = output.replace('</head>', renderOpenGraph(rel, output, site, imageUrl, { lang, versions: langVersions }) + '</head>');
     }
@@ -198,8 +197,8 @@ async function build({ check = false } = {}) {
   checkFlasherHtaccess(pages, await exists(htaccessFile) ? await readFile(htaccessFile, 'utf8') : '');
 
   if (site.url && !check) {
-    // S63: lastmod for non-project pages = last git commit date of the source
-    // file (D24); omitted when git is unavailable or the file is untracked.
+    // lastmod for non-project pages = last git commit date of the source
+    // file; omitted when git is unavailable or the file is untracked.
     const lastmodByRel = new Map();
     for (const [rel] of pages) {
       if (rel === '404.html' || projectByRel.has(rel)) continue;

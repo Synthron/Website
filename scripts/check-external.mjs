@@ -1,5 +1,5 @@
 // Manual HEAD checks of every external link under wwwroot/ — pages, partials,
-// the master template and the data JSONs (projects, navs). Node fetch (S67).
+// the master template and the data JSONs (projects, navs). Node fetch.
 // Never part of `build` or `check`; exit code 1 when any link fails.
 
 import { readFile, readdir } from 'node:fs/promises';

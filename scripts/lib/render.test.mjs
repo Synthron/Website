@@ -145,7 +145,7 @@ test('renderSitemap maps pages, lastmod for projects and git pages, skips 404 an
   assert.doesNotMatch(xml, /404\.html/);
 });
 
-// --- Open Graph / canonical (S64) --------------------------------------------
+// --- Open Graph / canonical --------------------------------------------------
 
 const SITE = {
   url: 'https://dm7wb.de',
@@ -195,7 +195,7 @@ test('renderOpenGraph emits hreflang alternates, x-default and the page locale',
   assert.match(og, /<meta property="og:locale:alternate" content="de_DE">/);
 });
 
-// --- multi-language renderers (M91) ------------------------------------------
+// --- multi-language renderers ------------------------------------------------
 
 test('renderLangSwitch links differently named pages via ctx.versions and keeps the other languages at their home', () => {
   const versions = [{ lang: 'de', rel: 'de/ueber-mich.html' }, { lang: 'en', rel: 'en/about.html' }];

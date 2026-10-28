@@ -14,7 +14,7 @@ for (const name of ['site', 'strings', 'nav', 'projects', 'ham', 'pages']) {
 }
 
 // Content collections: entries in data/<file>, one page per entry and language
-// at <lang>/<folder>/{id}.html (R1). `noun` is used in messages.
+// at <lang>/<folder>/{id}.html. `noun` is used in messages.
 export const COLLECTIONS = {
   projects: { file: 'projects.json', schema: 'projects', folder: 'proj', noun: 'project' },
   ham: { file: 'ham.json', schema: 'ham', folder: 'ham', noun: 'ham page' },
@@ -25,11 +25,11 @@ const FOLDERS = Object.values(COLLECTIONS).map(({ folder }) => folder);
 export const collectionOf = (pagePath) => Object.keys(COLLECTIONS)
   .find((name) => pagePath?.startsWith(`${COLLECTIONS[name].folder}/`));
 
-// D10: allowed status values, defined once in projects.schema.json. Values
+// Allowed status values, defined once in projects.schema.json. Values
 // contain spaces and capitals; slugify one before using it as a CSS class hook.
 export const STATUS_VALUES = schemas.projects.schema.items.properties.status.enum;
 
-// R9: allowed tags per language, defined once in the collection's schema.
+// Allowed tags per language, defined once in the collection's schema.
 const tagVocabulary = (name) => Object.fromEntries(Object.entries(schemas[name].schema.items.properties.tags.properties)
   .map(([code, list]) => [code, list.items.enum]));
 export const PROJECT_TAGS = tagVocabulary('projects');
@@ -284,7 +284,7 @@ export async function loadPages(site, { pageDir = langDir, langBase = (code) => 
 // complete, no TODO, page exists); use localize() for a flat per-language view.
 export const loadProjects = (site, pages, options) => loadCollection('projects', site, pages, options);
 
-// Loads data/ham.json (R1); same rules as projects, fewer required fields.
+// Loads data/ham.json; same rules as projects, fewer required fields.
 export const loadHam = (site, pages, options) => loadCollection('ham', site, pages, options);
 
 async function loadCollection(name, site, pages, { src = SRC } = {}) {

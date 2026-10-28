@@ -19,9 +19,7 @@ A minimal, responsive, personal project website built with pure HTML, CSS and Ja
 Website/
 ├── README.md              # This file: directives, outline, todos
 ├── AGENTS.md              # Instructions for AI agents / contributors (AGENTS.md)
-├── language.md            # Multi-language plan, decision record (L1–L32), work log (M-steps) and open user tasks (Phase M20)
-├── radio.md               # Ham radio section: decision record (R1–…), open questions and next steps
-├── todo.md                # Remaining work and decision record (kept outside the outline, may be deleted)
+├── todo.md                # Open work only (content, deployment, release checks)
 ├── .gitignore             # Ignore OS/editor junk, node_modules/, dist/
 ├── .gitattributes         # LF line endings for text; binary for .bin/.jpg/.png/.webp
 ├── .editorconfig          # Indentation and encoding rules
@@ -60,7 +58,7 @@ Website/
 │   └── serve.mjs          # Local preview server for dist/
 ├── dist/                  # Build output (generated, git-ignored, deploy this)
 └── wwwroot/               # Source (build input)
-    ├── index.html         # Common landing page (placeholder "UNDER CONSTRUCTION"; fallback of the root redirect)
+    ├── index.html         # Common bilingual landing page (fallback of the root redirect)
     ├── 404.html           # Common not-found page (English)
     ├── .htaccess          # Apache config for dm7wb.de (error page, headers, caching; production only)
     ├── favicon.svg        # Logo favicon (simplified trace; also the header brand icon)
@@ -74,21 +72,21 @@ Website/
     │   └── project-template.html  # Master project write-up template (all layouts)
     ├── de/                # German pages (default language)
     │   ├── index.html     # German home (intro, featured projects)
-    │   ├── projects.html  # Project listing page with tag filter
+    │   ├── projekte.html  # Project listing page with tag filter (en: projects.html)
     │   ├── hamradio.html  # Ham radio page list with tag filter (see Ham Radio Pages)
     │   ├── about.html     # About and contact page
     │   ├── impressum.html # Legal: imprint
-    │   ├── privacy.html   # Legal: privacy policy
-    │   ├── rechtliches.html # Legal: legal notes
+    │   ├── datenschutz.html # Legal: privacy policy (en: privacy.html)
+    │   ├── rechtliches.html # Legal: legal notes (en: disclaimers.html)
     │   ├── ham/           # Ham radio pages (one per data/ham.json entry, named by `id`)
-    │   │   └── t2lt-antenna.html  # Placeholder ham page (from the project template)
+    │   │   └── t2lt.html  # T2LT antenna page
     │   └── proj/          # Individual project pages (one per project, named by `id`)
     │       ├── sy317.html # Static project page (from template)
-    │       ├── nixie-clock.html  # Static project page (from template)
-    │       └── placeholder-project-*.html  # Static project pages (from template)
-    ├── en/                # English pages (placeholders marked TODO until translated)
-    │   ├── index.html, projects.html, hamradio.html, about.html
-    │   └── proj/          # Skeletons; hidden while the project data in projects.json is TODO
+    │       └── nixie-clock.html  # Static project page (from template)
+    ├── en/                # English pages (remaining placeholders marked TODO, see todo.md)
+    │   ├── index.html, projects.html, hamradio.html, about.html, impressum.html, privacy.html, disclaimers.html
+    │   ├── ham/           # English ham radio pages
+    │   └── proj/          # English project pages
     ├── css/
     │   ├── base.css       # Reset, custom properties, typography, colour schemes
     │   ├── layout.css     # Container, header, nav, footer, sections
@@ -125,10 +123,10 @@ Website/
 
 ### Languages
 
-The site is multi-language; the decisions behind it are recorded in [`language.md`](language.md) (L1–L32), including the open tasks for the owner (Phase M20).
+The site is multi-language; open translation tasks are listed in [`todo.md`](todo.md).
 
 - **Configuration** (`data/site.json`): `languages` (`code`, `name`, `locale`, `flag`), `defaultLang` (`de`, also the `x-default` and fallback language) and `footerNote` per language. The code is the folder name below `wwwroot/`.
-- **Pages**: `wwwroot/<lang>/…` per language (`de/` is complete, `en/` holds placeholders). Two common pages live at the root: the landing page `index.html` (`lang="de"`, text blocks marked with their own `lang`) and `404.html` (English). Both use `partials/header-common.html` (brand and language selector, no nav). The legal pages exist in German only.
+- **Pages**: `wwwroot/<lang>/…` per language (`de/` is complete, `en/` holds placeholders). Two common pages live at the root: the landing page `index.html` (`lang="de"`, text blocks marked with their own `lang`) and `404.html` (English). Both use `partials/header-common.html` (brand and language selector, no nav). The legal pages exist in both languages (`de/datenschutz.html` ↔ `en/privacy.html`, `de/rechtliches.html` ↔ `en/disclaimers.html`, paired in `data/pages.json`).
 - **Root redirect**: `.htaccess` (and the preview servers) redirect `/` to `/de/` or `/en/` by the first `Accept-Language` entry (`302`, `Vary: Accept-Language`); everything else gets the landing page.
 - **Page pairs**: a page pairs with the page of the same path in another language. Pages with different file names per language are listed in `data/pages.json` (`[{ "de": "ueber-mich.html", "en": "about.html" }]`; project groups must contain `"de": "proj/{id}.html"`). The language selector, the `hreflang` alternates and `npm run create:project`/`create:afu`/`page`/`remove` use these pairs; a missing counterpart leads to that language's home.
 - **Localized data**: `strings.json`, `nav.json`, `footer-nav.json` hold one block per language; in `projects.json` `title`, `summary` and `tags` are objects per language (tag lists are independent, not translations, from a fixed vocabulary per language in the schema). `status` stays a German key; its label per language is `strings.<lang>.status`.
@@ -180,7 +178,7 @@ The build also generates `dist/sitemap.xml` from every built page (excluding `40
 
 ### Tooling Packages
 
-Installed as `devDependencies` (D27); none of them ship to `dist/`. Use these packages for the listed jobs instead of hand-written code for the same purpose.
+Installed as `devDependencies`; none of them ship to `dist/`. Use these packages for the listed jobs instead of hand-written code for the same purpose.
 
 | Package | Job | Command / config | Runs on |
 | --- | --- | --- | --- |
@@ -188,7 +186,7 @@ Installed as `devDependencies` (D27); none of them ship to `dist/`. Use these pa
 | `stylelint`, `stylelint-config-standard`, `stylelint-declaration-strict-value` | CSS lint; BEM-light class names, `min-width` prefix media queries; colours only via custom properties outside `css/base.css` | `npm run lint:css`, `.stylelintrc.json` | `wwwroot/css/` |
 | `html-validate` | HTML validation and accessibility rules (lowercase `<!doctype html>`) | `npm run lint:html`, `.htmlvalidate.json` | built pages in `dist/` (sources contain `{{tokens}}`) |
 | `ajv` | JSON Schema validation of the data files | `scripts/schemas/*.schema.json`, used by `scripts/lib/data.mjs` | `wwwroot/data/*.json` |
-| `sharp` | Raster → WebP, OG default image 1200×630 from `favicon.svg` (D25) | `npm run images`, `scripts/images.mjs` | `wwwroot/assets/img/`, `wwwroot/favicon.svg` |
+| `sharp` | Raster → WebP, OG default image 1200×630 from `favicon.svg` | `npm run images`, `scripts/images.mjs` | `wwwroot/assets/img/`, `wwwroot/favicon.svg` |
 | `svgo` | SVG optimisation | `npm run images`, `svgo.config.mjs` | `wwwroot/assets/img/`, `wwwroot/assets/icons/`, `wwwroot/favicon.svg` |
 | `@playwright/test` | Browser checks: 320/768/1280 px (no horizontal overflow), console errors, external requests, cookies/storage, visible keyboard focus | `npm run test:e2e`, `playwright.config.mjs`, `scripts/e2e/*.spec.mjs` | `dist/` via `scripts/serve.mjs` (port 8010) |
 | `@lhci/cli` | Lighthouse scores (accessibility and performance ≥ 95) | `npm run lighthouse`, `lighthouserc.json` | `dist/` via `scripts/serve.mjs` (port 8020) |
@@ -432,7 +430,7 @@ Some projects ship firmware that visitors can flash to an ESP32 directly from th
 
 ### Placeholders
 
-Name, copyright and email come from `data/site.json`. Still to replace with real content: the landing page `index.html` ("UNDER CONSTRUCTION"), the intro on `de/index.html`, the text on `de/about.html`, the three `placeholder-project-*` entries in `data/projects.json` and their page bodies, and every `TODO` / `TODO_…` placeholder of the English version (see the open tasks in `language.md`, Phase M20).
+Name, copyright and email come from `data/site.json`. Content still to replace (`TODO` / `TODO_…` markers, "Placeholder paragraph" text) is listed in [`todo.md`](todo.md); the build warns about every leftover placeholder.
 
 ### Supporting Files
 
@@ -479,7 +477,7 @@ Adding a project means `npm run create:project` (entry plus pages in all languag
 
 ### Ham Radio Pages (`data/ham.json`)
 
-A second collection next to the projects: `wwwroot/<lang>/hamradio.html` lists the ham radio pages (antennas, transceivers, contests, …) as a compact list with a tag filter instead of cards. Decisions and open steps: [`radio.md`](radio.md).
+A second collection next to the projects: `wwwroot/<lang>/hamradio.html` lists the ham radio pages (antennas, transceivers, contests, …) as a compact list with a tag filter instead of cards.
 
 ```json
 {
@@ -492,10 +490,10 @@ A second collection next to the projects: `wwwroot/<lang>/hamradio.html` lists t
 ```
 
 - Required: `id`, `title`, `summary`, `tags`, `date` (same rules as in `projects.json`, schema [`scripts/schemas/ham.schema.json`](scripts/schemas/ham.schema.json)). Optional: `status`, `links`, `draft`. No `image` and no `featured` (the list shows no images).
-- Tags come from a fixed vocabulary per language (R9), defined in `ham.schema.json` (`tags.properties.<lang>.items.enum`): `de` = `antenne`, `transceiver`, `contest`, `funkbetrieb`, `messtechnik`, `diy`; `en` = `antenna`, `transceiver`, `contest`, `operating`, `measurement`, `diy`. The build and `npm run create:afu -- … --tags` reject other tags; a new tag or language is added to that list first.
+- Tags come from a fixed vocabulary per language, defined in `ham.schema.json` (`tags.properties.<lang>.items.enum`): `de` = `antenne`, `transceiver`, `contest`, `funkbetrieb`, `messtechnik`, `diy`; `en` = `antenna`, `transceiver`, `contest`, `operating`, `measurement`, `diy`. The build and `npm run create:afu -- … --tags` reject other tags; a new tag or language is added to that list first.
 - Pages live at `<lang>/ham/{id}.html` (or a mapped name from `data/pages.json`; a group with `ham/` pages may only contain `ham/` pages). The default-language page is required; a `TODO` or missing translation hides the entry in that language, like projects.
 - A ham page uses the same structure as a project page (`{{projectTitle}}`, `{{projectSummary}}`, `@project-header`, layouts from the project template) with the back link `<a href="{{langRoot}}hamradio.html">{{t:backToHam}}</a>`.
-- Ham entries do not appear on `projects.html`, the home page (R10) or in the project tag filter.
+- Ham entries do not appear on `projects.html`, the home page or in the project tag filter.
 - Adding a ham page: `npm run create:afu -- "Name" "Brief" --tags a,b` (entry plus pages in all languages), replace the placeholder body, run `npm run build`.
 
 ### Other Data Files
@@ -508,103 +506,18 @@ A second collection next to the projects: `wwwroot/<lang>/hamradio.html` lists t
 | `data/pages.json` | Groups of the same page under different file names per language, see [Languages](#languages). `[]` when all pages pair by identical path. |
 | `data/site.json` | See [Site Config](#site-config-datasitejson). |
 
-## Todo List
+## Open Work
 
-### Phase 0 — Setup
-- [x] Create `index.html` with semantic skeleton (`header`, `main`, `footer`)
-- [x] Add `.editorconfig` and `.gitignore`
-- [x] Add `favicon.svg`, `robots.txt`, `404.html`
-- [x] Create `assets/img/` and `assets/icons/` folders
-
-### Phase 1 — Styling Foundation
-- [x] `css/base.css`: CSS custom properties (colours, spacing scale, type scale), reset, system font stack
-- [x] `css/layout.css`: container, header, footer, main grid
-- [x] `css/components.css`: project card, tag, link, button styles
-- [x] `css/responsive.css`: breakpoints (≥ 640px, ≥ 960px), fluid typography
-- [x] Light and dark colour scheme via `prefers-color-scheme`
-
-### Phase 2 — Content & Structure
-- [x] Home page: intro, featured projects (placeholder text)
-- [x] `de/projects.html`: full project listing
-- ~~[x] `html/project.html`: detail template (driven by `?id=` query parameter)~~ — obsolete; replaced by static `<lang>/proj/{id}.html` pages
-- [x] `de/about.html`: about and contact (contact via plain `mailto:` link)
-- [x] Shared header/footer markup, documented how to keep it consistent across pages
-- [x] `templates/project-template.html`: master project write-up template with all layout patterns
-- [ ] Replace placeholder content (intro, about text, project entries and pages)
-
-### Phase 3 — Data & Scripts
-- [x] Create `data/projects.json` with schema above (placeholder entries)
-- [x] `js/projects.js`: tag filter (originally fetched and rendered cards; now done at build time)
-- [x] `data/site.json`: single source of truth for header/footer content (name, copyright, email)
-- [x] `js/nav.js`: accessible mobile menu (button with `aria-expanded`, Escape to close)
-- [x] `js/main.js`: bootstrap that initialises modules per page
-- [x] Filtering by tag (no persistence, no cookies)
-- [x] Web flasher for ESP32 firmware (vendored ESP Web Tools, `assets/firmware/<suite>/manifest.json`, `nixie-clock.html`)
-
-### Phase 3b — npm Build
-- [x] `package.json` (no dependencies) with `build`, `clean`, `serve`, `start` scripts
-- [x] `scripts/build.mjs`: wwwroot/ → dist/, includes, tokens, directives, data validation, link check
-- [x] `scripts/serve.mjs`: local preview of `dist/`
-- [x] Navbar generated from `data/nav.json` (`@nav` directive)
-- [x] Footer nav generated from `data/footer-nav.json` (`@footer-nav` directive)
-- [x] Shared header/footer as partials; site.json content generated at build time
-- [x] Project lists, project headers and tag filter pre-rendered; runtime `fetch` removed
-- [x] `npm run create:project`: scaffold a new project page from the template and register it in `projects.json`
-- [x] Build logic split into `scripts/lib/` modules; `build.mjs` is a thin CLI
-- [x] `@raw` … `@endraw` escape block for literal `{{…}}` / `<!-- @… -->` in code samples
-- [x] Shared `<head>` partial with `{{csp}}` (flasher pages get the inline-style exception automatically)
-
-### Phase 4 — Quality
-Automated by the Phase 6 tooling once it exists (`test:e2e`, `lint:html`, `lint:css`, `lighthouse`).
-
-- [x] Test layout at 320px, 768px, 1280px widths (`npm run test:e2e`: no horizontal overflow)
-- [ ] Keyboard navigation and focus styles verified
-- [ ] Validate HTML (W3C validator) and CSS
-- [ ] Lighthouse check: accessibility and performance ≥ 95
-- [x] Verify no cookies are set and no third-party requests are made (`npm run test:e2e`)
-
-### Phase 5 — Release
-- [x] Choose hosting (done: Apache at `dm7wb.de`, manual SFTP upload — see [Deployment](#deployment))
-- [x] Add `sitemap.xml` (done: generated by the build)
-- [x] Add meta descriptions / Open Graph tags (generated by the build — see [Open Graph and Canonical Tags](#open-graph-and-canonical-tags))
-- [x] Write a short deployment note in this README (deploy the contents of `dist/`)
-
-### Phase 6 — Tooling Integration
-Wires the packages from [Tooling Packages](#tooling-packages) into the workflow. One step per change; add every new file to the outline.
-
-- [x] `npm run lint:js`: `eslint.config.js` (flat config, `@eslint/js` recommended, `globals.browser` for `wwwroot/js/`, `globals.node` for `scripts/`; ignore `wwwroot/js/vendor/`, `dist/`)
-- [x] `npm run lint:css`: `.stylelintrc.json` (`stylelint-config-standard`; `stylelint-declaration-strict-value` for colours outside `css/base.css`; rules matched to the existing CSS conventions)
-- [x] `npm run lint:html`: `.htmlvalidate.json`, validates `dist/**/*.html` after a build; overlap with `checkHtmlRules` documented
-- [x] `npm run lint` runs all three; `.githooks/pre-commit` runs it after `npm run check`
-- [x] JSON schemas for `data/*.json` in `scripts/schemas/`, validated with `ajv` in `scripts/lib/data.mjs`; `$schema` references for editor support (combine with the localized data model in `language.md`, Phase M1)
-- [x] `npm run images`: `scripts/images.mjs` — `sharp` writes WebP next to raster originals and creates `assets/img/og-default.png` (1200×630, D25) from `favicon.svg`; `svgo` (`svgo.config.mjs`) optimises SVGs in `assets/img/`, `assets/icons/` and `favicon.svg`
-- [x] `npm run test:e2e`: `playwright.config.mjs` + `scripts/e2e/*.spec.mjs` against `npm run serve`: every page at 320/768/1280 px, no console errors, no external requests, no cookies/storage, visible keyboard focus
-- [x] `npm run lighthouse`: `lighthouserc.json` with local URLs, assertions ≥ 0.95 for accessibility and performance, `upload.target: "filesystem"`
-- [x] `.gitignore`: `test-results/`, `playwright-report/`, `.lighthouseci/`
-- [x] `.vscode/extensions.json`: recommend the ESLint, Stylelint and html-validate extensions
-
-### Phase 7 — Multi-language
-Plan, decisions and work log: [`language.md`](language.md).
-
-- [x] Localized data model, loaders and schemas (`site`, `strings`, `nav`, `projects`, `pages`)
-- [x] Language-aware pipeline, renderers, language selector, hreflang alternates and checks
-- [x] Content moved to `de/`, English skeletons in `en/`, landing page and 404 as common pages
-- [x] Scaffolding and preview scripts for all languages; root redirect and flasher CSP in `.htaccess`
-- [x] Unit tests for loaders, renderers, pipeline and checks
-- [ ] English texts and the final landing page (owner, `language.md` Phase M20)
-- [ ] Verification in the browser and on the server (`language.md`, Phase M11)
-
-### Phase 8 — Ham Radio Section
-Plan, decisions and open steps: [`radio.md`](radio.md).
-
-- [x] `data/ham.json` + schema, loader, `<lang>/ham/` pages, `@ham-list`, `@tag-filter … from=ham`, list styles, tests
-- [x] Scaffolding: `npm run create:afu` (ham pages), `npm run create:project` (projects)
-- [x] Removal: `npm run remove:afu` (ham pages), `npm run remove:project` (projects)
-- [ ] Remaining steps in `radio.md`
+Open tasks are tracked in [`todo.md`](todo.md) (open items only; finished items are removed).
 
 ## Decisions
 
-- **Hosting**: Apache at `dm7wb.de`, manual SFTP upload of `dist/` — see [Deployment](#deployment).
-- **npm packages**: allowed for the build and tooling; the built site stays free of tracking, cookies and external services (D27).
-- **Tooling integration**: the installed packages are wired in via npm scripts and config files (see [Tooling Packages](#tooling-packages) and Phase 6); approved 2026-10-27.
-- **Languages**: German (default) and English; one folder per language (`de/`, `en/`) plus a common landing page and 404 at the root; the root redirects by `Accept-Language` (`302`) and falls back to the landing page; tags, titles and summaries are defined per language; `status` keeps German keys with labels per language; missing translations hide a project in that language and warn; legal pages stay German for now; no redirects from the old `/html/` URLs; all translations come from the owner. Full record: [`language.md`](language.md).
+Standing decisions that guide further work.
+
+- **Hosting**: Apache at `dm7wb.de`, manual SFTP upload of `dist/`; Cloudflare is DNS only (no proxy, so the HTTPS redirect in `.htaccess` cannot loop); no CI — see [Deployment](#deployment).
+- **npm packages**: allowed for the build and tooling; the built site stays free of tracking, cookies and external services.
+- **Tooling integration**: the installed packages are wired in via npm scripts and config files (see [Tooling Packages](#tooling-packages)); approved 2026-10-27.
+- **Build checks**: HTML rule violations (one `h1`, `<html lang>`, `alt`, no inline scripts or `style` attributes) fail the build instead of warning.
+- **Colour scheme**: follows `prefers-color-scheme`; no dark-mode toggle.
+- **Languages**: German (default) and English; one folder per language (`de/`, `en/`) plus a common landing page and 404 at the root; the root redirects by `Accept-Language` (`302`) and falls back to the landing page; tags, titles and summaries are defined per language; `status` keeps German keys with labels per language; missing translations hide a project in that language and warn; no redirects from the old `/html/` URLs; all translations come from the owner.
+- **Ham radio section**: own data file `data/ham.json` with pages in `<lang>/ham/`; listed only on `hamradio.html` (not on `projects.html` or the home page); fixed tag vocabulary per language in the schema.

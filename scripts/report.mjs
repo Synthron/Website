@@ -1,4 +1,4 @@
-// dist/ report (S65): total size, largest files, page sizes per language,
+// dist/ report: total size, largest files, page sizes per language,
 // raster images not converted to WebP and unused assets in assets/img/.
 // Read-only; run after `npm run build`. Node built-ins only.
 

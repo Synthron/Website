@@ -35,7 +35,7 @@
         "additionalProperties": false
       },
       "status": {
-        "description": "D10: German status values; slugify before using one as a CSS hook.",
+        "description": "German status values; slugify before using one as a CSS hook.",
         "enum": ["in Arbeit", "fertig", "pausiert", "veraltet", "Konzept", "abgebrochen"]
       },
       "date": {

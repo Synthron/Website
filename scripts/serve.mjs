@@ -1,8 +1,8 @@
 // Minimal static file server for dist/ (local preview only).
 // Sends Cache-Control: no-store so CSS/JS changes are never stale while
 // developing; mirrors Apache by redirecting directory requests to add a "/".
-// S60: mirrors the production security headers (.htaccess) so local preview
-// behaves like dm7wb.de; S59: HOST can bind to a LAN address for phone tests.
+// Mirrors the production security headers (.htaccess) so local preview
+// behaves like dm7wb.de; HOST can bind to a LAN address for phone tests.
 
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
@@ -32,7 +32,7 @@ const TYPES = {
 
 const NO_STORE = 'no-store';
 
-// Security headers mirrored from wwwroot/.htaccess (S60). The CSP header adds
+// Security headers mirrored from wwwroot/.htaccess. The CSP header adds
 // frame-ancestors 'none', which a <meta> CSP ignores; HSTS is only honored
 // over HTTPS, so it has no effect on a plain http preview.
 const SECURITY_HEADERS = {
@@ -108,7 +108,7 @@ createServer(async (req, res) => {
   }
 }).listen(PORT, HOST, () => {
   console.log(`Serving dist/ at http://${HOST}:${PORT}/`);
-  // S59: WebSerial needs a secure context (HTTPS or localhost); a LAN preview
+  // WebSerial needs a secure context (HTTPS or localhost); a LAN preview
   // is fine for layout testing, but the web flasher will not work there.
   if (HOST !== '127.0.0.1' && HOST !== '::1' && HOST !== 'localhost') {
     console.log('Note: non-loopback HOST — WebSerial needs a secure context, so the flasher will not work here.');

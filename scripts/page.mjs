@@ -1,4 +1,4 @@
-// Secondary page scaffold (D21): creates a minimal page in every language
+// Secondary page scaffold: creates a minimal page in every language
 // folder with the shared head, header and footer, and optionally adds nav
 // entries. Languages other than the default get TODO_<title> placeholders.
 // Node built-ins only.
@@ -19,7 +19,7 @@ const FOOTER_NAV_FILE = path.join(DATA_DIR, 'footer-nav.json');
 
 const exists = (file) => access(file).then(() => true, () => false);
 
-// D21 minimal template: shared head (CSP, title/description with {{name}},
+// Minimal template: shared head (CSP, title/description with {{name}},
 // stylesheets, main.js), header, one h1, one prose section, footer.
 function template(title, description, text) {
   return [

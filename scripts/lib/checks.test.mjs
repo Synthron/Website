@@ -56,7 +56,7 @@ test('checkLinks ignores external and same-page schemes', async () => {
   assert.deepEqual(errors, []);
 });
 
-// --- language-aware checks (M4) ----------------------------------------------
+// --- language-aware checks ---------------------------------------------------
 
 const site = { defaultLang: 'de', languages: [{ code: 'de' }, { code: 'en' }] };
 const pageDir = (code) => code;

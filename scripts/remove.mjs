@@ -1,7 +1,7 @@
 // Removes a project (remove:project) or ham page (remove:afu, --ham): deletes
 // its entry from data/projects.json / data/ham.json, its page in every
 // language folder (<lang>/proj|ham/{id}.html or the mapped name from
-// data/pages.json) and its pages.json group (S66). Asks for confirmation
+// data/pages.json) and its pages.json group. Asks for confirmation
 // unless --yes. Node built-ins only.
 
 import { readFile, rm } from 'node:fs/promises';

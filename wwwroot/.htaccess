@@ -11,7 +11,7 @@ Options -Indexes
 DirectoryIndex index.html
 
 # HTTPS erzwingen — WebSerial braucht einen sicheren Kontext. Unkritisch, weil
-# Cloudflare nur DNS ist (D18); bei aktivem Proxy mit SSL-Modus "Flexible"
+# Cloudflare nur DNS ist; bei aktivem Proxy mit SSL-Modus "Flexible"
 # würde diese Weiterleitung loopen.
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -65,7 +65,7 @@ AddDefaultCharset UTF-8
     Header always set Content-Security-Policy "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
     # Kamera/Mikrofon/Standort deaktivieren; serial für die Web-Flasher-Seiten erlauben.
     Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), serial=(self)"
-    # HTTPS läuft auf dm7wb.de und Cloudflare ist nur DNS (D18). Kurzes max-age
+    # HTTPS läuft auf dm7wb.de und Cloudflare ist nur DNS. Kurzes max-age
     # zuerst; später erhöhen, sobald der Header live bestätigt ist.
     Header always set Strict-Transport-Security "max-age=86400"
 

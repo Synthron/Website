@@ -1,5 +1,5 @@
 // HTML/XML renderers for directives and generated files. All data is escaped.
-// UI labels come from data/strings.json (S40); dates use the site language.
+// UI labels come from data/strings.json; dates use the page language.
 
 import { esc, formatDate, safeExternalUrl } from './util.mjs';
 
@@ -37,7 +37,7 @@ export function renderLangSwitch(ctx, site, strings) {
 }
 
 // The label is translated; data-status keeps the German key for CSS hooks.
-// Ham entries may have no status (R2); then only the date is shown.
+// Ham entries may have no status; then only the date is shown.
 export function renderMeta(project, strings) {
   const status = project.status === undefined ? '' : `
   <span class="status" data-status="${esc(project.status)}">${esc(strings.status?.[project.status] ?? project.status)}</span>`;
@@ -95,7 +95,7 @@ export function renderCard(project, ctx, level, strings) {
 </article>`;
 }
 
-// S36: draft projects are built but excluded from lists, the tag filter and
+// Draft projects are built but excluded from lists, the tag filter and
 // the sitemap. Cards for drafts would leak in-browser otherwise.
 const published = (projects) => projects.filter((project) => project.draft !== true);
 
@@ -112,7 +112,7 @@ export function renderProjectList(projects, args, ctx, strings) {
   return `<div class="project-grid"${id}>\n${inner}\n</div>`;
 }
 
-// R3: compact list for the ham radio pages (title link, meta, summary, tags),
+// Compact list for the ham radio pages (title link, meta, summary, tags),
 // newest first. Items carry data-tags for js/projects.js like the cards.
 export function renderEntryList(entries, args, ctx, strings) {
   const options = Object.fromEntries(args.map((arg) => arg.split('=')));
@@ -146,12 +146,12 @@ ${buttons.join('\n')}
 <p class="filter-status" role="status" data-filter-status="${esc(listId)}" data-count-singular="${esc(strings.countSingular)}" data-count-plural="${esc(strings.countPlural)}" data-with-tag="${esc(strings.withTag)}" data-quote-open="${esc(strings.quoteOpen)}" data-quote-close="${esc(strings.quoteClose)}" data-lang="${esc(lang)}">${esc(format(visible.length))}</p>`;
 }
 
-// S64: project pages use their raster project image for Open Graph; everything
-// else (and projects whose image is an SVG) falls back to the OG default PNG
-// (D25). The build warns until that file exists.
+// Project pages use their raster project image for Open Graph; everything
+// else (and projects whose image is an SVG) falls back to the OG default PNG.
+// The build warns until that file exists.
 export const ogImageRel = (project) => (project && /\.(png|jpe?g|webp)$/i.test(project.image) ? project.image : 'assets/img/og-default.png');
 
-// S64: canonical + Open Graph tags. Title and description are read back from
+// Canonical + Open Graph tags. Title and description are read back from
 // the rendered page so they match what the page shows; og:image (added by the
 // build once the file exists) is cache-busted like any local asset.
 // `versions` lists every available language version of the page ({ lang, rel },
@@ -194,7 +194,7 @@ export function renderSitemap(pages, baseUrl, projectByRel, lastmodByRel = new M
     if (project?.draft) continue;
     const loc = rel === 'index.html' ? `${baseUrl}/` : `${baseUrl}/${rel}`;
     const lines = [`    <loc>${loc}</loc>`];
-    // S63/D24: project pages use their date; other pages use the last git
+    // Project pages use their date; other pages use the last git
     // commit date of the source file (computed by the build, omitted when git
     // is unavailable or the file is untracked).
     const lastmod = project?.date ? `${project.date}-01` : lastmodByRel.get(rel);
