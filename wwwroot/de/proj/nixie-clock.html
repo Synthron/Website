@@ -20,15 +20,52 @@
           <!-- 1. Einführung -------------------------------------- -->
           <section class="project-section" aria-labelledby="overview">
             <h2 id="overview">Einführung</h2>
+            <figure class="figure figure--full">
+              <img src="{{root}}assets/img/nixie_face.jpg" alt="Nixie-Uhr" width="1600" height="1086" loading="lazy" decoding="async">
+              <figcaption>Ansicht der Nixie-Uhr</figcaption>
+            </figure>
             <div class="prose">
-              <p>Placeholder paragraph. This is the opening section of the project write-up. Describe what the project does, the problem it solves, and why it exists. Keep paragraphs short and let the text breathe.</p>
-              <p>Placeholder paragraph. You can include <a href="https://example.com">inline links</a>, <strong>strong emphasis</strong>, <em>emphasis</em>, and <code>inline code</code> anywhere in the text.</p>
+              <p>ich wollte schon seit einiger Zeit eine Nixie-Uhr bauen. Das Problem dabei war, dass die Röhren teilweise sehr teuer sind und dadurch die Hemmschwelle für das Projekt eine Zeit lang sehr hoch war.<br>
+              Als aber ein Freund von mir, <a href="https://www.dl5tz.de">Marcus DL5TZ</a>, mir Z5600M Nixie-Röhren angeboten hat mit der Bedingung, ihm eine Uhr damit zu bauen, konnte ich nicht widerstehen.</p>
+              <p>Also haben wir uns zusammengesetzt und einige Spezifikationen ausgearbeitet und Ideen gebrainstormt.<br>
+              Dabei hat sich schnell realisiert, dass möglichst viele bedrahtete THT-Bauteile verwendet werden sollen, um ein nostalgisches Aussehen zu erreichen. Meine Idee, nur generische Bauteile und Techniken zu benutzen, stieß ebenfalls auf Zustimmung. Das hat die Realisierung zwar etwas komplizierter gemacht, allerdings können so Reparaturen mit wenig Aufwand und Kosten durchgeführt werden.</p>
             </div>
           </section>
 
           <!-- 2. Hardware ----------------------------------- -->
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware und Elektronik</h2>
+            <figure class="figure figure--full">
+              <img src="{{root}}assets/img/nixie_pcbs.jpg" alt="Nixie Uhr Platinen" width="1600" height="1086" loading="lazy" decoding="async">
+              <figcaption>Platinen der Nixie-Uhr</figcaption>
+            </figure>
+            <div class="prose">
+              <p>Und so hat sich nach und nach der Schaltplan entwickelt. Hier ein schneller Abriss der einzelnen Schaltungsteile.</p>
+              <h3>Controller</h3>
+              <p>Als Controller dient ein ESP32-WROOM-Modul. Die Entscheidung war schnell gefallen, da er einfach zu programmieren ist und außerdem über WLAN verfügt. Dadurch kann die Uhrzeit über NTP synchronisiert werden. Außerdem hat er mehr als genug Rechenleistung um neben der Ansteuerung noch weitere Aufgaben mit Leichtigkeit zu übernehmen, unter Anderem die Ansteuerung einer DS1302 RTC mit Goldcap-Puffer. Die externe <i>Real Time Clock</i> speichert die Zeit und zählt auch bei Stromausfall weiter. So können Ausschaltzeiten von bis zu einer Woche überbrückt werden, ohne die Zeitinformationen zu verlieren.</p>
+              <h3>Spannungsversorgung</h3>
+              <p>Die Spannungsversorgung selbst ist mehrstufig aufgebaut. DC-Versorgung geschieht per 12V Netzteil. Ein <a href="{{langRoot}}proj/sy317.html">Schaltregler</a> mit nachgeschaltetem LDO erzeugt die 5V und 3V3 Spannung für ESP und Schieberegister.<br>
+              Ein MC34063 Schaltregler-IC erzeugt aus den 12V ca. 90V. Um die notwendigen 150V für die Röhren zu erreichen ohne dabei einen schlechten Tastgrad zu erhalten, wird diese 90V-Spannung zunächst gepuffert und dann über eine Ladungspumpe auf ca. 180V verdoppelt.</p>
+              <h3>Röhren-Ansteuerung</h3>
+              <p>Mit Marcus habe ich mich lange Zeit beraten, wie wir die Röhren ansteuern sollen. Von HV2255-Nixie-ICs bis hin zu Multiplex-Ansteuerungen war alles dabei. Letzten Endes haben wir uns dazu entschieden, die ineffizienteste Lösung von allen zu benutzen: <b>Schieberegister</b>.<br>
+              Fpr 6 Röhren plus 4 Glimmlampen als Trennpunkte kommen so 64 Segmente zusammen. Passenderweise sind das exakt 8 8-bit Schieberegister des Typs 74HC595. Mit MPSA-42 Hochspannungstransistoren als Low-Side-Schalter für die Segmente entsteht so eine primitive aber effektive Ansteuerung. Der Vorteil: Jede Röhre kann so gedimmt werden, ohne dass die Röhren gemultiplext werden müssen. Dies beugt Flimmern und Flackern vor. Außerdem hält es die Schaltung vergleichsweise einfach, wenn auch dezent platzbrauchend.</p>
+              <h3>Inputs und Outputs</h3>
+              <p>Natürlich habe ich auch einige Inputs und Outputs vorgesehen. Acht Inputs sind an einem DIP-Schalter angelegt um die Bootstrap-Konfiguration vorzunehmen. So können einzelne Funktionen nach Belieben zu- oder abgeschaltet werden. Ferner sind vier Taster zur Menüsteuerung und Bedienung vorhanden, sowie vier freie Testpunkte.<br>
+              Ferner gibt es acht Outputs, die aktuell nicht implementiert sind. Hier können später Signale ausgegeben werden, um weitere Peripherien zu steuern.</p>
+              <p>Außderdem sind zwei ADC-Kanäle vorhanden für Temperatursensoren (z.B. PT1000) oder LDR-Widerstände. Die Sensoren (aktuell keine Kalibriermöglichkeit) können die Temperatur mit den Nixies anzeigen und der LDR kann zur automatischen Helligkeitsanpassung genutzt werden. Letztere Funktion funktioniert aktuell nur sehr rudimentär.</p>
+              <p>Abschließend ist noch ein DCF77-Eingang vorgesehen. Damit kann ein DCF77-Modul zur Synchronisierung genutzt werden. Diese Funktion ist allerdings noch nicht implementiert, da ich bisher kein DCF77-Modul sauber genug zum Laufen gebracht habe um das zu testen.</p>
+            </div>
+          </section>
 
-          <!-- 3. Features -------------------------------- -->
+          <!-- 3. Software -------------------------------- -->
+                     <section class="project-section" aria-labelledby="software">
+            <h2 id="software">Software</h2>
+            <div class="prose">
+              <p>Die Software für die Nixie-Uhr ist mit Visual Studio Code und PlatformIO entwickelt worden. Das gesamte Projekt ist im github (link siehe oben) verfügbar. Es benutzt fast keine fertigen Bibliotheken, da der Code selbst vergleichsweise einfach gestrickt ist.</p>
+            </div>
+          </section>
+
+          <!-- 4. Features -------------------------------- -->
 
           <section class="project-section" aria-labelledby="features">
             <h2 id="features">Features</h2>

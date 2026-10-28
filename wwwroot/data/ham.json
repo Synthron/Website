@@ -1,13 +1,13 @@
 [
   {
-    "id": "t2lt",
+    "id": "moxon-2m-70cm",
     "title": {
-      "de": "T2LT 2m/70cm Antenne",
-      "en": "T2LT 2m/70cm Antenna"
+      "de": "Moxon 2m/70cm",
+      "en": "Moxon 2m/70cm"
     },
     "summary": {
-      "de": "T2LT Dualband 7m/70cm Antenne aus dem Baumarkt",
-      "en": "T2LT dual-band 2m/70cm antenna from the hardware store"
+      "de": "Selbstbau-Moxon Antenne für 2m und 70cm für unter 10€ aus dem Baumarkt",
+      "en": "Self-built Moxon antenna for 2m and 70cm for under 10€ from the hardware store"
     },
     "tags": {
       "de": ["antenne", "diy"],

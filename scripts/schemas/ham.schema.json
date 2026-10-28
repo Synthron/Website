@@ -24,12 +24,12 @@
           "de": {
             "type": "array",
             "uniqueItems": true,
-            "items": { "enum": ["antenne", "transceiver", "contest", "funkbetrieb", "messtechnik", "diy"] }
+            "items": { "enum": ["antenne", "transceiver", "contest", "diy", "modifikation"] }
           },
           "en": {
             "type": "array",
             "uniqueItems": true,
-            "items": { "enum": ["antenna", "transceiver", "contest", "operating", "measurement", "diy"] }
+            "items": { "enum": ["antenna", "transceiver", "contest", "diy", "modification"] }
           }
         },
         "additionalProperties": false
