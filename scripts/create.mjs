@@ -25,8 +25,11 @@ const KINDS = {
   project: { script: 'create:project', noun: 'project', folder: 'proj', file: path.join(ROOT, 'wwwroot', 'data', 'projects.json'), schema: 'projects.schema.json', tags: PROJECT_TAGS },
   ham: { script: 'create:afu', noun: 'ham page', folder: 'ham', file: path.join(ROOT, 'wwwroot', 'data', 'ham.json'), schema: 'ham.schema.json', tags: HAM_TAGS },
 };
-const PROJECT_BACK_LINK = '<a href="{{langRoot}}projects.html">{{t:backToProjects}}</a>';
-const HAM_BACK_LINK = '<a href="{{langRoot}}hamradio.html">{{t:backToHam}}</a>';
+// The listing page name is language-dependent (de: projekte.html /
+// amateurfunk.html, en: projects.html / hamradio.html), so the back link
+// resolves it per language at build time via data/pages.json.
+const PROJECT_BACK_LINK = '<a href="{{langRoot}}{{projectsPage}}">{{t:backToProjects}}</a>';
+const HAM_BACK_LINK = '<a href="{{langRoot}}{{hamPage}}">{{t:backToHam}}</a>';
 
 // Same id/tag rule the build enforces in scripts/build.mjs.
 const ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -156,7 +159,7 @@ async function main() {
 
   let template = (await readFile(TEMPLATE, 'utf8')).replace(MASTER_COMMENT, '');
   if (options.ham) {
-    if (!template.includes(PROJECT_BACK_LINK)) throw new Error('project-template.html: back link to projects.html not found');
+    if (!template.includes(PROJECT_BACK_LINK)) throw new Error('project-template.html: project back link not found');
     template = template.replace(PROJECT_BACK_LINK, HAM_BACK_LINK);
   }
   for (const [code, page] of pageFiles) {

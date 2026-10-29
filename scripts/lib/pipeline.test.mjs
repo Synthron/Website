@@ -52,6 +52,13 @@ test('applyTokens fails on an unknown or non-text UI string', () => {
   errors.length = 0;
 });
 
+test('applyTokens resolves {{projectsPage}} and {{hamPage}} per page language via pages.json', () => {
+  const pages = { pageName: (file, code) => ({ 'projekte.html': { de: 'projekte.html', en: 'projects.html' }, 'amateurfunk.html': { de: 'amateurfunk.html', en: 'hamradio.html' } }[file]?.[code] ?? file) };
+  const ctx = { rel: 'de/proj/a.html', site, lang: 'de', langRoot: '../', root: '../', strings: {}, pages };
+  assert.equal(applyTokens('{{projectsPage}}|{{hamPage}}', ctx), 'projekte.html|amateurfunk.html');
+  assert.equal(applyTokens('{{projectsPage}}|{{hamPage}}', { ...ctx, rel: 'en/proj/a.html', lang: 'en' }), 'projects.html|hamradio.html');
+});
+
 test('applyDirectives renders no @nav on common pages', () => {
   const ctx = { rel: 'index.html', lang: 'de', root: '', isCommon: true, site, pages: { base: () => '' } };
   const nav = [{ label: 'Start', href: 'index.html', external: false }];

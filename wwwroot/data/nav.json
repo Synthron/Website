@@ -3,7 +3,7 @@
     { "label": "Start", "href": "index.html" },
     { "label": "Über mich", "href": "about.html" },
     { "label": "Projekte", "href": "projekte.html" },
-    { "label": "Amateurfunk", "href": "hamradio.html" }
+    { "label": "Amateurfunk", "href": "amateurfunk.html" }
   ],
   "en": [
     { "label": "Home", "href": "index.html" },

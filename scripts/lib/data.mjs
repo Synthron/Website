@@ -278,6 +278,11 @@ export async function loadPages(site, { pageDir = langDir, langBase = (code) => 
       const source = groupOf.get(`${code}:${file}`)?.paths[defaultLang] ?? file;
       return path.posix.basename(source, '.html');
     },
+    // File name of the page that is `file` in the default language: the mapped
+    // name in `code` from data/pages.json, else `file` itself (identical path).
+    pageName(file, code) {
+      return groupOf.get(`${defaultLang}:${file}`)?.paths[code] ?? file;
+    },
   };
 }
 

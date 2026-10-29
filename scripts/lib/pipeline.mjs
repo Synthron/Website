@@ -70,6 +70,10 @@ export function applyTokens(text, ctx) {
       }
       return esc(value);
     }
+    // Listing page names per language, resolved from data/pages.json (groups
+    // keyed by the default-language file name). Used by the back link on
+    // project and ham pages so the target is never hard-coded per language.
+    const listing = (file) => ctx.pages?.pageName?.(file, ctx.lang) ?? file;
     const values = {
       lang: ctx.lang,
       langRoot: ctx.langRoot,
@@ -83,6 +87,8 @@ export function applyTokens(text, ctx) {
       csp: ctx.flasher ? CSP_FLASHER : CSP,
       projectTitle: ctx.project?.title,
       projectSummary: ctx.project?.summary,
+      projectsPage: listing('projekte.html'),
+      hamPage: listing('amateurfunk.html'),
     };
     if (values[key] === undefined) {
       fail(`${ref(ctx.rel, text, offset)}: unknown token ${match}`);

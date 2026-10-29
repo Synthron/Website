@@ -143,6 +143,10 @@ test('loadPages pairs identical paths and mapped names and hides claimed paths f
   assert.equal(pages.projectPage('de', 'a'), 'proj/a.html');
   assert.equal(pages.projectPage('en', 'b'), null);
   assert.equal(pages.projectId('en', 'proj/a-en.html'), 'a');
+  // pageName resolves the mapped name per language; identical paths unmapped.
+  assert.equal(pages.pageName('ueber-mich.html', 'en'), 'about.html');
+  assert.equal(pages.pageName('ueber-mich.html', 'de'), 'ueber-mich.html');
+  assert.equal(pages.pageName('about.html', 'en'), 'about.html');
 });
 
 test('loadPages reports unknown languages, missing files, duplicates and proj/ group mistakes', async () => {
