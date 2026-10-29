@@ -17,15 +17,47 @@
 
         <div class="project-content">
 
-          <!-- 1. PURE TEXT -------------------------------------- -->
+          <!-- 1. Übersicht https://www.qsl.net/dk7zb/start1.htm -------------------------------------- -->
           <section class="project-section" aria-labelledby="overview">
             <h2 id="overview">Overview</h2>
             <figure class="figure figure--full">
-              <img src="{{root}}assets/img/moxon.jpg" alt="Moxon Antenna" width="1600" height="1086" loading="lazy" decoding="async">
-              <figcaption>Assembled Moxon antenna</figcaption>
+              <img src="{{root}}assets/img/moxon.webp" alt="Moxon Antenne" width="1600" height="900" loading="lazy" decoding="async">
+              <figcaption>Assembled Moxon Antenna</figcaption>
             </figure>
             <div class="prose">
+              <p>The idea for the Moxon antenna came from my club colleague. He made me aware of the page by <a href="https://www.qsl.net/dk7zb/start1.htm">DK7ZB</a>. The Moxon looked remarkably simple and fit comfortably within my tight budget, so I decided to build it.</p>
+              <p>In fact, the material list is quite manageable. 4mm aluminum rods from the hardware store, a 25mm wooden rod, 6mm² chandelier terminals, 25mm pipe clamps and some RG58 coax cable. All in all, the antenna costs less than 10€. And if it works as well as it saves money, there's nothing standing in the way, right?</p>
+            </div>
+          </section>
 
+          <section class="project-section" aria-labelledby="problems">
+            <h2 id="problems">Problems</h2>
+            <div class="prose">
+              <p>Well, sadly it was not that simple. I built the antenna, the feeeding choke is only coax wrapped around the wooden rod, and naturally the SWR and resonance points were not where they should be. But what do I have a NanoVNA for? :)</p>
+              <p>So I played around with the dimensions and eventually realized that the positions on the boom DK7ZB indicates on his page were not ideal. I had to adjust the positions of the boom quite a bit.</p>
+            </div>
+          </section>
+
+          <!-- 3. Aufbau -->
+          <section class="project-section" aria-labelledby="construction">
+            <h2 id="construction">Construction</h2>
+            <figure class="figure figure--full">
+              <img src="{{root}}assets/img/moxon_masse.webp" alt="Moxon Antenne Aufbau" width="1170" height="700" loading="lazy" decoding="async">
+              <figcaption>Construction of the Moxon Antenna</figcaption>
+            </figure>
+            <div class="prose">
+              <p>After much trial and error, I arrived at the above dimensions. All length measurements are the internal dimensions, not the measurements in the middle of the rods. I didn't need to shorten any element, but adjusting the distance between the reflector and radiator made a significant difference. The reflector of the 70cm elements was also much too low in the original.</p>
+              <p>But with these specified dimensions, I could achieve an SWR of 1.1:1 in the 2m band and an SWR of 1.05:1 in the 70cm band. The SWRs refer to the FM range of the bands, since that is what I use the antenna for.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="results">
+            <h2 id="results">Results</h2>
+            <div class="prose">
+              <p>Now the question: does the antenna work at all?</p>
+              <p>Answer: Yes, and how it does! For the low effort, small size and simple materials, the antenna has a strong directivity by design and even weak signals are well readable. The highlight was that I could make a QSO to Italy via the ARISS relay of the ISS with the Moxon and a handheld transceiver!</p>
+              <p>But of course, the construction has its weaknesses. Since the elements are only attached to the boom, the entire construction is very easy to deform, which quickly affects the SWR. Also, at least two clamping ferrites should be installed behind the feeding choke. The 5-6 turns around the boom are not quite enough.</p>
+              <p>Would I recommend the antenna further? Definitely! Especially for beginners, it is an excellent first self-build directional antenna, can be easily held in hand and is also perfectly suitable for mobile use. With some additional effort, the antenna can probably also be stabilized well without significantly changing the resonance. I have to test this myself though.</p>
             </div>
           </section>
 
