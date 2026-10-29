@@ -17,7 +17,7 @@
     "dev": "node scripts/dev.mjs",
     "firmware": "node scripts/firmware.mjs",
     "images": "node scripts/images.mjs",
-    "lighthouse": "node scripts/build.mjs && lhci autorun",
+    "lighthouse": "node scripts/build.mjs && node scripts/lighthouse.mjs",
     "lint": "npm run lint:js && npm run lint:css && npm run lint:html",
     "lint:css": "stylelint \"wwwroot/css/**/*.css\"",
     "lint:html": "node scripts/build.mjs && html-validate \"dist/**/*.html\"",

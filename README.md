@@ -43,7 +43,8 @@ Website/
 │   │   ├── checks.mjs     # Checks on the rendered output (links, anchors, language setup)
 │   │   ├── scaffold.mjs   # Shared helpers of create/page/remove (languages, pages.json)
 │   │   ├── preview.mjs    # Shared helpers of serve/dev (root redirect, flasher detection)
-│   │   └── *.test.mjs     # Unit tests (node --test): util, data, render, pipeline, checks, scaffold, preview
+│   │   ├── lighthouse.mjs # Overview page of the Lighthouse CI reports
+│   │   └── *.test.mjs     # Unit tests (node --test): util, data, render, pipeline, checks, scaffold, preview, lighthouse
 │   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects, ham, pages)
 │   ├── e2e/               # Playwright specs (*.spec.mjs)
 │   │   ├── pages.spec.mjs # Every built page: 320/768/1280 px, console, requests, storage, focus
@@ -52,6 +53,7 @@ Website/
 │   ├── dev.mjs            # Dev server: build, serve, watch, live reload
 │   ├── firmware.mjs       # Scaffold an assets/firmware/<suite>/manifest.json
 │   ├── images.mjs         # WebP conversion, OG default image, SVG optimisation
+│   ├── lighthouse.mjs     # Run Lighthouse CI and write the report overview (npm run lighthouse)
 │   ├── page.mjs           # Scaffold a minimal secondary page in every language folder
 │   ├── remove.mjs         # Delete a project / ham entry and its pages in all languages (npm run remove:project / remove:afu)
 │   ├── report.mjs         # Report dist/ size, largest files, unused assets
@@ -168,7 +170,7 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | `npm run lint:html` | Builds, then runs html-validate over `dist/**/*.html`. |
 | `npm run images [-- --dry-run]` | WebP next to raster originals in `assets/img/` (skipped when not smaller), creates `assets/img/og-default.png` if missing, optimises SVGs in place. Never overwrites existing outputs or originals. |
 | `npm run test:e2e` | Builds, then runs the Playwright specs in `scripts/e2e/` against `scripts/serve.mjs` on port 8010: every page at 320/768/1280 px (`pages.spec.mjs`) and the language setup of the built site (`language.spec.mjs`: `<html lang>`, canonical, `og:locale`, hreflang alternates, selector targets and `aria-current`, hidden projects, sitemap, root redirect, keyboard use of the selector). |
-| `npm run lighthouse` | Builds, then runs Lighthouse CI against `scripts/serve.mjs` on port 8020; reports go to `.lighthouseci/` (never uploaded). |
+| `npm run lighthouse` | Builds, then runs Lighthouse CI (`scripts/lighthouse.mjs`) against `scripts/serve.mjs` on port 8020; reports go to `.lighthouseci/reports/` (never uploaded). Afterwards `.lighthouseci/reports/index.html` lists every page with its category scores (scores below a `categories:*` `minScore` assertion are framed) and links to its report; it is written even when assertions fail (the exit code stays the lhci status). |
 | `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` and `HOST` env vars override) with `Cache-Control: no-store` and the same security headers as production (mirrors `.htaccess`, flasher CSP exception detected from the served page); redirects directory requests to add the trailing slash and mirrors the root redirect (`/` → `/de/` or `/en/` by the first `Accept-Language` entry, `302` + `Vary: Accept-Language`; other languages get the landing page). `HOST=0.0.0.0` works for phone testing on the LAN, but WebSerial needs a secure context, so the web flasher will not work there. |
 | `npm start` | Build, then serve. |
 | `npm run clean` | Removes `dist/`. |
@@ -191,7 +193,7 @@ Installed as `devDependencies`; none of them ship to `dist/`. Use these packages
 | `sharp` | Raster → WebP, OG default image 1200×630 from `favicon.svg` | `npm run images`, `scripts/images.mjs` | `wwwroot/assets/img/`, `wwwroot/favicon.svg` |
 | `svgo` | SVG optimisation | `npm run images`, `svgo.config.mjs` | `wwwroot/assets/img/`, `wwwroot/assets/icons/`, `wwwroot/favicon.svg` |
 | `@playwright/test` | Browser checks: 320/768/1280 px (no horizontal overflow), console errors, external requests, cookies/storage, visible keyboard focus | `npm run test:e2e`, `playwright.config.mjs`, `scripts/e2e/*.spec.mjs` | `dist/` via `scripts/serve.mjs` (port 8010) |
-| `@lhci/cli` | Lighthouse scores (accessibility and performance ≥ 95) | `npm run lighthouse`, `lighthouserc.json` | `dist/` via `scripts/serve.mjs` (port 8020) |
+| `@lhci/cli` | Lighthouse scores (accessibility and performance ≥ 95) | `npm run lighthouse`, `lighthouserc.json`, `scripts/lighthouse.mjs` | `dist/` via `scripts/serve.mjs` (port 8020) |
 
 - Playwright needs a browser once: `npx playwright install chromium`. Alternatively use an installed browser: `$env:PLAYWRIGHT_CHANNEL='msedge'` (or `chrome`) before `npm run test:e2e`. Lighthouse CI uses the installed Chrome (`CHROME_PATH` overrides).
 - Lighthouse CI uploads reports to a public server by default (`temporary-public-storage`); `lighthouserc.json` sets `upload.target` to `"filesystem"` — keep it that way.
