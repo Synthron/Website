@@ -178,6 +178,20 @@ test('loadProjects keeps complete languages and localizes them', async () => {
   assert.deepEqual(warnings, []);
   assert.deepEqual(localize(projects[0], 'en').tags, ['electronics']);
   assert.equal(localize(projects[0], 'de').title, 'Titel');
+  assert.equal(projects[0].draft, false);
+});
+
+test('loadProjects marks a project as draft when a title starts with DRAFT and warns', async () => {
+  reset();
+  const { src, pages } = await withProjects([{ ...PROJECT, title: { de: 'Titel', en: 'DRAFT Yagi Antenna' } }, { ...PROJECT, id: 'b', title: { de: 'Drafting', en: 'DRAFTS' } }], [], { 'de/proj/b.html': '', 'en/proj/b.html': '' });
+  const projects = await loadProjects(SITE, pages, { src });
+  assert.deepEqual(errors, []);
+  assert.equal(projects.find((entry) => entry.id === 'a').draft, true);
+  assert.equal(projects.find((entry) => entry.id === 'b').draft, false);
+  assert.equal(localize(projects.find((entry) => entry.id === 'a'), 'de').draft, true);
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /\(a\): draft \(title starts with DRAFT\)/);
+  reset();
 });
 
 test('loadProjects hides a project with TODO or missing texts in another language and warns', async () => {

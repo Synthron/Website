@@ -48,6 +48,8 @@ const isObject = (value) => typeof value === 'object' && value !== null && !Arra
 // "TODO" (or "TODO: ...") marks a translation that is not written yet.
 export const isTodo = (value) => typeof value === 'string' && /^\s*TODO\b/.test(value);
 const isFilled = (value) => typeof value === 'string' && value.trim() !== '' && !isTodo(value);
+// A title starting with "DRAFT" (any language) marks a draft: built, but not listed.
+export const isDraftTitle = (value) => typeof value === 'string' && /^\s*DRAFT\b/.test(value);
 
 // Language keys of a per-language object: unknown codes and missing required
 // codes are errors.
@@ -314,7 +316,8 @@ async function loadCollection(name, site, pages, { src = SRC } = {}) {
     checkLangKeys(`${label}.summary`, project.summary, codes, [defaultLang]);
     checkLangKeys(`${label}.tags`, project.tags, codes, [defaultLang]);
 
-    const entry = { ...project, title: {}, summary: {}, tags: {} };
+    const entry = { ...project, title: {}, summary: {}, tags: {}, draft: Object.values(project.title).some(isDraftTitle) };
+    if (entry.draft) warn(`${label} (${project.id}): draft (title starts with DRAFT); page built but not listed`);
     for (const code of codes) {
       const hasPage = pages.projectPage(code, project.id, folder) !== null;
       const pageRel = `wwwroot/${pages.dir(code)}/${folder}/${project.id}.html`;

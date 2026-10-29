@@ -36,11 +36,7 @@
       },
       "date": { "$ref": "projects.schema.json#/items/properties/date" },
       "status": { "$ref": "projects.schema.json#/items/properties/status" },
-      "links": { "$ref": "projects.schema.json#/items/properties/links" },
-      "draft": {
-        "description": "Optional: page is built but hidden from the list, tag filter and sitemap.",
-        "type": "boolean"
-      }
+      "links": { "$ref": "projects.schema.json#/items/properties/links" }
     }
   }
 }

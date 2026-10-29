@@ -95,8 +95,8 @@ export function renderCard(project, ctx, level, strings) {
 </article>`;
 }
 
-// Draft projects are built but excluded from lists, the tag filter and
-// the sitemap. Cards for drafts would leak in-browser otherwise.
+// Drafts (title starts with DRAFT, see data.mjs) are built but excluded from
+// lists, the tag filter and the sitemap.
 const published = (projects) => projects.filter((project) => project.draft !== true);
 
 export function renderProjectList(projects, args, ctx, strings) {

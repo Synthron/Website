@@ -56,16 +56,12 @@
         "type": "string",
         "pattern": "^(?![a-zA-Z]:|/)(?!(.*/)?\\.\\.?(/|$))[^\\\\]+$"
       },
-      "featured": { "type": "boolean" },
-      "draft": {
-        "description": "Optional: page is built but hidden from lists, tag filter and sitemap.",
-        "type": "boolean"
-      }
+      "featured": { "type": "boolean" }
     }
   },
   "definitions": {
     "localizedText": {
-      "description": "Text per language code. A value starting with TODO counts as missing.",
+      "description": "Text per language code. A value starting with TODO counts as missing; a title starting with DRAFT marks a draft.",
       "type": "object",
       "minProperties": 1,
       "patternProperties": { "^[a-z]{2,3}$": { "type": "string", "pattern": "\\S" } },

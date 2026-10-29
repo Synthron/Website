@@ -143,7 +143,7 @@ The `devDependencies`, their jobs, planned scripts and config files are listed i
 ### Data
 - `data/projects.json` must match the schema documented in `README.md`.
 - Required fields: `id`, `title`, `summary`, `tags`, `status`, `date`, `links`, `image`, `featured`.
-- `title`, `summary` and `tags` are objects keyed by language code; the default language is required, others are optional (`"TODO"` or a missing key hides the project in that language and the build warns). `id`, `status`, `date`, `links`, `image`, `featured` and `draft` are language-neutral.
+- `title`, `summary` and `tags` are objects keyed by language code; the default language is required, others are optional (`"TODO"` or a missing key hides the project in that language and the build warns). `id`, `status`, `date`, `links`, `image` and `featured` are language-neutral. A `title` starting with `DRAFT` (any language) marks a draft: pages built, but not listed and not in the sitemap.
 - `id` values are unique, lowercase, hyphenated.
 - `status` is one of the German keys: `in Arbeit`, `fertig`, `pausiert`, `veraltet`, `Konzept`, `abgebrochen`; the label per language is `strings.<lang>.status`.
 - `tags` come from the fixed vocabulary per language in `scripts/schemas/projects.schema.json` / `ham.schema.json` (never invent new tags; ask the user and add them to the schema first), no duplicates per project and language; the lists of the languages are independent.

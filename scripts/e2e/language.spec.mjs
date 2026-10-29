@@ -27,6 +27,10 @@ const attr = (tag, name) => new RegExp(`\\b${name}="([^"]*)"`).exec(tag)?.[1];
 const htmlLang = (rel) => attr(/<html\b[^>]*>/.exec(html.get(rel))[0], 'lang');
 const resolve = (rel, href) => path.posix.normalize(path.posix.join(path.posix.dirname(rel), href.split(/[?#]/)[0]));
 const isTodo = (value) => typeof value !== 'string' || value.trim() === '' || /^\s*TODO\b/.test(value);
+const isDraft = (entry) => Object.values(entry.title).some((title) => /^\s*DRAFT\b/.test(title));
+const draftPages = [...projects.map((entry) => ['proj', entry]), ...readData('ham.json').map((entry) => ['ham', entry])]
+  .filter(([, entry]) => isDraft(entry))
+  .flatMap(([folder, entry]) => codes.map((code) => `${code}/${folder}/${entry.id}.html`));
 
 // Language -> page path (relative to the language folder) of every version of a page.
 function versions(rel) {
@@ -109,14 +113,14 @@ test('projects with TODO or missing texts are hidden in that language, the other
     }
     const listing = `${code}/${groups.find((entry) => Object.values(entry).includes('projects.html'))?.[code] ?? 'projects.html'}`;
     const cards = (html.get(listing)?.match(/class="project-card"/g) ?? []).length;
-    expect(cards, `project cards on ${listing}`).toBe(visible.filter((project) => !project.draft).length);
+    expect(cards, `project cards on ${listing}`).toBe(visible.filter((project) => !isDraft(project)).length);
   }
 });
 
-test('sitemap.xml lists every page except 404.html, nothing else', () => {
+test('sitemap.xml lists every page except 404.html and drafts, nothing else', () => {
   const xml = readFileSync(path.join(DIST, 'sitemap.xml'), 'utf8');
   const listed = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]).sort();
-  const expected = pages.filter((rel) => rel !== '404.html').map((rel) => (rel === 'index.html' ? `${url}/` : `${url}/${rel}`)).sort();
+  const expected = pages.filter((rel) => rel !== '404.html' && !draftPages.includes(rel)).map((rel) => (rel === 'index.html' ? `${url}/` : `${url}/${rel}`)).sort();
   expect(listed).toEqual(expected);
 });
 
