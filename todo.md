@@ -33,3 +33,19 @@ Agents never write or translate site content. The build warns about every leftov
 ## Tests
 
 - [ ] **A18** Optional: e2e check in `scripts/e2e/` that the ham tag filter on `hamradio.html` hides and shows list items.
+
+## Topics (User)
+
+- General Projects
+  - [ ] DCF77 Uhr
+  - [ ] SynPLC (mit Unterseiten)
+  - [ ] ModLab (mit Unterseiten)
+  - [ ] 3D-Drucker?
+- AFU
+  - [ ] QMX Tuner
+  - [ ] QMX 10W Upgrade
+  - [ ] QMX Mikro Kapsel
+  - [ ] 5+8ele Yagi und SCAD Teile
+  - [ ] Signal Stick
+  - [ ] Endfed?
+  - [ ] SCAD Balun-Gehäuse (WIP)
