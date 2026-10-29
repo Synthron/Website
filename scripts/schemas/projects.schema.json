@@ -24,12 +24,12 @@
           "de": {
             "type": "array",
             "uniqueItems": true,
-            "items": { "enum": ["elektronik", "software", "roehren", "esp32", "stromversorgung"] }
+            "items": { "enum": ["elektronik", "software", "roehren", "esp32", "stromversorgung", "3d-druck"] }
           },
           "en": {
             "type": "array",
             "uniqueItems": true,
-            "items": { "enum": ["electronics", "software", "tubes", "esp32", "power-supply"] }
+            "items": { "enum": ["electronics", "software", "tubes", "esp32", "power-supply", "3d-printing"] }
           }
         },
         "additionalProperties": false

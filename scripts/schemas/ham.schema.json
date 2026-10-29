@@ -24,12 +24,12 @@
           "de": {
             "type": "array",
             "uniqueItems": true,
-            "items": { "enum": ["antenne", "transceiver", "contest", "diy", "modifikation"] }
+            "items": { "enum": ["antenne", "transceiver", "contest", "diy", "modifikation", "3d-druck"] }
           },
           "en": {
             "type": "array",
             "uniqueItems": true,
-            "items": { "enum": ["antenna", "transceiver", "contest", "diy", "modification"] }
+            "items": { "enum": ["antenna", "transceiver", "contest", "diy", "modification", "3d-printing"] }
           }
         },
         "additionalProperties": false
