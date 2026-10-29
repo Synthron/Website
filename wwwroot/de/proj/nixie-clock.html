@@ -21,7 +21,7 @@
           <section class="project-section" aria-labelledby="overview">
             <h2 id="overview">Einführung</h2>
             <figure class="figure figure--full">
-              <img src="{{root}}assets/img/nixie_face.jpg" alt="Nixie-Uhr" width="1600" height="1086" loading="lazy" decoding="async">
+              <img src="{{root}}assets/img/nixie_face.webp" alt="Nixie-Uhr" width="1600" height="1086" loading="lazy" decoding="async">
               <figcaption>Ansicht der Nixie-Uhr</figcaption>
             </figure>
             <div class="prose">
@@ -36,7 +36,7 @@
           <section class="project-section" aria-labelledby="hardware">
             <h2 id="hardware">Hardware und Elektronik</h2>
             <figure class="figure figure--full">
-              <img src="{{root}}assets/img/nixie_pcbs.jpg" alt="Nixie Uhr Platinen" width="1600" height="1086" loading="lazy" decoding="async">
+              <img src="{{root}}assets/img/nixie_pcbs.webp" alt="Nixie Uhr Platinen" width="1600" height="1086" loading="lazy" decoding="async">
               <figcaption>Platinen der Nixie-Uhr</figcaption>
             </figure>
             <div class="prose">
@@ -47,7 +47,7 @@
               <p>Die Spannungsversorgung selbst ist mehrstufig aufgebaut. DC-Versorgung geschieht per 12V Netzteil. Ein <a href="{{langRoot}}proj/sy317.html">Schaltregler</a> mit nachgeschaltetem LDO erzeugt die 5V und 3V3 Spannung für ESP und Schieberegister.<br>
               Ein MC34063 Schaltregler-IC erzeugt aus den 12V ca. 90V. Um die notwendigen 150V für die Röhren zu erreichen ohne dabei einen schlechten Tastgrad zu erhalten, wird diese 90V-Spannung zunächst gepuffert und dann über eine Ladungspumpe auf ca. 180V verdoppelt.</p>
               <h3>Röhren-Ansteuerung</h3>
-              <p>Mit Marcus habe ich mich lange Zeit beraten, wie wir die Röhren ansteuern sollen. Von HV2255-Nixie-ICs bis hin zu Multiplex-Ansteuerungen war alles dabei. Letzten Endes haben wir uns dazu entschieden, die ineffizienteste Lösung von allen zu benutzen: <b>Schieberegister</b>.<br>
+              <p>Mit Marcus habe ich mich lange Zeit beraten, wie wir die Röhren ansteuern sollen. Von HV5522 Treiber-ICs bis hin zu Multiplex-Ansteuerungen war alles dabei. Letzten Endes haben wir uns dazu entschieden, die ineffizienteste Lösung von allen zu benutzen: <b>Schieberegister</b>.<br>
               Fpr 6 Röhren plus 4 Glimmlampen als Trennpunkte kommen so 64 Segmente zusammen. Passenderweise sind das exakt 8 8-bit Schieberegister des Typs 74HC595. Mit MPSA-42 Hochspannungstransistoren als Low-Side-Schalter für die Segmente entsteht so eine primitive aber effektive Ansteuerung. Der Vorteil: Jede Röhre kann so gedimmt werden, ohne dass die Röhren gemultiplext werden müssen. Dies beugt Flimmern und Flackern vor. Außerdem hält es die Schaltung vergleichsweise einfach, wenn auch dezent platzbrauchend.</p>
               <h3>Inputs und Outputs</h3>
               <p>Natürlich habe ich auch einige Inputs und Outputs vorgesehen. Acht Inputs sind an einem DIP-Schalter angelegt um die Bootstrap-Konfiguration vorzunehmen. So können einzelne Funktionen nach Belieben zu- oder abgeschaltet werden. Ferner sind vier Taster zur Menüsteuerung und Bedienung vorhanden, sowie vier freie Testpunkte.<br>

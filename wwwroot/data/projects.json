@@ -24,7 +24,7 @@
       "repo": "https://github.com/Synthron/Nixie",
       "demo": null
     },
-    "image": "assets/img/nixie_face.jpg",
+    "image": "assets/img/nixie_face.webp",
     "featured": true
   },
   {
@@ -48,7 +48,7 @@
       "repo": "https://github.com/Synthron/SY317",
       "demo": null
     },
-    "image": "assets/img/sy317_render.png",
+    "image": "assets/img/sy317_render.webp",
     "featured": true
   }
 ]

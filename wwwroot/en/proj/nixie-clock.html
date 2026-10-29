@@ -16,17 +16,110 @@
         <!-- @project-header -->
 
         <div class="project-content">
+
+          <!-- 1. Overview -------------------------------------- -->
           <section class="project-section" aria-labelledby="overview">
-            <h2 id="overview">TODO</h2>
+            <h2 id="overview">Overview</h2>
+            <figure class="figure figure--full">
+              <img src="{{root}}assets/img/nixie_face.webp" alt="Nixie-Clock" width="1600" height="1086" loading="lazy" decoding="async">
+              <figcaption>View of the Nixie-Clock</figcaption>
+            </figure>
             <div class="prose">
-              <p>TODO: English write-up (translate de/proj/nixie-clock.html, including the web flasher section).</p>
+              <p>I wanted to build a Nixie-Clock for quite some time. The problem was that the tubes are can get very expensive, which made the starting cost of the project quite high and me reconsider.<br>
+              But when a friend of mine, <a href="https://www.dl5tz.de">Marcus DL5TZ</a>, offered me Z5600M Nixie tubes on the condition that I build him a clock with them, I could neither resist nor refuse.</p>
+              <p>So we sat down and worked out some specifications and brainstormed ideas.<br>
+              It quickly became clear that we wanted to use as many wired THT components as possible for a nostalgic look and ease of soldering. My idea of using only generic components and simple circuits was also met with approval. This made the implementation somewhat more complicated, but repairs can be carried out with little effort and cost.</p>
             </div>
           </section>
+
+          <!-- 2. Hardware and Electronics ----------------------------------- -->
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware and Electronics</h2>
+            <figure class="figure figure--full">
+              <img src="{{root}}assets/img/nixie_pcbs.webp" alt="Nixie-Clock PCBs" width="1600" height="1086" loading="lazy" decoding="async">
+              <figcaption>PCBs of the Nixie-Clock</figcaption>
+            </figure>
+            <div class="prose">
+              <p>And so the circuit diagram gradually developed. Here is a quick overview of the individual circuit parts.</p>
+              <h3>Controller</h3>
+              <p>An ESP32-WROOM module serves as the controller. The decision was quickly made, as it is easy to program and also has Wifi. This allows the time to be synchronized via the network. In addition, it has more than enough computing power to easily handle additional tasks alongside the control, including the control of a DS1302 RTC with Goldcap buffer. The external <i>Real Time Clock</i> stores the time and continues counting even during a power outage. This allows for power-off times of up to a week to be bridged without losing the time information.</p>
+              <h3>Power Supply</h3>
+              <p>The power supply itself is multi-stage. DC power is provided via a 12V power adapter. A <a href="{{langRoot}}proj/sy317.html">switching regulator</a> with a following LDO generates the 5V and 3V3 voltages for the ESP and shift registers.<br>
+              An MC34063 boost converter circuit generates about 90V from the 12V. To achieve the necessary 150V for the tubes without a poor duty cycle, this 90V voltage is first buffered and then doubled to about 180V via a charge pump.</p>
+              <h3>Filament Control</h3>
+              <p>I consulted with Marcus for a long time on how to drive the tubes. Everything from HV5522 low side driver ICs to multiplexing was considered. In the end, we decided to use the most inefficient solution of all: <b>shift registers</b>.<br>
+              For 6 tubes plus 4 glow lamps as separators, this results in 64 segments. Conveniently, this is exactly 8 8-bit shift registers of the type 74HC595. With MPSA-42 high-voltage transistors as low-side switches for the segments, this creates a primitive but effective control. The advantage: each tube can be dimmed without having to multiplex the tubes. This prevents flickering and flashing. In addition, it keeps the circuit comparatively simple, although somewhat space-consuming.</p>
+              <h3>Inputs and Outputs</h3>
+              <p>Of course, I also provided some inputs and outputs. Eight inputs are connected to a DIP switch to configure the bootstrap. This allows individual functions to be enabled or disabled as needed. Also, there are four buttons for menu control and operation, as well as four free test points.<br>
+              Further, there are eight outputs, which are currently not implemented. Signals can be output here later to control additional peripherals.</p>
+              <p>In addition, there are two ADC channels for temperature sensors (e.g. PT1000) or LDR resistors. The sensors (currently no calibration option) can display the temperature with the Nixies, and the LDR can be used for automatic brightness adjustment. The latter function currently works only very rudimentarily.</p>
+              <p>Finally, a DCF77 input is provided. This allows a DCF77 module to be used for synchronization. However, this function is not yet implemented, as I have not yet managed to get a DCF77 module running reliably enough to test it.</p>
+            </div>
+          </section>
+
+          <!-- 3. Software -------------------------------- -->
+                     <section class="project-section" aria-labelledby="software">
+            <h2 id="software">Software</h2>
+            <div class="prose">
+              <p>The software for the Nixie-Clock was developed with Visual Studio Code and PlatformIO. The entire project is available on GitHub (link see above). It uses almost no ready-made libraries, as the code itself is comparatively simple.</p>
+            </div>
+          </section>
+
+          <!-- 4. Features -------------------------------- -->
+
+          <section class="project-section" aria-labelledby="features">
+            <h2 id="features">Features</h2>
+            <div class="prose">
+              <p>The clock is more than just a pretty display device. An internal RTC serves as the time base, which reliably keeps the time even without external components. In addition, there is prioritized synchronization: if Wifi and NTP are enabled, the time is automatically synchronized over the network. If no NTP is available, an external RTC (DS1302) takes over this task on request.</p>
+              <p>Everything is controlled via a button menu with MODE, UP, DOWN and ENTER. Outside the menu, ENTER is used to switch through the display modes: time, date and – if the sensors are enabled – the temperature of sensor 1 and sensor 2.</p>
+              <h3>The Menu</h3>
+              <p>In the menu, modes 1 to 4 are selected with UP/DOWN, MODE exits the menu again. The options are:</p>
+              <ul>
+                <li>Set time (hours / minutes / seconds)</li>
+                <li>Set date (day / month / year)</li>
+                <li>Set brightness (in percent, applied live)</li>
+                <li>Set offset (time zone offset in hours, range -12 to +14, also across the date line)</li>
+              </ul>
+              <p>Particularly handy is the brightness setting with live preview: while adjusting, the value is displayed on all three tube sets as 00-99 and applied immediately. This way, you can quickly find the appropriate brightness for the environment.</p>
+              <h3>Configuration via DIP switch</h3>
+              <p>Configuration is done via a DIP switch. Among other things, this allows USB debug messages, the external RTC, the temperature sensors T1 and T2, the LDR, the anode dimming as well as the Wifi and NTP services to be activated. DCF77 reception is planned but not yet implemented.</p>
+              <h3>Wifi &amp; NTP</h3>
+              <p>For time synchronization, a Wifi manager is used: if you connect to the Wifi "Nixie-&lt;MAC&gt;" (password "Nixie1234", IP address 4.3.2.1), you can configure the available Wifi network. The user-defined time zone offset is applied to the displayed time and replaces the previous DST switch.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Install Firmware</h2>
+            <div class="prose">
+              <p>
+                The finished firmware can be transferred directly to the
+                microcontroller via the browser. Installation of the
+                toolchain is not required.
+              </p>
+              <p>
+                Connect the ESP32 via USB to the computer, select the
+                appropriate serial port and start the flashing process.
+                The process runs entirely locally in the browser.
+              </p>
+              <p>
+                <strong>Note:</strong> Installing the firmware
+                will erase all previous settings. In addition, the Chrome or Edge browser is required, as the Web Serial API is <strong>not supported</strong> by Firefox and Safari.
+              </p>
+            </div>
+            <esp-web-install-button manifest="{{root}}assets/firmware/nixie-clock/manifest.json">
+            </esp-web-install-button>
+          </section>
+
+
         </div>
       </article>
     </div>
   </main>
 
   <!-- @include footer -->
+
+  <!-- ESP Web Tools (vendored locally; no external requests) -->
+  <script type="module" src="{{root}}js/vendor/esp-web-tools/install-button.js"></script>
+
 </body>
 </html>
