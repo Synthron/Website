@@ -4,39 +4,58 @@
       "startServerCommand": "node -e \"process.env.PORT='8020'; import('./scripts/serve.mjs')\"",
       "startServerReadyPattern": "Serving dist/",
       "url": [
-        "http://127.0.0.1:8020/index.html",
-        "http://127.0.0.1:8020/de/index.html",
-        "http://127.0.0.1:8020/de/projekte.html",
-        "http://127.0.0.1:8020/de/hamradio.html",
+        "http://127.0.0.1:8020/404.html",
         "http://127.0.0.1:8020/de/about.html",
-        "http://127.0.0.1:8020/de/proj/sy317.html",
-        "http://127.0.0.1:8020/de/proj/nixie-clock.html",
-        "http://127.0.0.1:8020/de/ham/moxon-2m-70cm.html",
-        "http://127.0.0.1:8020/de/impressum.html",
+        "http://127.0.0.1:8020/de/amateurfunk.html",
         "http://127.0.0.1:8020/de/datenschutz.html",
+        "http://127.0.0.1:8020/de/ham/moxon-2m-70cm.html",
+        "http://127.0.0.1:8020/de/ham/qmx-mikrofon.html",
+        "http://127.0.0.1:8020/de/impressum.html",
+        "http://127.0.0.1:8020/de/index.html",
+        "http://127.0.0.1:8020/de/proj/dcf77-clock.html",
+        "http://127.0.0.1:8020/de/proj/nixie-clock.html",
+        "http://127.0.0.1:8020/de/proj/sy317.html",
+        "http://127.0.0.1:8020/de/projekte.html",
         "http://127.0.0.1:8020/de/rechtliches.html",
-        "http://127.0.0.1:8020/en/index.html",
-        "http://127.0.0.1:8020/en/projects.html",
-        "http://127.0.0.1:8020/en/hamradio.html",
         "http://127.0.0.1:8020/en/about.html",
-        "http://127.0.0.1:8020/en/proj/sy317.html",
-        "http://127.0.0.1:8020/en/proj/nixie-clock.html",
-        "http://127.0.0.1:8020/en/ham/moxon-2m-70cm.html",
-        "http://127.0.0.1:8020/en/impressum.html",
-        "http://127.0.0.1:8020/en/privacy.html",
         "http://127.0.0.1:8020/en/disclaimers.html",
-        "http://127.0.0.1:8020/404.html"
+        "http://127.0.0.1:8020/en/ham/moxon-2m-70cm.html",
+        "http://127.0.0.1:8020/en/ham/qmx-mikrofon.html",
+        "http://127.0.0.1:8020/en/hamradio.html",
+        "http://127.0.0.1:8020/en/impressum.html",
+        "http://127.0.0.1:8020/en/index.html",
+        "http://127.0.0.1:8020/en/privacy.html",
+        "http://127.0.0.1:8020/en/proj/dcf77-clock.html",
+        "http://127.0.0.1:8020/en/proj/nixie-clock.html",
+        "http://127.0.0.1:8020/en/proj/sy317.html",
+        "http://127.0.0.1:8020/en/projects.html",
+        "http://127.0.0.1:8020/index.html"
       ],
       "numberOfRuns": 1,
       "settings": {
-        "onlyCategories": ["performance", "accessibility", "best-practices", "seo"],
+        "onlyCategories": [
+          "performance",
+          "accessibility",
+          "best-practices",
+          "seo"
+        ],
         "chromeFlags": "--headless=new"
       }
     },
     "assert": {
       "assertions": {
-        "categories:accessibility": ["error", { "minScore": 0.95 }],
-        "categories:performance": ["error", { "minScore": 0.95 }]
+        "categories:accessibility": [
+          "error",
+          {
+            "minScore": 0.95
+          }
+        ],
+        "categories:performance": [
+          "error",
+          {
+            "minScore": 0.95
+          }
+        ]
       }
     },
     "upload": {

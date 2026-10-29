@@ -47,7 +47,7 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | `scripts/page.mjs` | `npm run page` | Scaffolds a minimal secondary page in every language folder (optionally `--title-<lang>`, `--nav` / `--footer`). |
 | `scripts/remove.mjs` | `npm run remove:project`, `npm run remove:afu` | Deletes a project (`projects.json`, `proj/`) or ham radio entry (`ham.json`, `ham/`, `--ham`) and its pages in all languages (with confirmation / `--yes`). |
 | `scripts/report.mjs` | `npm run report` | Prints a `dist/` size report: total, largest files, non-WebP raster images, unused assets. |
-| `scripts/lighthouse.mjs` | `npm run lighthouse` | Runs `lhci autorun`, then writes `.lighthouseci/reports/index.html` (scores per page, links to the reports); exits with the lhci status. |
+| `scripts/lighthouse.mjs` | `npm run lighthouse` | Refreshes the `url` list in `lighthouserc.json` from the built pages in `dist/` (so every page is audited even after pages are added, renamed or removed), then runs `lhci autorun` and writes `.lighthouseci/reports/index.html` (scores per page, links to the reports); exits with the lhci status. |
 | `scripts/check-external.mjs` | `npm run check:external` | Manual HEAD checks of external links (never part of `build`). |
 | `scripts/serve.mjs` | `npm run serve` | Local preview of `dist/` only (`PORT`/`HOST` overrides; mirrors the production security headers, the root `Accept-Language` redirect and `Cache-Control: no-cache`; never `no-store`, it blocks the back/forward cache). |
 | `scripts/images.mjs` | `npm run images` | `sharp` / `svgo` image processing (see Tooling Packages); `--dry-run` reports only. |
