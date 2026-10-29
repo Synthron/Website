@@ -27,6 +27,7 @@ Agents never write or translate site content. The build warns about every leftov
   - [ ] ModLab (mit Unterseiten)
   - [ ] 3D-Drucker?
 - AFU
+  - [x] Moxon Dual Band
   - [ ] QMX Tuner
   - [ ] QMX 10W Upgrade
   - [ ] QMX Mikro Kapsel
