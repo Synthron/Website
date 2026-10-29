@@ -24,6 +24,10 @@ Agents never write or translate site content. The build warns about every leftov
 
 - [x] **A05** `de/proj/sy317.html`: the schematic `img` has no `width`/`height` (layout shift); `npm run images` would create `sy317_render.webp` (73.6 KB → 36.3 KB), then switch the reference.
 
+## Fixes (code analysis 2026-10-29)
+
+- [ ] **A19** `wwwroot/templates/project-template.html` and `scripts/create.mjs` write the back link as `{{langRoot}}projects.html`, which is wrong in German (`de/projekte.html`); every scaffolded German project page needs a manual fix. Resolve the per-language page name (e.g. via `data/pages.json`) instead of a hard-coded file name.
+
 ## Release Checks
 
 - [x] **A15** `npm run lighthouse`: accessibility and performance ≥ 95.

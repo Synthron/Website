@@ -47,6 +47,7 @@ export function renderMeta(project, strings) {
 }
 
 export function renderTags(tags, strings) {
+  if (!tags || tags.length === 0) return '';
   const items = tags.map((tag) => `<li><span class="tag">${esc(tag)}</span></li>`).join('\n  ');
   return `<ul class="tag-list" aria-label="${esc(strings.tagsLabel)}">\n  ${items}\n</ul>`;
 }

@@ -1,9 +1,14 @@
 [
   {
     "id": "nixie-clock",
-    "title": { "de": "Nixie Uhr", "en": "Nixie Clock" },
-    "summary": { "de": "Nixie-Uhr mit ESP32, Z5600M Nixie-Röhren und RTC.",
-                 "en": "Nixie clock with ESP32, Z5600M Nixie tubes and RTC." },
+    "title": {
+      "de": "Nixie Uhr",
+      "en": "Nixie Clock"
+    },
+    "summary": {
+      "de": "Nixie-Uhr mit ESP32, Z5600M Nixie-Röhren und RTC.",
+      "en": "Nixie clock with ESP32, Z5600M Nixie tubes and RTC."
+    },
     "tags": {
       "de": [
         "elektronik",
@@ -29,9 +34,14 @@
   },
   {
     "id": "sy317",
-    "title": { "de": "SY317 - 78xx Spannungsregler-Ersatz", "en": "SY317 - 78xx Voltage Regulator Replacement" },
-    "summary": { "de": "Drop-In Schaltregler-Replacement für 78xx Spannungsregler, mit einstellbarer Ausgangsspannung und höherem Ausgangsstrom.",
-                 "en": "Drop-In switch-mode replacement for 78xx voltage regulators, with adjustable output voltage and higher output current." },
+    "title": {
+      "de": "SY317 - 78xx Spannungsregler-Ersatz",
+      "en": "SY317 - 78xx Voltage Regulator Replacement"
+    },
+    "summary": {
+      "de": "Drop-In Schaltregler-Replacement für 78xx Spannungsregler, mit einstellbarer Ausgangsspannung und höherem Ausgangsstrom.",
+      "en": "Drop-In switch-mode replacement for 78xx voltage regulators, with adjustable output voltage and higher output current."
+    },
     "tags": {
       "de": [
         "elektronik",
@@ -50,5 +60,28 @@
     },
     "image": "assets/img/sy317_render.webp",
     "featured": true
+  },
+  {
+    "id": "dcf77-clock",
+    "title": {
+      "de": "DRAFT DCF77 Uhr und Dekoder",
+      "en": "DRAFT DCF77 Clock and Decoder"
+    },
+    "summary": {
+      "de": "DCF77-Uhr und Decoder",
+      "en": "DCF77 clock and decoder"
+    },
+    "tags": {
+      "de": [],
+      "en": []
+    },
+    "status": "in Arbeit",
+    "date": "2026-10",
+    "links": {
+      "repo": null,
+      "demo": null
+    },
+    "image": "assets/img/placeholder.svg",
+    "featured": false
   }
 ]
