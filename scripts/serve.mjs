@@ -1,6 +1,7 @@
 // Minimal static file server for dist/ (local preview only).
-// Sends Cache-Control: no-store so CSS/JS changes are never stale while
-// developing; mirrors Apache by redirecting directory requests to add a "/".
+// Sends Cache-Control: no-cache so CSS/JS changes are never stale while
+// developing (no-store would block the back/forward cache); mirrors Apache by
+// redirecting directory requests to add a "/".
 // Mirrors the production security headers (.htaccess) so local preview
 // behaves like dm7wb.de; HOST can bind to a LAN address for phone tests.
 
@@ -30,7 +31,7 @@ const TYPES = {
   '.xml': 'application/xml; charset=utf-8',
 };
 
-const NO_STORE = 'no-store';
+const NO_CACHE = 'no-cache';
 
 // Security headers mirrored from wwwroot/.htaccess. The CSP header adds
 // frame-ancestors 'none', which a <meta> CSP ignores; HSTS is only honored
@@ -59,7 +60,7 @@ async function send(res, status, file, extraHeaders = {}) {
   const body = await readFile(file);
   const headers = {
     'Content-Type': TYPES[path.extname(file)] ?? 'application/octet-stream',
-    'Cache-Control': NO_STORE,
+    'Cache-Control': NO_CACHE,
     ...SECURITY_HEADERS,
     ...extraHeaders,
   };
@@ -76,7 +77,7 @@ createServer(async (req, res) => {
     if (pathname === '/') {
       const target = rootRedirect(req.headers['accept-language'], await languageCodes());
       if (target) {
-        res.writeHead(302, { Location: target, Vary: 'Accept-Language', 'Cache-Control': NO_STORE, ...SECURITY_HEADERS });
+        res.writeHead(302, { Location: target, Vary: 'Accept-Language', 'Cache-Control': NO_CACHE, ...SECURITY_HEADERS });
         res.end();
         return;
       }
@@ -87,7 +88,7 @@ createServer(async (req, res) => {
         res.writeHead(301, {
           // Use the original (still encoded) path so special characters survive.
           Location: `${url.pathname}/${url.search}`,
-          'Cache-Control': NO_STORE,
+          'Cache-Control': NO_CACHE,
           ...SECURITY_HEADERS,
         });
         res.end();
@@ -102,7 +103,7 @@ createServer(async (req, res) => {
     try {
       await send(res, 404, path.join(DIST, '404.html'));
     } catch {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': NO_STORE, ...SECURITY_HEADERS });
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': NO_CACHE, ...SECURITY_HEADERS });
       res.end('Not found');
     }
   }

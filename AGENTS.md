@@ -49,7 +49,7 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | `scripts/report.mjs` | `npm run report` | Prints a `dist/` size report: total, largest files, non-WebP raster images, unused assets. |
 | `scripts/lighthouse.mjs` | `npm run lighthouse` | Runs `lhci autorun`, then writes `.lighthouseci/reports/index.html` (scores per page, links to the reports); exits with the lhci status. |
 | `scripts/check-external.mjs` | `npm run check:external` | Manual HEAD checks of external links (never part of `build`). |
-| `scripts/serve.mjs` | `npm run serve` | Local preview of `dist/` only (`PORT`/`HOST` overrides; mirrors the production security headers, the root `Accept-Language` redirect and `Cache-Control: no-store`). |
+| `scripts/serve.mjs` | `npm run serve` | Local preview of `dist/` only (`PORT`/`HOST` overrides; mirrors the production security headers, the root `Accept-Language` redirect and `Cache-Control: no-cache`; never `no-store`, it blocks the back/forward cache). |
 | `scripts/images.mjs` | `npm run images` | `sharp` / `svgo` image processing (see Tooling Packages); `--dry-run` reports only. |
 | `scripts/schemas/` | JSON Schemas for `data/*.json` | Used by `scripts/lib/data.mjs` via `ajv`. Change schema and loader together. |
 | `scripts/e2e/` | Playwright specs (`*.spec.mjs`) | Never name them `*.test.mjs` (`npm test` would run them). |
