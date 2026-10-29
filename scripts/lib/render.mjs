@@ -85,7 +85,7 @@ export function renderCard(project, ctx, level, strings) {
   const page = ctx.pages.projectPage(ctx.lang, project.id) ?? `proj/${project.id}.html`;
   const href = `${ctx.root}${ctx.pages.dir(ctx.lang)}/${page}`;
   return `<article class="project-card" data-tags="${esc(JSON.stringify(project.tags))}">
-  <img class="project-card__image" src="${esc(ctx.root + project.image)}" alt="" loading="lazy" decoding="async">
+  <a class="project-card__image-link" href="${esc(href)}" tabindex="-1" aria-hidden="true"><img class="project-card__image" src="${esc(ctx.root + project.image)}" alt="" loading="lazy" decoding="async"></a>
   <div class="project-card__body">
     <${tag} class="project-card__title"><a class="project-card__link" href="${esc(href)}">${esc(project.title)}</a></${tag}>
     ${renderMeta(project, strings)}

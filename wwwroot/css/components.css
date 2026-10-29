@@ -122,7 +122,12 @@
   border-radius: var(--radius);
 }
 
+.project-card__image-link {
+  display: block;
+}
+
 .project-card__image {
+  display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;

@@ -373,7 +373,7 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 - The styles for all patterns live in `css/components.css` (base) and `css/responsive.css` (breakpoints at 640px and 960px). Do not add inline styles.
 - To add a NEW layout pattern, append a new numbered section to the template, add its styles to `css/components.css` (and `css/responsive.css` if it needs breakpoints), and note it here.
 - Placeholder images for different aspect ratios live in `assets/img/` (`placeholder.svg` wide, `placeholder-square.svg`, `placeholder-portrait.svg`). They are reserved (template references, scaffold default image), so the build and `npm run report` never list them as unused.
-- Project cards link to a static page per project at `<lang>/proj/{id}.html` (e.g. `de/proj/sy317.html`; other languages may use a mapped name from `data/pages.json`). The template is never built; `npm run create:project` / `create:afu` copy it.
+- Project cards link to a static page per project at `<lang>/proj/{id}.html` (e.g. `de/proj/sy317.html`; other languages may use a mapped name from `data/pages.json`). Title and preview image both link there; the image link is hidden from keyboard and screen readers (`tabindex="-1"`, `aria-hidden`) so each card has one link stop. The template is never built; `npm run create:project` / `create:afu` copy it.
 
 ### Scaffolding a New Project or Ham Page (`npm run create:project`, `npm run create:afu`)
 

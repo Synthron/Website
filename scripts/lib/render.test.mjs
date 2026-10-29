@@ -112,6 +112,7 @@ test('renderEntryList renders tagged list items, skips drafts and shows a messag
 test('renderCard links the project page of the page language', () => {
   const html = renderCard(PROJECT, ctxFor('html/projects.html', '../'), 3, STRINGS);
   assert.match(html, /href="\.\.\/html\/proj\/sy317\.html"/);
+  assert.match(html, /<a class="project-card__image-link" href="\.\.\/html\/proj\/sy317\.html" tabindex="-1" aria-hidden="true"><img /);
   assert.match(html, /data-tags="\[&quot;hardware&quot;\]"/);
   const english = renderCard(PROJECT, ctxFor('en/projects.html', '../', { lang: 'en', pages: { ...pageIndex, projectPage: () => 'proj/sy317-regulator.html' } }), 3, STRINGS);
   assert.match(english, /href="\.\.\/en\/proj\/sy317-regulator\.html"/);
