@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "parent": "synplc",
+    "id": "cpu",
+    "title": {
+      "de": "DRAFT CPU",
+      "en": "DRAFT CPU"
+    },
+    "summary": {
+      "de": "Steuer-Einheit mit optionalem digitalem IO",
+      "en": "Control unit with optional digital IO"
+    },
+    "status": "in Arbeit",
+    "date": "2026-10",
+    "image": "assets/img/placeholder.svg"
+  }
+]

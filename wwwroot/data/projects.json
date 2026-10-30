@@ -83,5 +83,37 @@
     },
     "image": "assets/img/placeholder.svg",
     "featured": false
+  },
+  {
+    "id": "synplc",
+    "title": {
+      "de": "DRAFT SynPLC",
+      "en": "DRAFT SynPLC"
+    },
+    "summary": {
+      "de": "Selbstbau-SPS auf STM32-Basis",
+      "en": "DIY PLC based on STM32"
+    },
+    "tags": {
+      "de": [
+        "elektronik",
+        "stm32",
+        "software",
+        "3d-druck"
+      ],
+      "en": [
+        "electronics",
+        "stm32",
+        "3d-printing"
+      ]
+    },
+    "status": "in Arbeit",
+    "date": "2026-10",
+    "links": {
+      "repo": "https://github.com/Synthron/SynPLC",
+      "demo": null
+    },
+    "image": "assets/img/placeholder.svg",
+    "featured": false
   }
 ]
