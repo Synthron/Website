@@ -3,7 +3,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ogImageRel, renderCard, renderEntryList, renderLangSwitch, renderLinks, renderMeta, renderNav, renderOpenGraph, renderSitemap } from './render.mjs';
+import { ogImageRel, renderCard, renderEntryList, renderLangSwitch, renderLinks, renderMeta, renderModuleHeader, renderModuleNav, renderNav, renderOpenGraph, renderSitemap } from './render.mjs';
 
 // --- renderNav --------------------------------------------------------------
 
@@ -250,4 +250,56 @@ test('renderSitemap lists every language folder, skips drafts and uses project d
   assert.doesNotMatch(xml, /draft|404/);
   assert.equal(xml.match(/<lastmod>2026-05-01<\/lastmod>/g).length, 2);
   assert.match(xml, /<lastmod>2026-10-01<\/lastmod>/);
+});
+
+// --- module pages --------------------------------------------------------------
+
+const MODULE_PAGES = { cpu: 'proj/synplc/cpu.html', netzteil: 'proj/synplc/power-supply.html', io: 'proj/synplc/io.html', bus: 'proj/synplc/bus.html' };
+const moduleCtx = (extra = {}) => ({
+  rel: 'en/proj/synplc/cpu.html', root: '../../../', lang: 'en', project: { title: 'Syn<PLC>' },
+  pages: { dir: (code) => code, projectPage: () => 'proj/synplc.html', modulePage: (code, parent, id) => MODULE_PAGES[id] ?? null },
+  ...extra,
+});
+const mod = (id, extra = {}) => ({ parent: 'synsps', id, collection: 'projects', folder: 'proj', title: id, summary: 'S', status: 'fertig', date: '2026-09', ...extra });
+
+test('renderModuleHeader shows the parent title as h1 and the module as h2 with meta', () => {
+  const html = renderModuleHeader({ title: 'Syn<PLC>' }, mod('cpu', { title: 'CPU & IO', summary: 'Sum' }), STRINGS);
+  assert.match(html, /<h1>Syn&lt;PLC&gt;<\/h1>\n<h2 class="page-header__module">CPU &amp; IO<\/h2>\n<p class="page-header__lead">Sum<\/p>/);
+  assert.match(html, /data-status="fertig">done</);
+  assert.doesNotMatch(html, /<a /);
+});
+
+test('renderModuleNav links the overview, skips drafts and other parents and has no link at the ends', () => {
+  const strings = { prev: 'previous', next: 'next' };
+  const modules = [mod('cpu'), mod('io', { draft: true }), mod('x', { parent: 'other' }), mod('netzteil'), mod('bus')];
+  const first = renderModuleNav(modules[0], modules, moduleCtx(), strings);
+  assert.match(first, /<a class="module-nav__back" href="\.\.\/\.\.\/\.\.\/en\/proj\/synplc\.html"><span aria-hidden="true">←<\/span> Syn&lt;PLC&gt;<\/a>/);
+  assert.doesNotMatch(first, /module-nav__prev/);
+  assert.match(first, /<a class="module-nav__next" href="\.\.\/\.\.\/\.\.\/en\/proj\/synplc\/power-supply\.html" rel="next">next <span aria-hidden="true">→<\/span><\/a>/);
+  const middle = renderModuleNav(modules[3], modules, moduleCtx(), strings);
+  assert.match(middle, /href="[^"]*\/cpu\.html" rel="prev"><span aria-hidden="true">←<\/span> previous/);
+  assert.match(middle, /href="[^"]*\/bus\.html" rel="next"/);
+  const last = renderModuleNav(modules[4], modules, moduleCtx(), strings);
+  assert.doesNotMatch(last, /module-nav__next/);
+  // A draft page still gets its neighbours.
+  const draft = renderModuleNav(modules[1], modules, moduleCtx(), strings);
+  assert.match(draft, /\/cpu\.html" rel="prev"/);
+  assert.match(draft, /\/power-supply\.html" rel="next"/);
+  assert.doesNotMatch(renderModuleNav(modules[2], modules, moduleCtx(), strings), /rel="(prev|next)"/);
+});
+
+test('ogImageRel prefers a raster module image, then the parent image', () => {
+  const webp = { image: 'assets/img/m.webp' };
+  const svg = { image: 'assets/img/placeholder.svg' };
+  assert.equal(ogImageRel({ image: 'assets/img/p.webp' }, webp), 'assets/img/m.webp');
+  assert.equal(ogImageRel({ image: 'assets/img/p.webp' }, svg), 'assets/img/p.webp');
+  assert.equal(ogImageRel(svg, svg), 'assets/img/og-default.png');
+});
+
+test('renderSitemap lists module pages with git lastmod and skips draft modules', () => {
+  const built = ['de/proj/a/m.html', 'de/proj/a/draft.html'].map((rel) => [rel, '<html>']);
+  const modules = new Map([['de/proj/a/m.html', { draft: false }], ['de/proj/a/draft.html', { draft: true }]]);
+  const xml = renderSitemap(built, 'https://dm7wb.de', new Map(), new Map([['de/proj/a/m.html', '2026-10-02']]), modules);
+  assert.match(xml, /<loc>https:\/\/dm7wb\.de\/de\/proj\/a\/m\.html<\/loc>\n {4}<lastmod>2026-10-02<\/lastmod>/);
+  assert.doesNotMatch(xml, /draft/);
 });

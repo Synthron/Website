@@ -2,7 +2,7 @@
 // canonical/hreflang/og:locale, language selector targets, hidden projects,
 // sitemap, root redirect and keyboard use of the selector.
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
@@ -22,10 +22,17 @@ const { defaultLang, url } = site;
 const KEYS = ['proj', 'ham'];
 const folderOf = (key, code) => folders[key]?.[code] ?? key;
 const hasMapping = KEYS.some((key) => codes.some((code) => folderOf(key, code) !== key));
-// The same path in another language, collection folder translated.
+// The same path in another language, collection folder translated; module
+// pages follow the counterpart of their overview page.
 const translate = (file, from, to) => {
   const key = KEYS.find((name) => file.startsWith(`${folderOf(name, from)}/`));
-  return key === undefined ? file : `${folderOf(key, to)}/${file.slice(folderOf(key, from).length + 1)}`;
+  if (key === undefined) return file;
+  const rest = file.slice(folderOf(key, from).length + 1);
+  if (rest.includes('/')) {
+    const parent = versions(`${from}/${path.posix.dirname(file)}.html`).get(to);
+    return parent === undefined ? undefined : `${parent.slice(to.length + 1, -5)}/${path.posix.basename(file)}`;
+  }
+  return `${folderOf(key, to)}/${rest}`;
 };
 // Page path of a collection entry in a language: pages.json group, else <folder>/{id}.html.
 const entryPage = (key, id, code) => groups.find((entry) => entry[defaultLang] === `${folderOf(key, defaultLang)}/${id}.html`)?.[code]
@@ -45,6 +52,16 @@ const isDraft = (entry) => Object.values(entry.title).some((title) => /^\s*DRAFT
 const draftPages = [...projects.map((entry) => ['proj', entry]), ...readData('ham.json').map((entry) => ['ham', entry])]
   .filter(([, entry]) => isDraft(entry))
   .flatMap(([key, entry]) => codes.map((code) => `${code}/${entryPage(key, entry.id, code)}`));
+// Draft modules and all modules of a draft parent are not in the sitemap either.
+const parentKey = new Map([...projects.map((entry) => [entry.id, ['proj', entry]]), ...readData('ham.json').map((entry) => [entry.id, ['ham', entry]])]);
+const modules = existsSync(path.join(ROOT, 'wwwroot', 'data', 'modules.json')) ? readData('modules.json') : [];
+const modulePage = (module, code) => {
+  const [key] = parentKey.get(module.parent);
+  return groups.find((entry) => entry[defaultLang] === `${folderOf(key, defaultLang)}/${module.parent}/${module.id}.html`)?.[code]
+    ?? `${entryPage(key, module.parent, code).slice(0, -5)}/${module.id}.html`;
+};
+draftPages.push(...modules.filter((module) => isDraft(module) || isDraft(parentKey.get(module.parent)[1]))
+  .flatMap((module) => codes.map((code) => `${code}/${modulePage(module, code)}`)));
 
 // Language -> page path (relative to the language folder) of every version of a page.
 function versions(rel) {

@@ -2,7 +2,7 @@
 
 import path from 'node:path';
 import { esc, fail, ref } from './util.mjs';
-import { renderEntryList, renderLangSwitch, renderNav, renderProjectHeader, renderProjectList, renderTagFilter } from './render.mjs';
+import { renderEntryList, renderLangSwitch, renderModuleHeader, renderModuleNav, renderNav, renderProjectHeader, renderProjectList, renderTagFilter } from './render.mjs';
 
 const RAW_BLOCK = /<!--\s*@raw\s*-->([\s\S]*?)<!--\s*@endraw\s*-->/g;
 const RAW_MARKER = /<!--\s*@(?:raw|endraw)\s*-->/g;
@@ -96,6 +96,10 @@ export function applyTokens(text, ctx) {
       csp: ctx.flasher ? CSP_FLASHER : CSP,
       projectTitle: ctx.project?.title,
       projectSummary: ctx.project?.summary,
+      moduleTitle: ctx.module?.title,
+      moduleSummary: ctx.module?.summary,
+      // Overview page of a module page (relative to the language folder, mapped name per language).
+      parentPage: ctx.module ? ctx.pages?.projectPage?.(ctx.lang, ctx.module.parent, ctx.module.folder) ?? undefined : undefined,
       projectsPage: listing('projekte.html'),
       hamPage: listing('amateurfunk.html'),
     };
@@ -107,7 +111,8 @@ export function applyTokens(text, ctx) {
   });
 }
 
-// `lists` holds the localized entries per collection ({ projects, ham }).
+// `lists` holds the localized entries per collection ({ projects, ham }) and
+// the localized modules of the page language (`modules`).
 export function applyDirectives(html, ctx, lists, nav, footerNav, strings) {
   return html.replace(/<!--\s*@([\w-]+)([^>]*?)-->/g, (match, name, rawArgs, offset) => {
     const args = rawArgs.trim().split(/\s+/).filter(Boolean);
@@ -139,6 +144,15 @@ export function applyDirectives(html, ctx, lists, nav, footerNav, strings) {
           return '';
         }
         return renderProjectHeader(ctx.project, ctx, strings);
+      case 'module-header':
+      case 'module-nav':
+        if (!ctx.project || !ctx.module) {
+          fail(`${ref(ctx.rel, html, offset)}: @${name} needs a module page with a data/modules.json entry`);
+          return '';
+        }
+        return name === 'module-header'
+          ? renderModuleHeader(ctx.project, ctx.module, strings)
+          : renderModuleNav(ctx.module, lists.modules ?? [], ctx, strings);
       default:
         fail(`${ref(ctx.rel, html, offset)}: unknown directive @${name}`);
         return '';

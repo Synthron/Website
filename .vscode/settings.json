@@ -3,6 +3,7 @@
   "json.schemas": [
     { "fileMatch": ["/wwwroot/data/projects.json"], "url": "./scripts/schemas/projects.schema.json" },
     { "fileMatch": ["/wwwroot/data/ham.json"], "url": "./scripts/schemas/ham.schema.json" },
+    { "fileMatch": ["/wwwroot/data/modules.json"], "url": "./scripts/schemas/modules.schema.json" },
     { "fileMatch": ["/wwwroot/data/nav.json", "/wwwroot/data/footer-nav.json"], "url": "./scripts/schemas/nav.schema.json" },
     { "fileMatch": ["/wwwroot/data/pages.json"], "url": "./scripts/schemas/pages.schema.json" }
   ],

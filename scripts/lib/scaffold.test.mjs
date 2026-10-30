@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { DATA_DIR, PAGES_FILE, collectionFolders, folderName, loadSetup, projectPagePath, readPages } from './scaffold.mjs';
+import { DATA_DIR, MODULES_FILE, PAGES_FILE, collectionFolders, folderName, loadSetup, modulePagePath, projectPagePath, readModules, readPages } from './scaffold.mjs';
 
 test('projectPagePath returns the mapped name or the standard path', () => {
   const pages = [{ de: 'proj/uhr.html', en: 'proj/clock.html' }, { de: 'ham/t2lt.html', en: 'ham/t2lt-antenna.html' }];
@@ -40,4 +40,25 @@ test('loadSetup returns the language codes and the default language of site.json
 test('readPages returns the groups of pages.json', async () => {
   const expected = JSON.parse(await readFile(PAGES_FILE, 'utf8'));
   assert.deepEqual(await readPages(), expected);
+});
+
+test('modulePagePath uses the module folder of the parent page per language', () => {
+  const folders = { ham: { de: 'afu' } };
+  const pages = [
+    { de: 'proj/synsps.html', en: 'proj/synplc.html' },
+    { de: 'proj/synsps/netzteil.html', en: 'proj/synplc/power-supply.html' },
+    { de: 'afu/t2lt.html', en: 'ham/t2lt-antenna.html' },
+  ];
+  assert.equal(modulePagePath(pages, 'de', 'de', 'synsps', 'cpu'), 'proj/synsps/cpu.html');
+  assert.equal(modulePagePath(pages, 'de', 'en', 'synsps', 'cpu'), 'proj/synplc/cpu.html');
+  assert.equal(modulePagePath(pages, 'de', 'en', 'synsps', 'netzteil'), 'proj/synplc/power-supply.html');
+  assert.equal(modulePagePath(pages, 'de', 'en', 'other', 'cpu'), 'proj/other/cpu.html');
+  assert.equal(modulePagePath(pages, 'de', 'de', 't2lt', 'balun', 'ham', folders), 'afu/t2lt/balun.html');
+  assert.equal(modulePagePath(pages, 'de', 'en', 't2lt', 'balun', 'ham', folders), 'ham/t2lt-antenna/balun.html');
+  assert.equal(modulePagePath([], 'de', 'en', 'x', 'y', 'ham', folders), 'ham/x/y.html');
+});
+
+test('readModules returns the entries of modules.json', async () => {
+  const expected = JSON.parse(await readFile(MODULES_FILE, 'utf8'));
+  assert.deepEqual(await readModules(), expected);
 });

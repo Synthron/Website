@@ -45,17 +45,18 @@ Website/
 │   │   ├── preview.mjs    # Shared helpers of serve/dev (root redirect, flasher detection)
 │   │   ├── lighthouse.mjs # Overview page of the Lighthouse CI reports
 │   │   └── *.test.mjs     # Unit tests (node --test): util, data, render, pipeline, checks, scaffold, preview, lighthouse
-│   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects, ham, pages, folders)
+│   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects, ham, modules, pages, folders)
 │   ├── e2e/               # Playwright specs (*.spec.mjs)
 │   │   ├── pages.spec.mjs # Every built page: 320/768/1280 px, console, requests, storage, focus
-│   │   └── language.spec.mjs # Language setup of the built site (lang, canonical, hreflang, selector, sitemap, root redirect)
-│   ├── create.mjs         # Scaffold a new project page + projects.json entry
+│   │   ├── language.spec.mjs # Language setup of the built site (lang, canonical, hreflang, selector, sitemap, root redirect)
+│   │   └── modules.spec.mjs  # Module pages (header, back/previous/next links, language pairs, hidden modules)
+│   ├── create.mjs         # Scaffold a new project / ham page (or module page, --module) + data entry
 │   ├── dev.mjs            # Dev server: build, serve, watch, live reload
 │   ├── firmware.mjs       # Scaffold an assets/firmware/<suite>/manifest.json
 │   ├── images.mjs         # WebP conversion, OG default image, SVG optimisation
 │   ├── lighthouse.mjs     # Run Lighthouse CI and write the report overview (npm run lighthouse)
 │   ├── page.mjs           # Scaffold a minimal secondary page in every language folder
-│   ├── remove.mjs         # Delete a project / ham entry and its pages in all languages (npm run remove:project / remove:afu)
+│   ├── remove.mjs         # Delete a project / ham entry (or module page, --module) and its pages in all languages (npm run remove:project / remove:afu)
 │   ├── report.mjs         # Report dist/ size, largest files, unused assets
 │   ├── check-external.mjs # Manual HEAD checks of external links
 │   └── serve.mjs          # Local preview server for dist/
@@ -72,7 +73,8 @@ Website/
     │   ├── header-common.html  # Skip link, brand and language selector only (common pages)
     │   └── footer.html    # Shared footer (copyright, footer nav)
     ├── templates/         # Source-only templates (not built, not deployed)
-    │   └── project-template.html  # Master project write-up template (all layouts)
+    │   ├── project-template.html  # Master project write-up template (all layouts)
+    │   └── module-template.html   # Module page template (copied by create:project / create:afu --module)
     ├── de/                # German pages (default language)
     │   ├── index.html     # German home (intro, featured projects)
     │   ├── projekte.html  # Project listing page with tag filter (en: projects.html)
@@ -83,7 +85,7 @@ Website/
     │   ├── rechtliches.html # Legal: legal notes (en: disclaimers.html)
     │   ├── afu/           # Ham radio pages (one per data/ham.json entry, named by `id`; collection folder "ham", mapped in data/folders.json)
     │   │   └── moxon-2m-70cm.html  # Moxon antenna page
-    │   └── proj/          # Individual project pages (one per project, named by `id`)
+    │   └── proj/          # Individual project pages (one per project, named by `id`; module pages in proj/<parent page>/, see Module Pages)
     │       ├── sy317.html # Static project page (from template)
     │       └── nixie-clock.html  # Static project page (from template)
     ├── en/                # English pages (remaining placeholders marked TODO, see todo.md)
@@ -108,6 +110,7 @@ Website/
     │   ├── folders.json    # Collection folder names per language (de: ham -> afu)
     │   ├── projects.json   # Project entries (single source of truth)
     │   ├── ham.json        # Ham radio page entries (list on hamradio.html)
+    │   ├── modules.json    # Module pages below a project or ham entry (see Module Pages)
     │   ├── site.json       # Shared site info (languages, defaultLang, name, copyright, email, footerNote per language)
     │   └── strings.json    # UI strings per language (count labels, buttons, aria, status labels)
     └── assets/
@@ -133,7 +136,7 @@ The site is multi-language; open translation tasks are listed in [`todo.md`](tod
 - **Configuration** (`data/site.json`): `languages` (`code`, `name`, `locale`, `flag`), `defaultLang` (`de`, also the `x-default` and fallback language) and `footerNote` per language. The code is the folder name below `wwwroot/`.
 - **Pages**: `wwwroot/<lang>/…` per language (`de/` is complete, `en/` holds placeholders). Two common pages live at the root: the landing page `index.html` (`lang="de"`, text blocks marked with their own `lang`) and `404.html` (English). Both use `partials/header-common.html` (brand and language selector, no nav). The legal pages exist in both languages (`de/datenschutz.html` ↔ `en/privacy.html`, `de/rechtliches.html` ↔ `en/disclaimers.html`, paired in `data/pages.json`).
 - **Root redirect**: `.htaccess` (and the preview servers) redirect `/` to `/de/` or `/en/` by the first `Accept-Language` entry (`302`, `Vary: Accept-Language`); everything else gets the landing page.
-- **Page pairs**: a page pairs with the page of the same path in another language (collection folders translated, see below). Pages with different file names per language are listed in `data/pages.json` (`[{ "de": "ueber-mich.html", "en": "about.html" }]`; project groups must contain `"de": "proj/{id}.html"`, ham groups `"de": "afu/{id}.html"`, and every path of a group must lie in the collection folder of its language). The language selector, the `hreflang` alternates and `npm run create:project`/`create:afu`/`page`/`remove` use these pairs; a missing counterpart leads to that language's home.
+- **Page pairs**: a page pairs with the page of the same path in another language (collection folders translated, see below). Pages with different file names per language are listed in `data/pages.json` (`[{ "de": "ueber-mich.html", "en": "about.html" }]`; project groups must contain `"de": "proj/{id}.html"`, ham groups `"de": "afu/{id}.html"`, module groups `"de": "proj/{parent id}/{module id}.html"` (only module pages; every path in the module folder of the parent in its language), and every path of a group must lie in the collection folder of its language). The language selector, the `hreflang` alternates and `npm run create:project`/`create:afu`/`page`/`remove` use these pairs; a missing counterpart leads to that language's home.
 - **Collection folders** (`data/folders.json`, schema `scripts/schemas/folders.schema.json`): the folders of the collections can have a different name per language, `{ "ham": { "de": "afu" } }` (German ham pages in `de/afu/`, English ones in `en/ham/`). Keys are the internal folder names `proj` and `ham` (data files, ids, scripts and code keep using them); a language without a value (or a missing file) uses the key. Names are lowercase and hyphenated, unique per language and never the key of another collection; pages left in a key folder that is mapped away fail the build. Pages in collection folders pair by key and file name (`de/afu/x.html` ↔ `en/ham/x.html`) without a `pages.json` entry. The source tree carries the mapped names; the build does not rename output. In page text, link to a collection page with `{{langRoot}}{{folder:ham}}x.html`.
 - **Localized data**: `strings.json`, `nav.json`, `footer-nav.json` hold one block per language; in `projects.json` `title`, `summary` and `tags` are objects per language (tag lists are independent, not translations, from a fixed vocabulary per language in the schema). `status` stays a German key; its label per language is `strings.<lang>.status`.
 - **Missing translations**: the default language is required, other languages are optional. A project whose `title`/`summary` is missing or starts with `TODO` in a language (or whose page is missing) is hidden there (lists, filter, sitemap, alternates; its page is not built) and the build warns. Placeholders follow two conventions: `TODO` for project texts, `TODO_<German label>` for labels (navigation, strings, footer note).
@@ -158,9 +161,11 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | `npm run check` | Validation only: runs every build check (data, firmware manifests, tokens/includes/directives, links) and **writes nothing**. Fast pre-commit check; used by the git hook. |
 | `npm run create:project -- "Name" "Brief" [flags]` | Scaffolds a new project: copies `templates/project-template.html` to `<lang>/proj/{id}.html` for every language and registers the project in `data/projects.json` (other languages as `TODO`). Flags: `--tags a,b`, `--featured`, `--status <value>`, `--repo <url>`, `--dry-run` (validate only). |
 | `npm run create:afu -- "Name" "Brief" [flags]` | Same for a ham radio page: `de/afu/{id}.html`, `en/ham/{id}.html` (ham folder per language from `data/folders.json`; back link to the ham listing) and an entry in `data/ham.json`. Flags: `--tags a,b`, `--status <value>` (optional), `--repo <url>` (optional), `--dry-run`. |
+| `npm run create:project -- --module <parent-id> "Name" "Brief"` | Scaffolds a module page below a project (`create:afu -- --module …` below a ham entry): copies `templates/module-template.html` into the module folder of the parent in every language and appends an entry to `data/modules.json`. Flags: `--status <value>` (default `in Arbeit`), `--dry-run`; see [Module Pages](#module-pages-datamodulesjson). |
 | `npm run page -- "Title" [--title-<lang> "…"] [--nav\|--footer]` | Scaffolds a minimal secondary page (shared head with CSP/`{{name}}` title/description, header, `h1`, one prose section, footer) at `<lang>/{slug}.html` for every language; refuses to overwrite; pairs differently named pages in `data/pages.json`; optionally appends nav entries to `data/nav.json` / `data/footer-nav.json`. |
-| `npm run remove:project -- <id>` | Deletes a project from `data/projects.json`, its pages in every language folder and its `pages.json` group; asks for confirmation (`--yes` skips the prompt). The image file is left in place. |
+| `npm run remove:project -- <id>` | Deletes a project from `data/projects.json`, its pages in every language folder and its `pages.json` group; asks for confirmation (`--yes` skips the prompt). The image file is left in place. Refused while the project has modules. |
 | `npm run remove:afu -- <id>` | Same for a ham radio page: entry in `data/ham.json`, `de/afu/{id}.html` / `en/ham/{id}.html` pages and `pages.json` group. |
+| `npm run remove:project -- --module <parent-id> <module-id>` | Deletes a module (`remove:afu -- --module …` below a ham entry): its `data/modules.json` entry, its page in every language, its `pages.json` group and the module folder once it is empty; `--yes` skips the prompt. |
 | `npm run report` | Prints a size report of `dist/` (run `npm run build` first): total size, largest files, page sizes (overall and per language), raster images not converted to WebP, unused images (the reserved `placeholder*.svg` are excluded). |
 | `npm run check:external` | Sends a HEAD request to every external link found in `wwwroot/` (pages, partials, template, `data/*.json`) and reports the status. Manual only — never part of `build` or `check`. |
 | `npm run firmware -- <suite> --chip <family> [--chip …]` | Creates `assets/firmware/<suite>/manifest.json` with a `builds` entry per `--chip` and prints the `<esp-web-install-button>` snippet. Supported chips: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 (see Firmware section for offsets). |
@@ -171,7 +176,7 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | `npm run lint:css` | Stylelint over `wwwroot/css/`. |
 | `npm run lint:html` | Builds, then runs html-validate over `dist/**/*.html`. |
 | `npm run images [-- --dry-run]` | WebP next to raster originals in `assets/img/` (skipped when not smaller), creates `assets/img/og-default.png` if missing, optimises SVGs in place. Never overwrites existing outputs or originals. |
-| `npm run test:e2e` | Builds, then runs the Playwright specs in `scripts/e2e/` against `scripts/serve.mjs` on port 8010: every page at 320/768/1280 px (`pages.spec.mjs`) and the language setup of the built site (`language.spec.mjs`: `<html lang>`, canonical, `og:locale`, hreflang alternates, selector targets and `aria-current`, hidden projects, sitemap, root redirect, keyboard use of the selector). |
+| `npm run test:e2e` | Builds, then runs the Playwright specs in `scripts/e2e/` against `scripts/serve.mjs` on port 8010: every page at 320/768/1280 px (`pages.spec.mjs`), the language setup of the built site (`language.spec.mjs`: `<html lang>`, canonical, `og:locale`, hreflang alternates, selector targets and `aria-current`, hidden projects, sitemap, root redirect, keyboard use of the selector) and the module pages (`modules.spec.mjs`: header, back link and previous/next at the top and the bottom, language pairs, hidden modules; no tests while `data/modules.json` is empty). |
 | `npm run lighthouse` | Builds, then refreshes the `url` list in `lighthouserc.json` from the built pages in `dist/` (so every page is audited even after pages are added, renamed or removed) and runs Lighthouse CI (`scripts/lighthouse.mjs`) against `scripts/serve.mjs` on port 8020; reports go to `.lighthouseci/reports/` (never uploaded). Afterwards `.lighthouseci/reports/index.html` lists every page with its category scores (scores below a `categories:*` `minScore` assertion are framed) and links to its report; it is written even when assertions fail (the exit code stays the lhci status). |
 | `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` and `HOST` env vars override) with `Cache-Control: no-cache` (revalidates every request but, unlike `no-store`, keeps the back/forward cache usable) and the same security headers as production (mirrors `.htaccess`, flasher CSP exception detected from the served page); redirects directory requests to add the trailing slash and mirrors the root redirect (`/` → `/de/` or `/en/` by the first `Accept-Language` entry, `302` + `Vary: Accept-Language`; other languages get the landing page). `HOST=0.0.0.0` works for phone testing on the LAN, but WebSerial needs a secure context, so the web flasher will not work there. |
 | `npm start` | Build, then serve. |
@@ -180,7 +185,7 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 
 The build copies `wwwroot/` to `dist/` except `partials/`, `data/`, `templates/` and `assets/firmware/dummy/` (the template's example suite is not a real product, so it is not deployed). HTML files and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then local asset URLs are cache-busted and finally the `@raw` blocks are put back unchanged. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
 
-The build also generates `dist/sitemap.xml` from every built page (excluding `404.html`; `index.html` becomes the root URL). Project pages carry a `lastmod` from their `date`; all other pages take it from the last git commit date of their source file — today when the file has uncommitted changes, omitted when git is unavailable or the file is untracked. Pages of projects that are hidden in a language are not built and therefore not listed; the sitemap has no `hreflang` alternates (those are `<link>` tags in the page heads). The build also fills the `Sitemap:` line in `dist/robots.txt`. Both use the canonical `url` in `data/site.json`. Keep `data/site.json`'s `url` current when the site moves domains.
+The build also generates `dist/sitemap.xml` from every built page (excluding `404.html`; `index.html` becomes the root URL). Project pages carry a `lastmod` from their `date`; all other pages (module pages included) take it from the last git commit date of their source file — today when the file has uncommitted changes, omitted when git is unavailable or the file is untracked. Draft projects, draft modules and all modules of a draft parent are not listed. Pages of projects that are hidden in a language are not built and therefore not listed; the sitemap has no `hreflang` alternates (those are `<link>` tags in the page heads). The build also fills the `Sitemap:` line in `dist/robots.txt`. Both use the canonical `url` in `data/site.json`. Keep `data/site.json`'s `url` current when the site moves domains.
 
 ### Tooling Packages
 
@@ -203,7 +208,7 @@ Installed as `devDependencies`; none of them ship to `dist/`. Use these packages
 - Generated reports (`test-results/`, `playwright-report/`, `.lighthouseci/`) are git-ignored.
 - `npm run build` and `npm run check` stay fast and offline: only `ajv` runs inside them. Lint runs via `npm run lint` (and the pre-commit hook); Playwright and Lighthouse run on demand.
 - `html-validate` and the build's `checkHtmlRules` overlap on purpose: the build check (one `h1`, `<html lang>`, `alt`, no inline scripts or `style` attributes) runs offline in every build and `npm run check`; `html-validate` adds full HTML5 content-model, ARIA and landmark rules on the built pages.
-- `data/site.json` and `data/strings.json` reference their schema via `$schema`; the array files (`projects.json`, `pages.json`) and the nav files (`nav.json`, `footer-nav.json`) are mapped via `json.schemas` in `.vscode/settings.json`.
+- `data/site.json` and `data/strings.json` reference their schema via `$schema`; the array files (`projects.json`, `ham.json`, `modules.json`, `pages.json`) and the nav files (`nav.json`, `footer-nav.json`) are mapped via `json.schemas` in `.vscode/settings.json`.
 - Add a package with `npm i -D <name>` and list it in this table in the same change. In PowerShell, quote scoped names: `npm i -D '@scope/name'` (a bare `@` starts splatting).
 
 ### Open Graph and Canonical Tags
@@ -212,7 +217,7 @@ Every built page except `404.html` automatically gets a canonical link and Open 
 
 - `canonical`, `og:url`, `og:type="website"`, `og:locale`, `og:site_name`, `og:title` and `og:description` come from `data/site.json` plus the page's own `<title>` and `meta name="description"` (parsed from the rendered page, so they always match). `og:locale` is the `locale` of the page language (`de_DE`, `en_GB`).
 - Pages that exist in two or more languages also get `<link rel="alternate" hreflang="…">` for every available version (a project hidden in a language gets none), `hreflang="x-default"` pointing to the root `/`, and `og:locale:alternate` for the other versions.
-- `og:image` uses the project's raster image (`.png`/`.jpg`/`.webp`) on project pages; every other page (and projects whose image is an SVG) uses `assets/img/og-default.png`. Create that file once — 1200×630, logo on a plain background: `npm run images` generates it from `favicon.svg` (or make it by hand in GIMP); until it exists the build warns and the image tag is omitted. The image URL is cache-busted like any local asset.
+- `og:image` uses the project's raster image (`.png`/`.jpg`/`.webp`) on project pages; module pages use the module's raster image, else the parent's; every other page (and SVG images) uses `assets/img/og-default.png`. Create that file once — 1200×630, logo on a plain background: `npm run images` generates it from `favicon.svg` (or make it by hand in GIMP); until it exists the build warns and the image tag is omitted. The image URL is cache-busted like any local asset.
 - No page edits needed: the tags are added at build time. Keep `url` in `data/site.json` current (it is the canonical base).
 
 ### Deployment
@@ -251,6 +256,9 @@ Beyond the link, anchor and HTML-rule checks, the build verifies the language se
 | Page of a non-default language without a default-language counterpart | fail |
 | Default-language page without a counterpart in another language (project pages are covered by the project data warnings) | warn |
 | Project page without project data in its language | warn |
+| Page nested deeper than `<folder>/<parent page>/<module>.html` in a collection folder; module folder without its overview page next to it (a renamed overview page names the folder to rename) | fail |
+| Module page without a `data/modules.json` entry or of an unknown parent | fail |
+| Visible, non-draft module page that its overview page in the same language does not link | warn |
 | Link from a language page into another language's folder (the language selector and entries with `hreflang`/`lang` are exempt; common pages are not checked) | warn |
 | Link into the removed `html/` folder (old URLs; the pages moved to `<lang>/`) | fail |
 | Flasher page (`<esp-web-install-button>`) whose file name is not covered by a `<Files>`/`<FilesMatch>` block with `'unsafe-inline'` in `wwwroot/.htaccess` | warn |
@@ -276,9 +284,13 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `<!-- @nav -->` | Nav list built from `data/nav.json` for the page language; sets `aria-current="page"` on the entry whose `href` is the current page. Renders nothing on common pages (brand only). Used in `partials/header.html`. |
 | `<!-- @footer-nav -->` | Footer nav list built from `data/footer-nav.json` for the page language; same `aria-current="page"` handling as `@nav`. Entries with `lang` pointing to another language get `lang`/`hreflang`. Used in `partials/footer.html`. |
 | `<!-- @lang-switch -->` | Language selector: one link per language (flag, code, language name as `aria-label`) to the same page in that language, else to that language's home; `aria-current="true"` on the current language of a language page. Renders nothing with a single configured language. Cards, status labels and the link hint word use the page language. |
-| `{{projectTitle}}`, `{{projectSummary}}` | Title/summary (in the page language) of the project whose page this is: `<lang>/proj/{id}.html` or the mapped name from `data/pages.json`. On ham pages (`<lang>/<ham folder>/{id}.html`, `de/afu/`, `en/ham/`) the same tokens hold the ham entry's title/summary. |
+| `{{projectTitle}}`, `{{projectSummary}}` | Title/summary (in the page language) of the project whose page this is: `<lang>/proj/{id}.html` or the mapped name from `data/pages.json`. On ham pages (`<lang>/<ham folder>/{id}.html`, `de/afu/`, `en/ham/`) the same tokens hold the ham entry's title/summary; on module pages those of the parent. |
+| `{{moduleTitle}}`, `{{moduleSummary}}` | Title/summary (in the page language) of the module on a module page (`data/modules.json`). Module pages use `<title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>` and `{{moduleSummary}}` as `meta description`. Unknown elsewhere (the build fails). |
+| `{{parentPage}}` | On module pages: path of the overview page relative to the language folder (mapped name per language, e.g. `proj/synsps.html` / `proj/synplc.html`); use it as `{{langRoot}}{{parentPage}}`. |
 | `{{projectsPage}}`, `{{hamPage}}` | File name (in the page language) of the projects listing (`projekte.html` ↔ `projects.html`) / ham radio listing (`amateurfunk.html` ↔ `hamradio.html`) page, resolved from `data/pages.json` (the group is keyed by the default-language name). Used by the back link on project and ham pages, so the target is never hard-coded per language. |
 | `<!-- @project-header -->` | Project page header (h1, summary, status/date, tags, links) from `data/projects.json`; on ham pages from `data/ham.json` (status and links only when set). |
+| `<!-- @module-header -->` | Module page header: parent title as `h1` (not linked), module title as `h2` (`page-header__module`), module summary, status and date. Fails outside module pages. |
+| `<!-- @module-nav -->` | Module navigation (`p.module-nav`, used at the top and the bottom of a module page): back link to the overview page (`←` + parent title), previous/next module of the same parent in `data/modules.json` order with the generic labels `strings.prev` / `strings.next` (`rel="prev"`/`"next"`); only modules shown in the page language, drafts skipped, no link at the ends. Fails outside module pages. |
 | `<!-- @projects all\|featured level=2\|3 id=list-id -->` | Pre-rendered project card grid, newest first; drafts are skipped. |
 | `<!-- @ham-list level=2\|3 id=list-id -->` | Pre-rendered list of the ham pages from `data/ham.json` (title link, date, status if set, summary, tags), newest first; drafts are skipped; `strings.noHamPages` when empty. |
 | `<!-- @tag-filter list-id [from=projects\|ham] -->` | Tag filter buttons and status line for the list with that `id`. `from` selects the data (default `projects`); `from=ham` uses the ham tags and the count words `hamCountSingular`/`hamCountPlural`. Hidden until `js/projects.js` runs. |
@@ -378,6 +390,7 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 - To add a NEW layout pattern, append a new numbered section to the template, add its styles to `css/components.css` (and `css/responsive.css` if it needs breakpoints), and note it here.
 - Placeholder images for different aspect ratios live in `assets/img/` (`placeholder.svg` wide, `placeholder-square.svg`, `placeholder-portrait.svg`). They are reserved (template references, scaffold default image), so the build and `npm run report` never list them as unused.
 - Project cards link to a static page per project at `<lang>/proj/{id}.html` (e.g. `de/proj/sy317.html`; other languages may use a mapped name from `data/pages.json`). Title and preview image both link there; the image link is hidden from keyboard and screen readers (`tabindex="-1"`, `aria-hidden`) so each card has one link stop. The template is never built; `npm run create:project` / `create:afu` copy it.
+- Module pages use the smaller [`wwwroot/templates/module-template.html`](wwwroot/templates/module-template.html) (not built either): head with `{{moduleSummary}}` and the title `{{projectTitle}} — {{moduleTitle}} — {{name}}`, `@module-nav` at the top, `@module-header`, one placeholder section, `@module-nav` at the bottom. Every layout of the project template works on module pages too. `--module` of `create:project` / `create:afu` copies it.
 
 ### Scaffolding a New Project or Ham Page (`npm run create:project`, `npm run create:afu`)
 
@@ -390,13 +403,13 @@ npm run create:afu -- "T2LT Antenne" "One-sentence description." --tags antenne
 
 The command:
 
-- Derives a lowercase, hyphenated `id` from the name (e.g. `My Project` → `my-project`) and refuses to run if that `id` already exists in the data file or as a page in any `<lang>/proj/` (ham folder of the language, e.g. `de/afu/`, `en/ham/`) folder (mapped names from `data/pages.json` and `data/folders.json` included). Unknown flags fail.
+- Derives a lowercase, hyphenated `id` from the name (e.g. `My Project` → `my-project`) and refuses to run if that `id` already exists in the data file, in the other collection's data file (ids are unique across `projects.json` and `ham.json`) or as a page in any `<lang>/proj/` (ham folder of the language, e.g. `de/afu/`, `en/ham/`) folder (mapped names from `data/pages.json` and `data/folders.json` included). Unknown flags fail.
 - Copies `templates/project-template.html` to `<lang>/proj/{id}.html` (`de/afu/{id}.html`, `en/ham/{id}.html`) for **every** configured language (without the master-template instruction comment; ham pages get the ham back link). The back link target is resolved per language at build time (`{{projectsPage}}` / `{{hamPage}}`, see Build-time Templating), so scaffolded pages always point at the right listing page (`projekte.html` in German, `projects.html` in English).
 - `create:project` appends an entry to `data/projects.json` with the required schema: `id`, `title` and `summary` per language (the default language gets the name/brief, every other language `"TODO"`), `tags` per language (the default language gets `--tags`, others start empty), `status` (`--status`, default `"in Arbeit"`), `date` (current `YYYY-MM`), `links` (`repo` from `--repo`, else `null`; `demo` `null`), the placeholder image, and `featured` (`--featured`). The project stays hidden in a language until its `TODO` texts are replaced.
 - `create:afu` appends the slim entry to `data/ham.json`: `id`, `title`, `summary`, `tags`, `date`; `status` and `links` only when `--status` / `--repo` are given. `--featured` is rejected.
 - `--dry-run` validates and prints the entry without writing anything.
 
-After scaffolding, replace the placeholder body on the new pages and set `tags` (projects also `links` and `image`) in the data file, then run `npm run build`.
+After scaffolding, replace the placeholder body on the new pages and set `tags` (projects also `links` and `image`) in the data file, then run `npm run build`. For module pages (`--module <parent-id>`) see [Module Pages](#module-pages-datamodulesjson).
 
 ### Scaffolding a Secondary Page (`npm run page`)
 
@@ -421,6 +434,7 @@ After scaffolding, replace the placeholder body text and add the page to the REA
 
 - Validates `<id>` (lowercase, hyphenated) and looks it up in `data/projects.json` (or `data/ham.json`); if the id belongs to the other collection, the error names the right script.
 - Asks for a confirmation prompt (listing the files) and deletes the entry plus its page in every language folder (`<lang>/proj/{id}.html` / `de/afu/{id}.html`, `en/ham/{id}.html` or the mapped name) and its group in `data/pages.json`; pass `--yes` to skip the prompt.
+- Refuses an entry that still has modules in `data/modules.json` and prints the commands to remove them first: `npm run remove:project -- --module <parent-id> <module-id>` (`remove:afu` for ham entries) deletes the module entry, its page in every language, its `pages.json` group and the module folder once it is empty.
 - The project's image file is left in place — images can be shared between projects. Delete it manually if nothing references it anymore (`npm run report` lists unused images).
 - Run `npm run build` afterwards and remove the now-stale files from the server on the next deploy.
 
@@ -479,6 +493,7 @@ Field validation (enforced by the build, failures abort `npm run build`). The st
 - `links` is an object; `repo` and `demo` are `null` or a valid http(s) URL (anything else fails the build).
 - `tags` come from a fixed vocabulary per language, defined in `projects.schema.json` (`tags.properties.<lang>.items.enum`): `de` = `elektronik`, `software`, `roehren`, `esp32`, `stromversorgung`; `en` = `electronics`, `software`, `tubes`, `esp32`, `power-supply`. They must not repeat within a language. The build and `npm run create:project -- … --tags` reject other tags; a new tag or language is added to that list first.
 - `image` is a relative path that resolves inside `wwwroot/`; `../` segments and absolute paths are rejected.
+- `id` values are unique across `projects.json` and `ham.json` (a shared id fails the build), so the `parent` of a module is unambiguous.
 - Every project needs the page `de/proj/{id}.html`; other languages use `<lang>/proj/{id}.html` or the mapped name from `data/pages.json`.
 
 Adding a project means `npm run create:project` (entry plus pages in all languages). Cards, filter, page title and page header are generated by the build. The project header's **Source** button (from `links.repo`) renders with the Github mark (`assets/icons/GitHub_Invertocat_White.svg`) as a leading badge; the **Demo** button (from `links.demo`) stays a plain text button. Omit the link to hide its button.
@@ -504,12 +519,46 @@ A second collection next to the projects: `wwwroot/<lang>/hamradio.html` lists t
 - Ham entries do not appear on `projects.html`, the home page or in the project tag filter.
 - Adding a ham page: `npm run create:afu -- "Name" "Brief" --tags a,b` (entry plus pages in all languages), replace the placeholder body, run `npm run build`.
 
+### Module Pages (`data/modules.json`)
+
+A project or ham entry (e.g. SynPLC, ModLab) can have module pages below its overview page, one level deep:
+
+```
+de/proj/synsps.html            # overview page (project synsps)
+de/proj/synsps/netzteil.html   # module page
+en/proj/synplc.html            # overview page, mapped name (data/pages.json)
+en/proj/synplc/netzteil.html   # module folder follows the page name of its language
+de/afu/t2lt.html, de/afu/t2lt/balun.html   # ham entry with a module (mapped collection folder)
+```
+
+```json
+{
+  "parent": "synsps",
+  "id": "netzteil",
+  "title": { "de": "Netzteil", "en": "TODO" },
+  "summary": { "de": "Ein Satz.", "en": "TODO" },
+  "status": "in Arbeit",
+  "date": "2026-09",
+  "image": "assets/img/placeholder.svg"
+}
+```
+
+- **Location**: `<lang>/<folder>/<parent page>/<module>.html`. `<folder>` is the collection folder of the parent in that language (`proj/`, `afu/` / `ham/`); the module folder is named like the parent's page in that language (mapped names from `data/pages.json` included). Deeper nesting and module folders without their overview page fail the build; renaming an overview page in `pages.json` moves its module folder (the build names the folder to rename).
+- **Data**: all fields required (schema [`scripts/schemas/modules.schema.json`](scripts/schemas/modules.schema.json)). `parent` is a project or ham id (both files are searched); `id` is lowercase, hyphenated and unique per parent and is the default-language file name; `status`, `date` and `image` follow the project rules; the file order is the order of previous/next. `title`/`summary` follow the language rules of projects (default language required; `TODO` or missing hides the module there and warns); a `DRAFT` title prefix marks a draft module (page built, skipped by previous/next and the sitemap).
+- **Visibility**: a module is shown in a language only where its parent and the module itself are (texts and page present). Hidden module pages are not built; the language selector and `hreflang` pair module pages only where both versions are shown. Module pages without a `modules.json` entry or of an unknown parent fail.
+- **File names**: the same name in every language at first; rename one per language with a module group in `data/pages.json` (`{ "de": "proj/synsps/netzteil.html", "en": "proj/synplc/power-supply.html" }`; only module pages, each in the module folder of its language).
+- **Page**: `templates/module-template.html` (see [Project Write-up Template](#project-write-up-template)). `@module-header` shows the parent title as `h1` and the module title as `h2`; `@module-nav` at the top and the bottom links back to the overview page and to the previous/next module. UI strings `prev`/`next` in `data/strings.json`.
+- **Overview page**: modules are linked by hand-written links or sections on the overview page of each language, relative to it: `<a href="synsps/netzteil.html">…</a>` (German), `<a href="synplc/netzteil.html">…</a>` (English). The build warns about a shown, non-draft module that its overview page does not link. Project cards, listings and the tag filter stay unchanged.
+- **Sitemap and Open Graph**: module pages are listed with `lastmod` from git (draft modules and all modules of a draft parent are left out); `og:image` is the module image, for an SVG the parent image, then the default image.
+- **Commands**: `npm run create:project -- --module <parent-id> "Name" "Brief" [--status <value>] [--dry-run]` (`create:afu` for ham entries; the parent must be in the command's collection) derives the id from the name, refuses an existing module or page, creates the module folder per language if missing, copies the template into every language whose overview page exists and appends the entry (other languages `TODO`, `date` = current month, placeholder image, `status` default `in Arbeit`; `--tags`, `--featured` and `--repo` are rejected). It prints the overview links to add. `npm run remove:project -- --module <parent-id> <module-id>` (`remove:afu`) removes a module; an entry with modules cannot be removed.
+
 ### Other Data Files
 
 | File | Content |
 | --- | --- |
-| `data/strings.json` | `{ "<lang>": { … } }`: UI strings per language (count words, labels, skip link, menu, aria labels, the connector word `projectLinkFor`, quote marks, `status` labels, ham list strings `hamCountSingular`/`hamCountPlural`/`noHamPages`/`backToHam`). Every language needs every key; `status` needs one label per status value. Rendered via `{{t:key}}` and the directives. |
+| `data/strings.json` | `{ "<lang>": { … } }`: UI strings per language (count words, labels, skip link, menu, aria labels, the connector word `projectLinkFor`, quote marks, `status` labels, ham list strings `hamCountSingular`/`hamCountPlural`/`noHamPages`/`backToHam`, module navigation `prev`/`next`). Every language needs every key; `status` needs one label per status value. Rendered via `{{t:key}}` and the directives. |
 | `data/ham.json` | Ham radio page entries, see [Ham Radio Pages](#ham-radio-pages-datahamjson). |
+| `data/modules.json` | Module pages below a project or ham entry, see [Module Pages](#module-pages-datamodulesjson). Optional; `[]` without modules. |
 | `data/nav.json`, `data/footer-nav.json` | See [Navigation](#navigation-datanavjson). |
 | `data/pages.json` | Groups of the same page under different file names per language, see [Languages](#languages). `[]` when all pages pair by identical path. |
 | `data/folders.json` | Collection folder names per language (`{ "ham": { "de": "afu" } }`), see [Languages](#languages). Optional; unmapped languages use the key. |
@@ -531,3 +580,4 @@ Standing decisions that guide further work.
 - **Languages**: German (default) and English; one folder per language (`de/`, `en/`) plus a common landing page and 404 at the root; the root redirects by `Accept-Language` (`302`) and falls back to the landing page; tags, titles and summaries are defined per language; `status` keeps German keys with labels per language; missing translations hide a project in that language and warn; no redirects from the old `/html/` URLs; all translations come from the owner.
 - **Ham radio section**: own data file `data/ham.json` with pages in the ham collection folder (`de/afu/`, `en/ham/`); listed only on `hamradio.html` (not on `projects.html` or the home page); fixed tag vocabulary per language in the schema.
 - **Folder mapping**: collection folders may have a name per language (`data/folders.json`); the keys (`proj`, `ham`) stay the internal names; the source tree carries the mapped names; no redirects from the old `de/ham/` URLs (site still under construction).
+- **Module pages**: one level below a project or ham overview page (`<folder>/<parent page>/<module>.html`), data in `data/modules.json`; linked by hand from the overview page (the build warns about unlinked modules); previous/next in file order; project and ham ids are unique across both files.

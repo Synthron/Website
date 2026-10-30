@@ -92,3 +92,33 @@ test('applyDirectives @tag-filter uses the list and count words of from=', () =>
   assert.equal(errors.length, 1);
   errors.length = 0;
 });
+
+test('applyTokens resolves the module tokens on module pages', () => {
+  errors.length = 0;
+  const pages = { projectPage: (code, id, key) => (code === 'en' && id === 'synsps' && key === 'proj' ? 'proj/synplc.html' : null) };
+  const ctx = {
+    rel: 'en/proj/synplc/cpu.html', site, lang: 'en', langRoot: '../../', root: '../../../', strings: {}, pages,
+    project: { title: 'SynPLC', summary: 'P' }, module: { parent: 'synsps', folder: 'proj', title: 'CPU <1>', summary: 'M' },
+  };
+  assert.equal(applyTokens('{{projectTitle}} — {{moduleTitle}}|{{moduleSummary}}|{{langRoot}}{{parentPage}}', ctx), 'SynPLC — CPU &lt;1&gt;|M|../../proj/synplc.html');
+  assert.equal(applyTokens('{{moduleTitle}}{{parentPage}}', { ...ctx, module: undefined }), '');
+  assert.equal(errors.length, 2);
+  errors.length = 0;
+});
+
+test('applyDirectives renders @module-header and @module-nav and fails outside module pages', () => {
+  errors.length = 0;
+  const pages = { dir: (code) => code, projectPage: () => 'proj/synplc.html', modulePage: (code, parent, id) => `proj/synplc/${id}.html` };
+  const module = { parent: 'synsps', id: 'cpu', collection: 'projects', folder: 'proj', title: 'CPU', summary: 'M', status: 'fertig', date: '2026-09' };
+  const ctx = { rel: 'en/proj/synplc/cpu.html', lang: 'en', root: '../../../', site, pages, project: { title: 'SynPLC' }, module };
+  const strings = { lang: 'en', status: { fertig: 'finished' }, prev: 'previous', next: 'next' };
+  const lists = { modules: [module, { ...module, id: 'io', title: 'IO' }] };
+  const html = applyDirectives('<!-- @module-nav -->\n<!-- @module-header -->', ctx, lists, [], [], strings);
+  assert.match(html, /<p class="module-nav">/);
+  assert.match(html, /href="\.\.\/\.\.\/\.\.\/en\/proj\/synplc\/io\.html" rel="next"/);
+  assert.match(html, /<h1>SynPLC<\/h1>\n<h2 class="page-header__module">CPU<\/h2>/);
+  assert.equal(applyDirectives('<!-- @module-header --><!-- @module-nav -->', { ...ctx, module: undefined }, lists, [], [], strings), '');
+  assert.equal(errors.length, 2);
+  assert.match(errors[0], /@module-header needs a module page/);
+  errors.length = 0;
+});

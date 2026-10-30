@@ -19,7 +19,7 @@
       "required": [
         "countSingular", "countPlural", "withTag", "tagFilterLabel", "tagsLabel", "all", "noProjects", "repo", "demo",
         "skipLink", "menu", "mainNavLabel", "footerNavLabel", "languageLabel", "projectLinkFor", "backToProjects",
-        "hamCountSingular", "hamCountPlural", "noHamPages", "backToHam",
+        "hamCountSingular", "hamCountPlural", "noHamPages", "backToHam", "prev", "next",
         "quoteOpen", "quoteClose", "status"
       ],
       "additionalProperties": false,
@@ -44,6 +44,8 @@
         "hamCountPlural": { "$ref": "#/definitions/text" },
         "noHamPages": { "$ref": "#/definitions/text" },
         "backToHam": { "$ref": "#/definitions/text" },
+        "prev": { "description": "Link to the previous module page (@module-nav).", "$ref": "#/definitions/text" },
+        "next": { "description": "Link to the next module page (@module-nav).", "$ref": "#/definitions/text" },
         "quoteOpen": { "$ref": "#/definitions/text" },
         "quoteClose": { "$ref": "#/definitions/text" },
         "status": {

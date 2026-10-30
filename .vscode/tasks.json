@@ -81,6 +81,18 @@
       "problemMatcher": []
     },
     {
+      "label": "create project module",
+      "type": "shell",
+      "command": "npm run create:project -- --module \"${input:parent}\" \"${input:name}\" \"${input:brief}\"",
+      "problemMatcher": []
+    },
+    {
+      "label": "create ham module",
+      "type": "shell",
+      "command": "npm run create:afu -- --module \"${input:parent}\" \"${input:name}\" \"${input:brief}\"",
+      "problemMatcher": []
+    },
+    {
       "label": "clean",
       "type": "shell",
       "command": "npm run clean",
@@ -97,6 +109,11 @@
       "id": "brief",
       "type": "promptString",
       "description": "One-line project brief (used for the summary)"
+    },
+    {
+      "id": "parent",
+      "type": "promptString",
+      "description": "Id of the parent project or ham entry (module pages)"
     }
   ]
 }

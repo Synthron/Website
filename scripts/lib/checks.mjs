@@ -96,18 +96,32 @@ export async function checkFirmwareManifests(src = SRC) {
 }
 
 // --- Page-level diagnostics -------------------------------------------------
-// Warn about project (and ham) pages without data in their language.
+// Warn about project (and ham) pages without data in their language. Module
+// pages are checked by the module loader.
 // `infoByRel` maps built page paths to { lang, pagePath, isCommon } (see build.mjs);
 // `byCollection` maps a collection name (projects, ham) to its entries by id.
 export function checkOrphanPages(infoByRel, pageIndex, byCollection) {
   for (const [rel, info] of infoByRel) {
     if (!info.pagePath?.includes('/')) continue;
     const collection = pageIndex.collectionOf(info.lang, info.pagePath);
-    if (!(collection in byCollection)) continue;
+    if (!(collection in byCollection) || pageIndex.isModulePage(info.lang, info.pagePath)) continue;
     const folder = info.pagePath.split('/')[0];
     const project = byCollection[collection].get(pageIndex.projectId(info.lang, info.pagePath));
     if (!project) warn(`wwwroot/${rel}: ${folder}/ page without a data entry`);
     else if (!Object.hasOwn(project.title, info.lang)) warn(`wwwroot/${rel}: entry "${project.id}" has no "${info.lang}" data`);
+  }
+}
+
+// Visible, non-draft module pages should be linked from their overview page
+// (warn). `expected`: [overview page, module page] pairs of built pages.
+export function checkModuleLinks(pages, expected) {
+  const htmlByRel = new Map(pages);
+  for (const [parentRel, moduleRel] of expected) {
+    const html = htmlByRel.get(parentRel);
+    if (html === undefined) continue;
+    const linked = [...html.matchAll(/<a\b[^>]*\bhref="([^"]*)"/gi)].some(([, href]) => !SCHEME.test(href)
+      && path.posix.normalize(path.posix.join(path.posix.dirname(parentRel), href.split(/[?#]/)[0])) === moduleRel);
+    if (!linked) warn(`wwwroot/${parentRel}: no link to its module page ${moduleRel}`);
   }
 }
 
