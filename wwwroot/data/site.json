@@ -1,6 +1,13 @@
 {
+  "$schema": "../../scripts/schemas/site.schema.json",
+  "languages": [
+    { "code": "de", "name": "Deutsch", "locale": "de_DE", "flag": "assets/icons/flag-de.svg" },
+    { "code": "en", "name": "English", "locale": "en_GB", "flag": "assets/icons/flag-gb.svg" }
+  ],
+  "defaultLang": "de",
   "name": "DM7WB",
+  "url": "https://dm7wb.de",
   "copyrightYear": 2026,
-  "footerNote": "No cookies. No tracking.",
+  "footerNote": { "de": "Keine cookies. Kein tracking.", "en": "No cookies. No tracking" },
   "email": "qso@dm7wb.de"
 }

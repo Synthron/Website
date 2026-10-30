@@ -26,6 +26,11 @@
   text-decoration: none;
 }
 
+.nav-toggle {
+  padding-inline: var(--space-3);
+  font-size: var(--text-sm);
+}
+
 .button--secondary,
 .nav-toggle {
   color: var(--color-text);
@@ -38,10 +43,6 @@
   color: var(--color-text);
   background-color: var(--color-surface);
   border-color: var(--color-muted);
-}
-
-.nav-toggle {
-  font-size: var(--text-sm);
 }
 
 /* Tags */
@@ -121,7 +122,12 @@
   border-radius: var(--radius);
 }
 
+.project-card__image-link {
+  display: block;
+}
+
 .project-card__image {
+  display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
@@ -154,6 +160,35 @@
   flex: 1;
 }
 
+/* Entry list (ham radio pages) */
+.entry-list {
+  padding: 0;
+  list-style: none;
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.entry-list__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-block: var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.entry-list__title {
+  font-size: var(--text-lg);
+}
+
+.entry-list__link {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.entry-list__link:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
 /* Project meta (status, date) */
 .project-meta {
   display: flex;
@@ -180,6 +215,26 @@
   list-style: none;
 }
 
+/* Github mark as leading icon in the Source button. The mark is white, so
+   it sits on a small dark badge to stay visible on light and dark surfaces. */
+.link-list__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: var(--space-2);
+  vertical-align: middle;
+  background-color: var(--color-icon-badge);
+  border-radius: 50%;
+}
+
+.link-list__badge img {
+  display: block;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
 /* Project detail */
 .back-link {
   margin-bottom: var(--space-5);
@@ -203,6 +258,15 @@
 .project-detail__summary {
   max-width: var(--measure);
   font-size: var(--text-lg);
+}
+
+/* Teapot illustration (404 / 418 page) */
+.teapot {
+  width: 8rem;
+  max-width: 100%;
+  height: auto;
+  margin-block: var(--space-5);
+  color: var(--color-accent);
 }
 
 /* Messages (loading, empty, error) */

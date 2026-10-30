@@ -1,0 +1,51 @@
+{
+  "name": "website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal project website. Static pages are built from wwwroot/ into dist/ with zero runtime dependencies.",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs --check",
+    "check:external": "node scripts/check-external.mjs",
+    "clean": "node -e \"import('node:fs').then((fs) => fs.rmSync('dist', { recursive: true, force: true }))\"",
+    "create:afu": "node scripts/create.mjs --ham",
+    "create:project": "node scripts/create.mjs",
+    "dev": "node scripts/dev.mjs",
+    "firmware": "node scripts/firmware.mjs",
+    "images": "node scripts/images.mjs",
+    "lighthouse": "node scripts/build.mjs && node scripts/lighthouse.mjs",
+    "lint": "npm run lint:js && npm run lint:css && npm run lint:html",
+    "lint:css": "stylelint \"wwwroot/css/**/*.css\"",
+    "lint:html": "node scripts/build.mjs && html-validate \"dist/**/*.html\"",
+    "lint:js": "eslint .",
+    "page": "node scripts/page.mjs",
+    "remove:afu": "node scripts/remove.mjs --ham",
+    "remove:project": "node scripts/remove.mjs",
+    "report": "node scripts/report.mjs",
+    "serve": "node scripts/serve.mjs",
+    "setup": "git config core.hooksPath .githooks",
+    "start": "npm run build && npm run serve",
+    "test": "node --test \"scripts/**/*.test.mjs\"",
+    "test:e2e": "node scripts/build.mjs && playwright test"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "html-validate": "^11.17.0",
+    "sharp": "^0.35.5",
+    "stylelint": "^17.16.0",
+    "stylelint-config-standard": "^40.0.0",
+    "stylelint-declaration-strict-value": "^1.12.1",
+    "svgo": "^4.1.0",
+    "@eslint/js": "^10.0.1",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.64.1"
+  }
+}

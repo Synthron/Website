@@ -1,0 +1,30 @@
+// Tests for the scaffolding helpers (scaffold.mjs). loadSetup/readPages read
+// the real data files (read-only).
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { DATA_DIR, PAGES_FILE, loadSetup, projectPagePath, readPages } from './scaffold.mjs';
+
+test('projectPagePath returns the mapped name or the standard path', () => {
+  const pages = [{ de: 'proj/uhr.html', en: 'proj/clock.html' }, { de: 'ham/t2lt.html', en: 'ham/t2lt-antenna.html' }];
+  assert.equal(projectPagePath(pages, 'de', 'en', 'uhr'), 'proj/clock.html');
+  assert.equal(projectPagePath(pages, 'de', 'de', 'uhr'), 'proj/uhr.html');
+  assert.equal(projectPagePath(pages, 'de', 'en', 'other'), 'proj/other.html');
+  assert.equal(projectPagePath(pages, 'de', 'en', 't2lt', 'ham'), 'ham/t2lt-antenna.html');
+  assert.equal(projectPagePath(pages, 'de', 'fr', 'uhr'), 'proj/uhr.html');
+});
+
+test('loadSetup returns the language codes and the default language of site.json', async () => {
+  const site = JSON.parse(await readFile(path.join(DATA_DIR, 'site.json'), 'utf8'));
+  const setup = await loadSetup();
+  assert.deepEqual(setup.languages, site.languages.map((language) => language.code));
+  assert.equal(setup.defaultLang, site.defaultLang);
+  assert.ok(setup.languages.includes(setup.defaultLang));
+});
+
+test('readPages returns the groups of pages.json', async () => {
+  const expected = JSON.parse(await readFile(PAGES_FILE, 'utf8'));
+  assert.deepEqual(await readPages(), expected);
+});

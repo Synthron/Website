@@ -1,34 +1,86 @@
 [
   {
-    "id": "placeholder-project-one",
-    "title": "Placeholder Project One",
-    "summary": "Placeholder entry — Test 1.",
-    "tags": ["javascript", "tool"],
-    "status": "active",
+    "id": "nixie-clock",
+    "title": {
+      "de": "Nixie Uhr",
+      "en": "Nixie Clock"
+    },
+    "summary": {
+      "de": "Nixie-Uhr mit ESP32, Z5600M Nixie-Röhren und RTC.",
+      "en": "Nixie clock with ESP32, Z5600M Nixie tubes and RTC."
+    },
+    "tags": {
+      "de": [
+        "elektronik",
+        "software",
+        "roehren",
+        "esp32"
+      ],
+      "en": [
+        "electronics",
+        "software",
+        "tubes",
+        "esp32"
+      ]
+    },
+    "status": "in Arbeit",
     "date": "2026-09",
-    "links": { "repo": null, "demo": null },
-    "image": "assets/img/placeholder.svg",
+    "links": {
+      "repo": "https://github.com/Synthron/Nixie",
+      "demo": null
+    },
+    "image": "assets/img/nixie_face.webp",
     "featured": true
   },
   {
-    "id": "placeholder-project-two",
-    "title": "Placeholder Project Two",
-    "summary": "Placeholder entry — replace with a real project description.",
-    "tags": ["css", "design"],
-    "status": "paused",
+    "id": "sy317",
+    "title": {
+      "de": "SY317 - 78xx Spannungsregler-Ersatz",
+      "en": "SY317 - 78xx Voltage Regulator Replacement"
+    },
+    "summary": {
+      "de": "Drop-In Schaltregler-Replacement für 78xx Spannungsregler, mit einstellbarer Ausgangsspannung und höherem Ausgangsstrom.",
+      "en": "Drop-In switch-mode replacement for 78xx voltage regulators, with adjustable output voltage and higher output current."
+    },
+    "tags": {
+      "de": [
+        "elektronik",
+        "stromversorgung"
+      ],
+      "en": [
+        "electronics",
+        "power-supply"
+      ]
+    },
+    "status": "fertig",
     "date": "2026-05",
-    "links": { "repo": null, "demo": null },
-    "image": "assets/img/placeholder.svg",
+    "links": {
+      "repo": "https://github.com/Synthron/SY317",
+      "demo": null
+    },
+    "image": "assets/img/sy317_render.webp",
     "featured": true
   },
   {
-    "id": "placeholder-project-three",
-    "title": "Placeholder Project Three",
-    "summary": "Placeholder entry — replace with a real project description.",
-    "tags": ["javascript", "experiment"],
-    "status": "archived",
-    "date": "2025-11",
-    "links": { "repo": null, "demo": null },
+    "id": "dcf77-clock",
+    "title": {
+      "de": "DRAFT DCF77 Uhr und Dekoder",
+      "en": "DRAFT DCF77 Clock and Decoder"
+    },
+    "summary": {
+      "de": "DCF77-Uhr und Decoder",
+      "en": "DCF77 clock and decoder"
+    },
+    "tags": {
+      "de": [],
+      "en": []
+    },
+    "status": "in Arbeit",
+    "date": "2026-10",
+    "links": {
+      "repo": null,
+      "demo": null
+    },
     "image": "assets/img/placeholder.svg",
     "featured": false
   }

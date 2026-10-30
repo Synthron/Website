@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "projects.schema.json",
+  "title": "wwwroot/data/projects.json",
+  "description": "Project entries (single source of truth). See README -> Data Model.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "title", "summary", "tags", "status", "date", "links", "image", "featured"],
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "description": "Lowercase, hyphenated; equals the default-language page name proj/{id}.html.",
+        "type": "string",
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+      },
+      "title": { "$ref": "#/definitions/localizedText" },
+      "summary": { "$ref": "#/definitions/localizedText" },
+      "tags": {
+        "description": "Fixed tag vocabulary per language (independent lists, not translations); a new language needs its own list here.",
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "de": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "enum": ["elektronik", "software", "roehren", "esp32", "stromversorgung", "3d-druck"] }
+          },
+          "en": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "enum": ["electronics", "software", "tubes", "esp32", "power-supply", "3d-printing"] }
+          }
+        },
+        "additionalProperties": false
+      },
+      "status": {
+        "description": "German status values; slugify before using one as a CSS hook.",
+        "enum": ["in Arbeit", "fertig", "pausiert", "veraltet", "Konzept", "abgebrochen"]
+      },
+      "date": {
+        "description": "YYYY-MM",
+        "type": "string",
+        "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+      },
+      "links": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "repo": { "$ref": "#/definitions/link" },
+          "demo": { "$ref": "#/definitions/link" }
+        }
+      },
+      "image": {
+        "description": "Relative path inside wwwroot/ (no ./ or ../ segments, no absolute path).",
+        "type": "string",
+        "pattern": "^(?![a-zA-Z]:|/)(?!(.*/)?\\.\\.?(/|$))[^\\\\]+$"
+      },
+      "featured": { "type": "boolean" }
+    }
+  },
+  "definitions": {
+    "localizedText": {
+      "description": "Text per language code. A value starting with TODO counts as missing; a title starting with DRAFT marks a draft.",
+      "type": "object",
+      "minProperties": 1,
+      "patternProperties": { "^[a-z]{2,3}$": { "type": "string", "pattern": "\\S" } },
+      "additionalProperties": false
+    },
+    "link": {
+      "description": "null or an http(s) URL.",
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^https?://\\S+$" }
+      ]
+    }
+  }
+}

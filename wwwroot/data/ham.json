@@ -1,0 +1,40 @@
+[
+  {
+    "id": "moxon-2m-70cm",
+    "title": {
+      "de": "Moxon 2m/70cm",
+      "en": "Moxon 2m/70cm"
+    },
+    "summary": {
+      "de": "Selbstbau-Moxon Antenne für 2m und 70cm für unter 10€ aus dem Baumarkt",
+      "en": "Self-built Moxon antenna for 2m and 70cm for under 10€ from the hardware store"
+    },
+    "tags": {
+      "de": [
+        "antenne",
+        "diy"
+      ],
+      "en": [
+        "antenna",
+        "diy"
+      ]
+    },
+    "date": "2026-10"
+  },
+  {
+    "id": "qmx-mikrofon",
+    "title": {
+      "de": "DRAFT QMX Mikrofon",
+      "en": "DRAFT QMX Microphone"
+    },
+    "summary": {
+      "de": "Mini Elektret-Mikrofon für den QMX Transceiver",
+      "en": "Mini Electret Microphone for the QMX Transceiver"
+    },
+    "tags": {
+      "de": [],
+      "en": []
+    },
+    "date": "2026-10"
+  }
+]

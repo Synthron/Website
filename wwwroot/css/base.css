@@ -11,9 +11,12 @@
   --color-border: #dadad6;
   --color-accent: #1d5bb8;
   --color-accent-hover: #164a96;
-  --color-on-accent: #ffffff;
+  --color-on-accent: #fff;
   --color-focus: #1d5bb8;
   --color-error: #a32020;
+
+  /* Dark badge behind white glyph icons (e.g. Github mark) */
+  --color-icon-badge: #1f1f1f;
 
   /* Fonts */
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -63,6 +66,7 @@
     --color-on-accent: #0d0d0d;
     --color-focus: #8ab4f8;
     --color-error: #f28b82;
+    --color-icon-badge: #3a3a38;
   }
 }
 
@@ -75,6 +79,11 @@
 
 * {
   margin: 0;
+}
+
+/* Reserve scrollbar space so centred layouts don't shift between short and long pages */
+html {
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -112,6 +121,8 @@ h3,
 h4 {
   line-height: var(--leading-tight);
   font-weight: 600;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 h1 {
@@ -168,7 +179,7 @@ samp {
   padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }

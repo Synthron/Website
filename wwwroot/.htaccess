@@ -1,0 +1,88 @@
+# Eigene Fehlerseiten
+ErrorDocument 404 /404.html
+# 403 zeigt vorerst auf die (gestylte) 404-Seite; eine eigene Styled-Seite
+# kann später ergänzt werden.
+ErrorDocument 403 /404.html
+
+# Verzeichnisauflistung deaktivieren
+Options -Indexes
+
+# Standarddatei für Verzeichnisaufrufe
+DirectoryIndex index.html
+
+# HTTPS erzwingen — WebSerial braucht einen sicheren Kontext. Unkritisch, weil
+# Cloudflare nur DNS ist; bei aktivem Proxy mit SSL-Modus "Flexible"
+# würde diese Weiterleitung loopen.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+    # Nur für den Pfad "/": nach dem ersten Eintrag von Accept-Language (Haupt-
+    # Sprachtag, z. B. de-AT -> de) auf die Sprachstartseite weiterleiten. 302,
+    # damit Browser und Caches keine Sprache an "/" festhalten. Alle anderen
+    # oder fehlende Sprachen (die meisten Crawler) bekommen die Landingpage
+    # index.html. Neue Sprache: hier eine weitere Regel ergänzen (README ->
+    # Add a language).
+    RewriteCond %{REQUEST_URI} ^/$
+    RewriteCond %{HTTP:Accept-Language} ^\s*de(-|;|,|$) [NC]
+    RewriteRule ^ /de/ [R=302,L]
+
+    RewriteCond %{REQUEST_URI} ^/$
+    RewriteCond %{HTTP:Accept-Language} ^\s*en(-|;|,|$) [NC]
+    RewriteRule ^ /en/ [R=302,L]
+</IfModule>
+
+# HTML lacks a charset header; send UTF-8 explicitly.
+AddDefaultCharset UTF-8
+
+# Production caching. The build appends ?v=<sha256 hash> to every local
+# .css/.js/image URL (see README -> Caching and Cache Busting), so versioned
+# assets can be cached for one year; the version changes with the file.
+# HTML, firmware manifests (.json) and binaries (.bin) are not versioned and
+# are revalidated on every request. No Cloudflare cache to purge (DNS only).
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+
+    <FilesMatch "\.(css|js|svg|webp|png|jpg|jpeg|gif|ico)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    <FilesMatch "\.(json|bin)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>
+
+# Sicherheitsheader
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    # CSP als HTTP-Header, damit frame-ancestors 'none' greift (ein <meta>-CSP
+    # ignoriert frame-ancestors). Entspricht dem {{csp}}-Token in partials/head.html.
+    Header always set Content-Security-Policy "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+    # Kamera/Mikrofon/Standort deaktivieren; serial für die Web-Flasher-Seiten erlauben.
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), serial=(self)"
+    # HTTPS läuft auf dm7wb.de und Cloudflare ist nur DNS. Kurzes max-age
+    # zuerst; später erhöhen, sobald der Header live bestätigt ist.
+    Header always set Strict-Transport-Security "max-age=86400"
+
+    # Die Antwort auf "/" (Weiterleitung oder Landingpage) hängt von
+    # Accept-Language ab; Vary verhindert, dass Caches eine Sprache festhalten.
+    <If "%{REQUEST_URI} == '/'">
+        Header always append Vary Accept-Language
+    </If>
+
+    # Der Web-Flasher (ESP Web Tools) injiziert Inline-Styles, daher braucht die
+    # Flasher-Seite style-src 'self' 'unsafe-inline' in ihrer CSP. Der Block gilt
+    # nach Dateiname in jedem Sprachordner (de/proj/nixie-clock.html und
+    # en/proj/nixie-clock.html). Heißt eine Flasher-Seite in einer Sprache anders
+    # (pages.json), ihren Namen in die Alternative eintragen, z. B.
+    # "^(nixie-clock|clock-en)\.html$"; der Build warnt, wenn ein Name fehlt.
+    # Das <meta>-CSP in partials/head.html trägt dieselbe Ausnahme bereits.
+    <FilesMatch "^(nixie-clock)\.html$">
+        Header always set Content-Security-Policy "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+    </FilesMatch>
+</IfModule>

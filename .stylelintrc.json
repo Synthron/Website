@@ -1,0 +1,34 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "plugins": ["stylelint-declaration-strict-value"],
+  "ignoreFiles": ["wwwroot/js/vendor/**", "wwwroot/assets/firmware/**", "node_modules/**", "dist/**"],
+  "rules": {
+    "selector-class-pattern": [
+      "^[a-z][a-z0-9]*(-[a-z0-9]+)*(__[a-z0-9]+(-[a-z0-9]+)*)?(--[a-z0-9]+(-[a-z0-9]+)*)?$",
+      { "message": "Class names are lowercase, hyphenated, BEM-light (block__element--modifier)" }
+    ],
+    "media-feature-range-notation": "prefix",
+    "value-keyword-case": ["lower", { "ignoreProperties": ["/^--font-/", "font-family"] }],
+    "color-no-hex": true,
+    "color-named": "never",
+    "function-disallowed-list": ["rgb", "rgba", "hsl", "hsla", "hwb", "lab", "lch", "oklab", "oklch", "color"],
+    "scale-unlimited/declaration-strict-value": [
+      ["/color$/", "fill", "stroke"],
+      {
+        "ignoreValues": ["currentcolor", "transparent", "inherit", "initial", "unset", "none"],
+        "disableFix": true
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["wwwroot/css/base.css"],
+      "rules": {
+        "color-no-hex": null,
+        "color-named": null,
+        "function-disallowed-list": null,
+        "scale-unlimited/declaration-strict-value": null
+      }
+    }
+  ]
+}

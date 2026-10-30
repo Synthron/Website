@@ -1,0 +1,7 @@
+#!/bin/sh
+# Pre-commit hook: build validation (writes nothing), then the linters
+# (lint:html rebuilds the git-ignored dist/).
+# Activated with `npm run setup` (sets core.hooksPath to .githooks).
+set -e
+npm run check
+npm run lint

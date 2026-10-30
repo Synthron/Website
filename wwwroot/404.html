@@ -1,51 +1,45 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
-  <meta name="color-scheme" content="light dark">
+  <!-- @include head -->
   <meta name="robots" content="noindex">
-  <title>Page not found — {name}</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/responsive.css">
-  <script type="module" src="js/main.js"></script>
+  <title>418 I'm a teapot — {{name}}</title>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
-
-  <header class="site-header">
-    <div class="container site-header__inner">
-      <a class="site-brand" data-site-brand href="index.html"></a>
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden>Menu</button>
-      <nav class="site-nav" id="site-nav" aria-label="Main">
-        <ul class="site-nav__list">
-          <li><a class="site-nav__link" href="index.html">Home</a></li>
-          <li><a class="site-nav__link" href="html/projects.html">Projects</a></li>
-          <li><a class="site-nav__link" href="html/about.html">About</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+  <!-- @include header-common -->
 
   <main class="site-main" id="main">
     <div class="container">
       <header class="page-header">
-        <h1>Page not found</h1>
-        <p class="page-header__lead">The page you are looking for does not exist or has moved.</p>
+        <h1>418 I'm a teapot</h1>
+        <p class="page-header__lead">This server is a teapot. It is short and stout, and it will not brew your coffee.</p>
       </header>
-      <p><a class="button" href="index.html">Back to home</a></p>
+
+      <svg class="teapot" width="128" height="117" viewBox="0 0 120 110" role="img" aria-label="A short and stout teapot">
+        <g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M52 14 c-5 -7 5 -9 0 -16"/>
+          <path d="M68 14 c-5 -7 5 -9 0 -16"/>
+          <path d="M38 34 h44"/>
+          <path d="M52 34 v-8 h16 v8"/>
+          <circle cx="60" cy="22" r="3"/>
+          <path d="M22 50 a38 30 0 0 0 76 0 z"/>
+          <path d="M22 52 c-16 0 -16 14 03 12"/>
+          <path d="M98 52 c16 0 16 14 -03 12"/>
+        </g>
+      </svg>
+
+      <div class="prose">
+        <!-- <p>Per <a href="https://www.rfc-editor.org/rfc/rfc2324">RFC 2324</a> and <a href="https://www.rfc-editor.org/rfc/rfc9110">RFC 9110</a>, any attempt to brew coffee with a teapot must result in the error code <code>418 I'm a teapot</code>. The resulting entity body may be short and stout.</p> -->
+        <p>You asked for a page that does not exist. The teapot, however, is very real — and it is not a coffee machine. It suggests you try the kettle instead.</p>
+      <br>
+      <p>See <a href="https://www.rfc-editor.org/rfc/rfc2324">RFC 2324</a> and <a href="https://www.rfc-editor.org/rfc/rfc9110">RFC 9110</a> for further information on the Hyper Text Coffee Pot Control Protocol.</p>
+      <br>
+      </div>
+
+      <p><a class="button" href="{{root}}index.html">Back to Home</a></p>
     </div>
   </main>
 
-  <footer class="site-footer">
-    <div class="container site-footer__inner">
-      <p data-site-copyright></p>
-      <p data-site-note>No cookies. No tracking.</p>
-    </div>
-  </footer>
+  <!-- @include footer -->
 </body>
 </html>

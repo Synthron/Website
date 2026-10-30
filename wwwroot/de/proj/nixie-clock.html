@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{projectSummary}}">
+  <title>{{projectTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <p class="back-link"><a href="{{langRoot}}{{projectsPage}}">{{t:backToProjects}}</a></p>
+
+      <article class="project-detail">
+        <!-- @project-header -->
+
+        <div class="project-content">
+
+          <!-- 1. Einführung -------------------------------------- -->
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Einführung</h2>
+            <figure class="figure figure--full">
+              <img src="{{root}}assets/img/nixie_face.webp" alt="Nixie-Uhr" width="3300" height="1000" loading="lazy" decoding="async">
+              <figcaption>Ansicht der Nixie-Uhr</figcaption>
+            </figure>
+            <div class="prose">
+              <p>ich wollte schon seit einiger Zeit eine Nixie-Uhr bauen. Das Problem dabei war, dass die Röhren teilweise sehr teuer sind und dadurch die Hemmschwelle für das Projekt eine Zeit lang sehr hoch war.<br>
+              Als aber ein Freund von mir, <a href="https://www.dl5tz.de">Marcus DL5TZ</a>, mir Z5600M Nixie-Röhren angeboten hat mit der Bedingung, ihm eine Uhr damit zu bauen, konnte ich nicht widerstehen.</p>
+              <p>Also haben wir uns zusammengesetzt und einige Spezifikationen ausgearbeitet und Ideen gebrainstormt.<br>
+              Dabei hat sich schnell realisiert, dass möglichst viele bedrahtete THT-Bauteile verwendet werden sollen, um ein nostalgisches Aussehen zu erreichen. Meine Idee, nur generische Bauteile und Techniken zu benutzen, stieß ebenfalls auf Zustimmung. Das hat die Realisierung zwar etwas komplizierter gemacht, allerdings können so Reparaturen mit wenig Aufwand und Kosten durchgeführt werden.</p>
+            </div>
+          </section>
+
+          <!-- 2. Hardware ----------------------------------- -->
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware und Elektronik</h2>
+            <figure class="figure figure--full">
+              <img src="{{root}}assets/img/nixie_pcbs.webp" alt="Nixie Uhr Platinen" width="3100" height="1900" loading="lazy" decoding="async">
+              <figcaption>Platinen der Nixie-Uhr</figcaption>
+            </figure>
+            <div class="prose">
+              <p>Und so hat sich nach und nach der Schaltplan entwickelt. Hier ein schneller Abriss der einzelnen Schaltungsteile.</p>
+              <h3>Controller</h3>
+              <p>Als Controller dient ein ESP32-WROOM-Modul. Die Entscheidung war schnell gefallen, da er einfach zu programmieren ist und außerdem über WLAN verfügt. Dadurch kann die Uhrzeit über NTP synchronisiert werden. Außerdem hat er mehr als genug Rechenleistung um neben der Ansteuerung noch weitere Aufgaben mit Leichtigkeit zu übernehmen, unter Anderem die Ansteuerung einer DS1302 RTC mit Goldcap-Puffer. Die externe <i>Real Time Clock</i> speichert die Zeit und zählt auch bei Stromausfall weiter. So können Ausschaltzeiten von bis zu einer Woche überbrückt werden, ohne die Zeitinformationen zu verlieren.</p>
+              <h3>Spannungsversorgung</h3>
+              <p>Die Spannungsversorgung selbst ist mehrstufig aufgebaut. DC-Versorgung geschieht per 12V Netzteil. Ein <a href="{{langRoot}}proj/sy317.html">Schaltregler</a> mit nachgeschaltetem LDO erzeugt die 5V und 3V3 Spannung für ESP und Schieberegister.<br>
+              Ein MC34063 Schaltregler-IC erzeugt aus den 12V ca. 90V. Um die notwendigen 150V für die Röhren zu erreichen ohne dabei einen schlechten Tastgrad zu erhalten, wird diese 90V-Spannung zunächst gepuffert und dann über eine Ladungspumpe auf ca. 180V verdoppelt.</p>
+              <h3>Röhren-Ansteuerung</h3>
+              <p>Mit Marcus habe ich mich lange Zeit beraten, wie wir die Röhren ansteuern sollen. Von HV5522 Treiber-ICs bis hin zu Multiplex-Ansteuerungen war alles dabei. Letzten Endes haben wir uns dazu entschieden, die ineffizienteste Lösung von allen zu benutzen: <b>Schieberegister</b>.<br>
+              Fpr 6 Röhren plus 4 Glimmlampen als Trennpunkte kommen so 64 Segmente zusammen. Passenderweise sind das exakt 8 8-bit Schieberegister des Typs 74HC595. Mit MPSA-42 Hochspannungstransistoren als Low-Side-Schalter für die Segmente entsteht so eine primitive aber effektive Ansteuerung. Der Vorteil: Jede Röhre kann so gedimmt werden, ohne dass die Röhren gemultiplext werden müssen. Dies beugt Flimmern und Flackern vor. Außerdem hält es die Schaltung vergleichsweise einfach, wenn auch dezent platzbrauchend.</p>
+              <h3>Inputs und Outputs</h3>
+              <p>Natürlich habe ich auch einige Inputs und Outputs vorgesehen. Acht Inputs sind an einem DIP-Schalter angelegt um die Bootstrap-Konfiguration vorzunehmen. So können einzelne Funktionen nach Belieben zu- oder abgeschaltet werden. Ferner sind vier Taster zur Menüsteuerung und Bedienung vorhanden, sowie vier freie Testpunkte.<br>
+              Ferner gibt es acht Outputs, die aktuell nicht implementiert sind. Hier können später Signale ausgegeben werden, um weitere Peripherien zu steuern.</p>
+              <p>Außderdem sind zwei ADC-Kanäle vorhanden für Temperatursensoren (z.B. PT1000) oder LDR-Widerstände. Die Sensoren (aktuell keine Kalibriermöglichkeit) können die Temperatur mit den Nixies anzeigen und der LDR kann zur automatischen Helligkeitsanpassung genutzt werden. Letztere Funktion funktioniert aktuell nur sehr rudimentär.</p>
+              <p>Abschließend ist noch ein DCF77-Eingang vorgesehen. Damit kann ein DCF77-Modul zur Synchronisierung genutzt werden. Diese Funktion ist allerdings noch nicht implementiert, da ich bisher kein DCF77-Modul sauber genug zum Laufen gebracht habe um das zu testen.</p>
+            </div>
+          </section>
+
+          <!-- 3. Software -------------------------------- -->
+                     <section class="project-section" aria-labelledby="software">
+            <h2 id="software">Software</h2>
+            <div class="prose">
+              <p>Die Software für die Nixie-Uhr ist mit Visual Studio Code und PlatformIO entwickelt worden. Das gesamte Projekt ist im github (link siehe oben) verfügbar. Es benutzt fast keine fertigen Bibliotheken, da der Code selbst vergleichsweise einfach gestrickt ist.</p>
+            </div>
+          </section>
+
+          <!-- 4. Features -------------------------------- -->
+
+          <section class="project-section" aria-labelledby="features">
+            <h2 id="features">Features</h2>
+            <div class="prose">
+              <p>Die Uhr ist mehr als nur ein hübsches Anzeigegerät. Als Zeitbasis dient eine interne RTC, die die Zeit auch ohne externe Bausteine zuverlässig hält. Dazu kommt eine priorisierte Synchronisation: Ist WLAN und NTP aktiviert, wird die Zeit automatisch über das Netzwerk abgeglichen. Steht kein NTP zur Verfügung, übernimmt auf Wunsch eine externe RTC (DS1302) diese Aufgabe.</p>
+              <p>Gesteuert wird alles über ein Tastenmenü mit MODE, UP, DOWN und ENTER. Außerhalb des Menüs wechselt man mit ENTER durch die Anzeigemodi: Zeit, Datum und – sofern die Sensoren aktiviert sind – die Temperatur von Sensor 1 und Sensor 2.</p>
+              <h3>Das Menü</h3>
+              <p>Im Menü wählt man die Modi 1 bis 4 mit UP/DOWN aus, MODE verlässt das Menü wieder. Zur Auswahl stehen:</p>
+              <ul>
+                <li>Zeit einstellen (Stunden / Minuten / Sekunden)</li>
+                <li>Datum einstellen (Tag / Monat / Jahr)</li>
+                <li>Helligkeit einstellen (in Prozent, live angewendet)</li>
+                <li>Offset einstellen (Zeitzonen-Offset in Stunden, Bereich -12 bis +14, auch über die Datumsgrenze hinweg)</li>
+              </ul>
+              <p>Besonders praktisch ist die Helligkeitseinstellung mit Live-Vorschau: Während der Anpassung wird der Wert auf allen drei Röhrensätzen als 00-99 angezeigt und sofort angewendet. So findet man schnell die passende Helligkeit für die Umgebung.</p>
+              <h3>Konfiguration per DIP-Schalter</h3>
+              <p>Die Konfiguration erfolgt über einen DIP-Schalter. Damit lassen sich unter anderem USB-Debug-Meldungen, die externe RTC, die Temperatursensoren T1 und T2, der LDR, das Anoden-Dimming sowie die WLAN- und NTP-Dienste aktivieren. Ein DCF77-Empfang ist geplant, aber noch nicht umgesetzt.</p>
+              <h3>WLAN &amp; NTP</h3>
+              <p>Für die Zeitsynchronisation sorgt ein WLAN-Manager: Verbindet man sich mit dem WLAN "Nixie-&lt;MAC&gt;" (Passwort "Nixie1234", IP-Adresse 4.3.2.1), kann man das verfügbare WLAN-Netz konfigurieren. Der benutzerdefinierte Zeitzonen-Offset wird auf die angezeigte Zeit angewendet und ersetzt den früheren DST-Schalter.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware installieren</h2>
+            <div class="prose">
+              <p>
+                Die fertige Firmware kann direkt über den Browser auf den
+                Mikrocontroller übertragen werden. Eine Installation der
+                Toolchain ist dafür nicht erforderlich.
+              </p>
+              <p>
+                Verbinde den ESP32 per USB mit dem Computer, wähle den
+                passenden seriellen Port aus und starte den Flashvorgang.
+                Der Vorgang läuft vollständig lokal im Browser ab.
+              </p>
+              <p>
+                <strong>Hinweis:</strong> Die Installation der Firmware
+                löscht alle vorherigen Einstellungen. Außerdem ist der Chrome- oder Edge-Browser erforderlich, da die Web Serial API von Firefox und Safari <strong>nicht unterstützt</strong> wird.
+              </p>
+            </div>
+            <esp-web-install-button manifest="{{root}}assets/firmware/nixie-clock/manifest.json">
+            </esp-web-install-button>
+          </section>
+
+
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <!-- @include footer -->
+
+  <!-- ESP Web Tools (vendored locally; no external requests) -->
+  <script type="module" src="{{root}}js/vendor/esp-web-tools/install-button.js"></script>
+
+</body>
+</html>

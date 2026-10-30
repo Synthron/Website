@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="Private Projektseite von {{name}}. Technik, Amateurfunk und Co.">
+  <title>Start — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <section class="section intro" aria-labelledby="intro-title">
+        <h1 id="intro-title">Hey, Ich bin Marco.</h1>
+        <p class="intro__lead">
+          Ich bin Hobbybastler, Funkamateur und Nerd aus Deutschland. Auf dieser Seite werde ich meine Projekte aus Elektronik und Funk präsentieren. <br>
+          Die Seite ist statisches HTML und CSS und benutzt <strong>KEINE</strong> Cookies, Tracking oder sonstiges. <br>
+          Alles hier ist Work in Progress und wird nach Lust, Laune und Bedarf erweitert. <br>
+          <strong>Viel Spaß beim Stöbern!</strong>
+        </p>
+      </section>
+
+      <section class="section" aria-labelledby="featured-title">
+        <div class="section__header">
+          <h2 id="featured-title">Ausgewählte Projekte</h2>
+          <a href="projekte.html">Alle Projekte</a>
+        </div>
+        <!-- @projects featured level=3 id=featured-list -->
+      </section>
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

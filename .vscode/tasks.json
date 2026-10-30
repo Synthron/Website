@@ -1,0 +1,102 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "npm run build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        {
+          "owner": "build",
+          "pattern": {
+            "regexp": "^\\s*-\\s+(.+?):(\\d+):(\\d+): (.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "message": 4
+          }
+        }
+      ]
+    },
+    {
+      "label": "dev",
+      "type": "shell",
+      "command": "npm run dev",
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "owner": "dev",
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": "^Change detected, rebuilding",
+            "endsPattern": "^(Dev server: http|Build ok|Build failed; the server keeps running)"
+          },
+          "pattern": {
+            "regexp": "^\\s*-\\s+(.+?):(\\d+):(\\d+): (.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "message": 4
+          }
+        }
+      ]
+    },
+    {
+      "label": "serve",
+      "type": "shell",
+      "command": "npm run serve",
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "owner": "serve",
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": "^> node scripts/serve\\.mjs",
+            "endsPattern": "^Serving dist/ at http"
+          },
+          "pattern": {
+            "regexp": "^\\s*-\\s+(.+?):(\\d+):(\\d+): (.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "message": 4
+          }
+        }
+      ]
+    },
+    {
+      "label": "create project",
+      "type": "shell",
+      "command": "npm run create:project -- \"${input:name}\" \"${input:brief}\"",
+      "problemMatcher": []
+    },
+    {
+      "label": "create ham page",
+      "type": "shell",
+      "command": "npm run create:afu -- \"${input:name}\" \"${input:brief}\"",
+      "problemMatcher": []
+    },
+    {
+      "label": "clean",
+      "type": "shell",
+      "command": "npm run clean",
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "name",
+      "type": "promptString",
+      "description": "Project name (used for the title and the page id)"
+    },
+    {
+      "id": "brief",
+      "type": "promptString",
+      "description": "One-line project brief (used for the summary)"
+    }
+  ]
+}

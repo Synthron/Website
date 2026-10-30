@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ham.schema.json",
+  "title": "wwwroot/data/ham.json",
+  "description": "Ham radio pages listed on hamradio.html. See README -> Ham Radio Pages.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "title", "summary", "tags", "date"],
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "description": "Lowercase, hyphenated; equals the default-language page name ham/{id}.html.",
+        "type": "string",
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+      },
+      "title": { "$ref": "projects.schema.json#/definitions/localizedText" },
+      "summary": { "$ref": "projects.schema.json#/definitions/localizedText" },
+      "tags": {
+        "description": "Fixed tag vocabulary per language; a new language needs its own list here.",
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "de": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "enum": ["antenne", "transceiver", "contest", "diy", "modifikation", "3d-druck"] }
+          },
+          "en": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "enum": ["antenna", "transceiver", "contest", "diy", "modification", "3d-printing"] }
+          }
+        },
+        "additionalProperties": false
+      },
+      "date": { "$ref": "projects.schema.json#/items/properties/date" },
+      "status": { "$ref": "projects.schema.json#/items/properties/status" },
+      "links": { "$ref": "projects.schema.json#/items/properties/links" }
+    }
+  }
+}

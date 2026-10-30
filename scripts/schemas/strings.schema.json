@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "strings.schema.json",
+  "title": "wwwroot/data/strings.json",
+  "description": "UI strings per language, rendered into pages and exposed to js/projects.js.",
+  "type": "object",
+  "minProperties": 1,
+  "properties": {
+    "$schema": { "type": "string" }
+  },
+  "patternProperties": {
+    "^[a-z]{2,3}$": { "$ref": "#/definitions/languageStrings" }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "text": { "type": "string", "minLength": 1 },
+    "languageStrings": {
+      "type": "object",
+      "required": [
+        "countSingular", "countPlural", "withTag", "tagFilterLabel", "tagsLabel", "all", "noProjects", "repo", "demo",
+        "skipLink", "menu", "mainNavLabel", "footerNavLabel", "languageLabel", "projectLinkFor", "backToProjects",
+        "hamCountSingular", "hamCountPlural", "noHamPages", "backToHam",
+        "quoteOpen", "quoteClose", "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "countSingular": { "$ref": "#/definitions/text" },
+        "countPlural": { "$ref": "#/definitions/text" },
+        "withTag": { "$ref": "#/definitions/text" },
+        "tagFilterLabel": { "$ref": "#/definitions/text" },
+        "tagsLabel": { "$ref": "#/definitions/text" },
+        "all": { "$ref": "#/definitions/text" },
+        "noProjects": { "$ref": "#/definitions/text" },
+        "repo": { "$ref": "#/definitions/text" },
+        "demo": { "$ref": "#/definitions/text" },
+        "skipLink": { "$ref": "#/definitions/text" },
+        "menu": { "$ref": "#/definitions/text" },
+        "mainNavLabel": { "$ref": "#/definitions/text" },
+        "footerNavLabel": { "$ref": "#/definitions/text" },
+        "languageLabel": { "$ref": "#/definitions/text" },
+        "projectLinkFor": { "description": "Word between a link label and the project title (screen readers), without spaces.", "$ref": "#/definitions/text" },
+        "backToProjects": { "$ref": "#/definitions/text" },
+        "hamCountSingular": { "$ref": "#/definitions/text" },
+        "hamCountPlural": { "$ref": "#/definitions/text" },
+        "noHamPages": { "$ref": "#/definitions/text" },
+        "backToHam": { "$ref": "#/definitions/text" },
+        "quoteOpen": { "$ref": "#/definitions/text" },
+        "quoteClose": { "$ref": "#/definitions/text" },
+        "status": {
+          "description": "Label per status value (keys are the German values, see projects.schema.json).",
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/text" }
+        }
+      }
+    }
+  }
+}

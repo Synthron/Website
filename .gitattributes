@@ -1,0 +1,8 @@
+# Normalise line endings to LF for all text files (matches .editorconfig).
+* text=auto eol=lf
+
+# Binary files: never convert line endings or diff them.
+*.bin  binary
+*.jpg  binary
+*.png  binary
+*.webp binary

@@ -1,0 +1,12 @@
+{
+  "de": [
+    { "label": "Impressum", "href": "impressum.html" },
+    { "label": "Datenschutz", "href": "datenschutz.html" },
+    { "label": "Rechtliche Hinweise", "href": "rechtliches.html" }
+  ],
+  "en": [
+    { "label": "Legal Notices", "href": "impressum.html" },
+    { "label": "Privacy Policy", "href": "privacy.html" },
+    { "label": "Legal Disclaimers", "href": "disclaimers.html" }
+  ]
+}
