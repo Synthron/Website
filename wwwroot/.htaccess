@@ -82,7 +82,7 @@ AddDefaultCharset UTF-8
     # (pages.json), ihren Namen in die Alternative eintragen, z. B.
     # "^(nixie-clock|clock-en)\.html$"; der Build warnt, wenn ein Name fehlt.
     # Das <meta>-CSP in partials/head.html trägt dieselbe Ausnahme bereits.
-    <FilesMatch "^(nixie-clock)\.html$">
+    <FilesMatch "^(nixie-clock|nixie-uhr)\.html$">
         Header always set Content-Security-Policy "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
     </FilesMatch>
 </IfModule>

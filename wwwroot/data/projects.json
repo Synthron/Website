@@ -1,6 +1,6 @@
 [
   {
-    "id": "nixie-clock",
+    "id": "nixie-uhr",
     "title": {
       "de": "Nixie Uhr",
       "en": "Nixie Clock"
@@ -62,7 +62,7 @@
     "featured": true
   },
   {
-    "id": "dcf77-clock",
+    "id": "dcf77-uhr",
     "title": {
       "de": "DRAFT DCF77 Uhr und Dekoder",
       "en": "DRAFT DCF77 Clock and Decoder"
@@ -135,6 +135,29 @@
         "electronics",
         "tubes"
       ]
+    },
+    "status": "in Arbeit",
+    "date": "2026-10",
+    "links": {
+      "repo": null,
+      "demo": null
+    },
+    "image": "assets/img/placeholder.svg",
+    "featured": false
+  },
+  {
+    "id": "gitarren-verstaerker",
+    "title": {
+      "de": "DRAFT Röhren-Gitarrenverstärker",
+      "en": "DRAFT Tube Guitar Amplifier"
+    },
+    "summary": {
+      "de": "DIY PSE Gitarrenverstärker mit Röhren",
+      "en": "DIY PSE guitar tube amplifier"
+    },
+    "tags": {
+      "de": [],
+      "en": []
     },
     "status": "in Arbeit",
     "date": "2026-10",
