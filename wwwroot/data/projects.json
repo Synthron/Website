@@ -115,5 +115,34 @@
     },
     "image": "assets/img/placeholder.svg",
     "featured": false
+  },
+  {
+    "id": "6l6-amp",
+    "title": {
+      "de": "DRAFT 6L6 Audioverstärker",
+      "en": "DRAFT 6L6 Tube Amplifier"
+    },
+    "summary": {
+      "de": "Eintakt-Röhrenverstärker mit 6L6, EF86 und selbstgewickelten Trafos",
+      "en": "Single-ended tube amplifier with 6L6, EF86 and custom-wound transformers"
+    },
+    "tags": {
+      "de": [
+        "elektronik",
+        "roehren"
+      ],
+      "en": [
+        "electronics",
+        "tubes"
+      ]
+    },
+    "status": "in Arbeit",
+    "date": "2026-10",
+    "links": {
+      "repo": null,
+      "demo": null
+    },
+    "image": "assets/img/placeholder.svg",
+    "featured": false
   }
 ]
