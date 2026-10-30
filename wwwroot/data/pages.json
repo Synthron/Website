@@ -3,5 +3,5 @@
   { "de": "projekte.html", "en": "projects.html" },
   { "de": "datenschutz.html", "en": "privacy.html" },
   { "de": "amateurfunk.html", "en": "hamradio.html" },
-  { "de": "ham/qmx-mikrofon.html", "en": "ham/qmx-microphone.html"}
+  { "de": "afu/qmx-mikrofon.html", "en": "ham/qmx-microphone.html"}
 ]

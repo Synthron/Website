@@ -1,0 +1,4 @@
+{
+  "$schema": "../../scripts/schemas/folders.schema.json",
+  "ham": { "de": "afu" }
+}

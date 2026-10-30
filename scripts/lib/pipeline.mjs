@@ -70,6 +70,15 @@ export function applyTokens(text, ctx) {
       }
       return esc(value);
     }
+    // Collection folder name of the page language (data/folders.json), with trailing slash.
+    if (key.startsWith('folder:')) {
+      const name = ctx.pages?.folder?.(key.slice(7), ctx.lang);
+      if (typeof name !== 'string') {
+        fail(`${ref(ctx.rel, text, offset)}: unknown collection folder ${match}`);
+        return '';
+      }
+      return esc(`${name}/`);
+    }
     // Listing page names per language, resolved from data/pages.json (groups
     // keyed by the default-language file name). Used by the back link on
     // project and ham pages so the target is never hard-coded per language.

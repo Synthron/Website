@@ -83,7 +83,7 @@ export function renderProjectHeader(project, ctx, strings) {
 
 export function renderCard(project, ctx, level, strings) {
   const tag = `h${level}`;
-  const page = ctx.pages.projectPage(ctx.lang, project.id) ?? `proj/${project.id}.html`;
+  const page = ctx.pages.projectPage(ctx.lang, project.id) ?? `${ctx.pages.folder('proj', ctx.lang)}/${project.id}.html`;
   const href = `${ctx.root}${ctx.pages.dir(ctx.lang)}/${page}`;
   return `<article class="project-card" data-tags="${esc(JSON.stringify(project.tags))}">
   <a class="project-card__image-link" href="${esc(href)}" tabindex="-1" aria-hidden="true"><img class="project-card__image" src="${esc(ctx.root + project.image)}" alt="" loading="lazy" decoding="async"></a>
@@ -122,7 +122,7 @@ export function renderEntryList(entries, args, ctx, strings) {
   const visible = published(entries);
   if (visible.length === 0) return `<p class="message"${id}>${esc(strings.noHamPages)}</p>`;
   const items = visible.map((entry) => {
-    const page = ctx.pages.projectPage(ctx.lang, entry.id, 'ham') ?? `ham/${entry.id}.html`;
+    const page = ctx.pages.projectPage(ctx.lang, entry.id, 'ham') ?? `${ctx.pages.folder('ham', ctx.lang)}/${entry.id}.html`;
     const href = `${ctx.root}${ctx.pages.dir(ctx.lang)}/${page}`;
     return `<li class="entry-list__item" data-tags="${esc(JSON.stringify(entry.tags))}">
   <${tag} class="entry-list__title"><a class="entry-list__link" href="${esc(href)}">${esc(entry.title)}</a></${tag}>

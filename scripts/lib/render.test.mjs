@@ -118,6 +118,15 @@ test('renderCard links the project page of the page language', () => {
   assert.match(english, /href="\.\.\/en\/proj\/sy317-regulator\.html"/);
 });
 
+test('renderCard and renderEntryList fall back to the mapped folder of the page language', () => {
+  const pages = { ...pageIndex, projectPage: () => null, folder: (key, code) => (key === 'ham' && code === 'de' ? 'afu' : key) };
+  const card = renderCard(PROJECT, ctxFor('html/projects.html', '../', { pages }), 3, STRINGS);
+  assert.match(card, /href="\.\.\/html\/proj\/sy317\.html"/);
+  const entry = { id: 't2lt', title: 'T2LT', summary: 'S', tags: [], date: '2026-10' };
+  assert.match(renderEntryList([entry], [], ctxFor('html/hamradio.html', '../', { pages }), STRINGS), /href="\.\.\/html\/afu\/t2lt\.html"/);
+  assert.match(renderEntryList([entry], [], ctxFor('en/hamradio.html', '../', { lang: 'en', pages }), STRINGS), /href="\.\.\/en\/ham\/t2lt\.html"/);
+});
+
 // --- renderSitemap -----------------------------------------------------------
 
 const projectByRel = new Map([

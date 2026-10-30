@@ -62,12 +62,14 @@ const site = { defaultLang: 'de', languages: [{ code: 'de' }, { code: 'en' }] };
 const pageDir = (code) => code;
 const reset = () => { errors.length = 0; warnings.length = 0; };
 
-// Page index stub: pages pair by identical path.
-const indexOf = (files) => ({
+// Page index stub: pages pair by identical path; `folders` maps folder keys per language ({ ham: { de: 'afu' } }).
+const COLLECTION_OF_KEY = { proj: 'projects', ham: 'ham' };
+const indexOf = (files, folders = {}) => ({
   dir: pageDir,
   files: (code) => files[code] ?? [],
   counterparts: (code, file) => new Map(Object.keys(files).filter((other) => files[other].includes(file)).map((other) => [other, file])),
   projectId: (code, file) => path.posix.basename(file, '.html'),
+  collectionOf: (code, file) => COLLECTION_OF_KEY[Object.keys(COLLECTION_OF_KEY).find((key) => file.startsWith(`${folders[key]?.[code] ?? key}/`))],
 });
 
 test('checkLinks and checkAnchors work across language folders', async () => {
@@ -96,11 +98,29 @@ test('checkOrphanPages warns about project and ham pages without data in their l
     ['de/about.html', { lang: 'de', pagePath: 'about.html' }],
     ['de/other/x.html', { lang: 'de', pagePath: 'other/x.html' }],
   ]);
-  checkOrphanPages(info, indexOf({}), { proj: byId, ham: new Map() });
+  checkOrphanPages(info, indexOf({}), { projects: byId, ham: new Map() });
   assert.equal(warnings.length, 3);
   assert.match(warnings[0], /en\/proj\/a\.html: entry "a" has no "en" data/);
   assert.match(warnings[1], /de\/proj\/b\.html: proj\/ page without a data entry/);
   assert.match(warnings[2], /de\/ham\/a\.html: ham\/ page without a data entry/);
+  reset();
+});
+
+test('checkOrphanPages and checkTranslationCoverage use the mapped folder of each language', () => {
+  reset();
+  const folders = { ham: { de: 'afu' } };
+  const info = new Map([
+    ['de/afu/a.html', { lang: 'de', pagePath: 'afu/a.html' }],
+    ['de/ham/b.html', { lang: 'de', pagePath: 'ham/b.html' }],
+    ['en/ham/c.html', { lang: 'en', pagePath: 'ham/c.html' }],
+  ]);
+  checkOrphanPages(info, indexOf({}, folders), { projects: new Map(), ham: new Map([['c', { id: 'c', title: { de: 'C', en: 'C' } }]]) });
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /de\/afu\/a\.html: afu\/ page without a data entry/);
+  reset();
+  checkTranslationCoverage(site, indexOf({ de: ['afu/h.html', 'ham/x.html'], en: [] }, folders));
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /de\/ham\/x\.html: no counterpart in "en"/);
   reset();
 });
 

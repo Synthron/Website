@@ -14,8 +14,22 @@ const readData = (name) => JSON.parse(readFileSync(path.join(ROOT, 'wwwroot', 'd
 const site = readData('site.json');
 const projects = readData('projects.json');
 const groups = readData('pages.json');
+const folders = readData('folders.json');
 const codes = site.languages.map((language) => language.code);
 const { defaultLang, url } = site;
+
+// Collection folder keys and their folder name per language (data/folders.json).
+const KEYS = ['proj', 'ham'];
+const folderOf = (key, code) => folders[key]?.[code] ?? key;
+const hasMapping = KEYS.some((key) => codes.some((code) => folderOf(key, code) !== key));
+// The same path in another language, collection folder translated.
+const translate = (file, from, to) => {
+  const key = KEYS.find((name) => file.startsWith(`${folderOf(name, from)}/`));
+  return key === undefined ? file : `${folderOf(key, to)}/${file.slice(folderOf(key, from).length + 1)}`;
+};
+// Page path of a collection entry in a language: pages.json group, else <folder>/{id}.html.
+const entryPage = (key, id, code) => groups.find((entry) => entry[defaultLang] === `${folderOf(key, defaultLang)}/${id}.html`)?.[code]
+  ?? `${folderOf(key, code)}/${id}.html`;
 
 const pages = readdirSync(DIST, { recursive: true })
   .map((file) => String(file).split(path.sep).join('/'))
@@ -30,7 +44,7 @@ const isTodo = (value) => typeof value !== 'string' || value.trim() === '' || /^
 const isDraft = (entry) => Object.values(entry.title).some((title) => /^\s*DRAFT\b/.test(title));
 const draftPages = [...projects.map((entry) => ['proj', entry]), ...readData('ham.json').map((entry) => ['ham', entry])]
   .filter(([, entry]) => isDraft(entry))
-  .flatMap(([folder, entry]) => codes.map((code) => `${code}/${folder}/${entry.id}.html`));
+  .flatMap(([key, entry]) => codes.map((code) => `${code}/${entryPage(key, entry.id, code)}`));
 
 // Language -> page path (relative to the language folder) of every version of a page.
 function versions(rel) {
@@ -39,7 +53,7 @@ function versions(rel) {
   const group = groups.find((entry) => entry[lang] === file);
   const found = new Map();
   for (const code of codes) {
-    const target = group ? group[code] : file;
+    const target = group ? group[code] : translate(file, lang, code);
     if (target !== undefined && html.has(`${code}/${target}`) && (group || !groups.some((entry) => entry[code] === target))) {
       found.set(code, `${code}/${target}`);
     }
@@ -108,12 +122,31 @@ test('projects with TODO or missing texts are hidden in that language, the other
   for (const code of codes) {
     const visible = projects.filter((project) => !isTodo(project.title[code]) && !isTodo(project.summary[code]));
     for (const project of projects) {
-      const built = html.has(`${code}/proj/${project.id}.html`);
-      expect(built, `${code}/proj/${project.id}.html built`).toBe(visible.includes(project));
+      const page = `${code}/${entryPage('proj', project.id, code)}`;
+      expect(html.has(page), `${page} built`).toBe(visible.includes(project));
     }
     const listing = `${code}/${groups.find((entry) => Object.values(entry).includes('projects.html'))?.[code] ?? 'projects.html'}`;
     const cards = (html.get(listing)?.match(/class="project-card"/g) ?? []).length;
     expect(cards, `project cards on ${listing}`).toBe(visible.filter((project) => !isDraft(project)).length);
+  }
+});
+
+test('collection folders follow data/folders.json and pair across languages (selector, hreflang)', () => {
+  test.skip(!hasMapping, 'no folder mapping in data/folders.json');
+  for (const key of KEYS) {
+    for (const code of codes.filter((other) => folderOf(key, other) !== key)) {
+      expect(pages.filter((rel) => rel.startsWith(`${code}/${key}/`)), `no pages left in ${code}/${key}/`).toEqual([]);
+    }
+  }
+  // Pages whose counterpart lives in a differently named folder.
+  const pairs = languagePages.flatMap((rel) => [...versions(rel)]
+    .filter(([, target]) => target.split('/')[1] !== rel.split('/')[1])
+    .map(([code, target]) => [rel, code, target]));
+  expect(pairs.length, 'pages paired across mapped folders').toBeGreaterThan(0);
+  for (const [rel, code, target] of pairs) {
+    const link = selectorLinks(rel).find((tag) => attr(tag, 'lang') === code);
+    expect(resolve(rel, attr(link, 'href')), `${rel}: ${code} selector link`).toBe(target);
+    expect(html.get(rel), `${rel}: hreflang ${code}`).toContain(`<link rel="alternate" hreflang="${code}" href="${url}/${target}">`);
   }
 });
 

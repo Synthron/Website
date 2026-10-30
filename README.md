@@ -41,11 +41,11 @@ Website/
 │   │   ├── render.mjs     # HTML/XML renderers for directives and sitemap
 │   │   ├── pipeline.mjs   # @raw, includes, tokens, directives, cache busting (assets/JS/CSS)
 │   │   ├── checks.mjs     # Checks on the rendered output (links, anchors, language setup)
-│   │   ├── scaffold.mjs   # Shared helpers of create/page/remove (languages, pages.json)
+│   │   ├── scaffold.mjs   # Shared helpers of create/page/remove (languages, pages.json, folders.json)
 │   │   ├── preview.mjs    # Shared helpers of serve/dev (root redirect, flasher detection)
 │   │   ├── lighthouse.mjs # Overview page of the Lighthouse CI reports
 │   │   └── *.test.mjs     # Unit tests (node --test): util, data, render, pipeline, checks, scaffold, preview, lighthouse
-│   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects, ham, pages)
+│   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects, ham, pages, folders)
 │   ├── e2e/               # Playwright specs (*.spec.mjs)
 │   │   ├── pages.spec.mjs # Every built page: 320/768/1280 px, console, requests, storage, focus
 │   │   └── language.spec.mjs # Language setup of the built site (lang, canonical, hreflang, selector, sitemap, root redirect)
@@ -81,8 +81,8 @@ Website/
     │   ├── impressum.html # Legal: imprint
     │   ├── datenschutz.html # Legal: privacy policy (en: privacy.html)
     │   ├── rechtliches.html # Legal: legal notes (en: disclaimers.html)
-    │   ├── ham/           # Ham radio pages (one per data/ham.json entry, named by `id`)
-    │   │   └── t2lt.html  # T2LT antenna page
+    │   ├── afu/           # Ham radio pages (one per data/ham.json entry, named by `id`; collection folder "ham", mapped in data/folders.json)
+    │   │   └── moxon-2m-70cm.html  # Moxon antenna page
     │   └── proj/          # Individual project pages (one per project, named by `id`)
     │       ├── sy317.html # Static project page (from template)
     │       └── nixie-clock.html  # Static project page (from template)
@@ -105,6 +105,7 @@ Website/
     │   ├── nav.json        # Header navigation entries per language (label + href)
     │   ├── footer-nav.json # Footer navigation entries per language (label + href)
     │   ├── pages.json      # Pages with different file names per language (empty: pair by identical path)
+    │   ├── folders.json    # Collection folder names per language (de: ham -> afu)
     │   ├── projects.json   # Project entries (single source of truth)
     │   ├── ham.json        # Ham radio page entries (list on hamradio.html)
     │   ├── site.json       # Shared site info (languages, defaultLang, name, copyright, email, footerNote per language)
@@ -132,7 +133,8 @@ The site is multi-language; open translation tasks are listed in [`todo.md`](tod
 - **Configuration** (`data/site.json`): `languages` (`code`, `name`, `locale`, `flag`), `defaultLang` (`de`, also the `x-default` and fallback language) and `footerNote` per language. The code is the folder name below `wwwroot/`.
 - **Pages**: `wwwroot/<lang>/…` per language (`de/` is complete, `en/` holds placeholders). Two common pages live at the root: the landing page `index.html` (`lang="de"`, text blocks marked with their own `lang`) and `404.html` (English). Both use `partials/header-common.html` (brand and language selector, no nav). The legal pages exist in both languages (`de/datenschutz.html` ↔ `en/privacy.html`, `de/rechtliches.html` ↔ `en/disclaimers.html`, paired in `data/pages.json`).
 - **Root redirect**: `.htaccess` (and the preview servers) redirect `/` to `/de/` or `/en/` by the first `Accept-Language` entry (`302`, `Vary: Accept-Language`); everything else gets the landing page.
-- **Page pairs**: a page pairs with the page of the same path in another language. Pages with different file names per language are listed in `data/pages.json` (`[{ "de": "ueber-mich.html", "en": "about.html" }]`; project groups must contain `"de": "proj/{id}.html"`). The language selector, the `hreflang` alternates and `npm run create:project`/`create:afu`/`page`/`remove` use these pairs; a missing counterpart leads to that language's home.
+- **Page pairs**: a page pairs with the page of the same path in another language (collection folders translated, see below). Pages with different file names per language are listed in `data/pages.json` (`[{ "de": "ueber-mich.html", "en": "about.html" }]`; project groups must contain `"de": "proj/{id}.html"`, ham groups `"de": "afu/{id}.html"`, and every path of a group must lie in the collection folder of its language). The language selector, the `hreflang` alternates and `npm run create:project`/`create:afu`/`page`/`remove` use these pairs; a missing counterpart leads to that language's home.
+- **Collection folders** (`data/folders.json`, schema `scripts/schemas/folders.schema.json`): the folders of the collections can have a different name per language, `{ "ham": { "de": "afu" } }` (German ham pages in `de/afu/`, English ones in `en/ham/`). Keys are the internal folder names `proj` and `ham` (data files, ids, scripts and code keep using them); a language without a value (or a missing file) uses the key. Names are lowercase and hyphenated, unique per language and never the key of another collection; pages left in a key folder that is mapped away fail the build. Pages in collection folders pair by key and file name (`de/afu/x.html` ↔ `en/ham/x.html`) without a `pages.json` entry. The source tree carries the mapped names; the build does not rename output. In page text, link to a collection page with `{{langRoot}}{{folder:ham}}x.html`.
 - **Localized data**: `strings.json`, `nav.json`, `footer-nav.json` hold one block per language; in `projects.json` `title`, `summary` and `tags` are objects per language (tag lists are independent, not translations, from a fixed vocabulary per language in the schema). `status` stays a German key; its label per language is `strings.<lang>.status`.
 - **Missing translations**: the default language is required, other languages are optional. A project whose `title`/`summary` is missing or starts with `TODO` in a language (or whose page is missing) is hidden there (lists, filter, sitemap, alternates; its page is not built) and the build warns. Placeholders follow two conventions: `TODO` for project texts, `TODO_<German label>` for labels (navigation, strings, footer note).
 - **Translations are written by the owner.** Agents only create structure and clearly marked placeholders unless asked to translate.
@@ -155,10 +157,10 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | `npm run build` | Deletes `dist/` and rebuilds it from `wwwroot/`. Exits non-zero on invalid data, unknown tokens/includes or broken internal links. |
 | `npm run check` | Validation only: runs every build check (data, firmware manifests, tokens/includes/directives, links) and **writes nothing**. Fast pre-commit check; used by the git hook. |
 | `npm run create:project -- "Name" "Brief" [flags]` | Scaffolds a new project: copies `templates/project-template.html` to `<lang>/proj/{id}.html` for every language and registers the project in `data/projects.json` (other languages as `TODO`). Flags: `--tags a,b`, `--featured`, `--status <value>`, `--repo <url>`, `--dry-run` (validate only). |
-| `npm run create:afu -- "Name" "Brief" [flags]` | Same for a ham radio page: `<lang>/ham/{id}.html` (back link to `hamradio.html`) and an entry in `data/ham.json`. Flags: `--tags a,b`, `--status <value>` (optional), `--repo <url>` (optional), `--dry-run`. |
+| `npm run create:afu -- "Name" "Brief" [flags]` | Same for a ham radio page: `de/afu/{id}.html`, `en/ham/{id}.html` (ham folder per language from `data/folders.json`; back link to the ham listing) and an entry in `data/ham.json`. Flags: `--tags a,b`, `--status <value>` (optional), `--repo <url>` (optional), `--dry-run`. |
 | `npm run page -- "Title" [--title-<lang> "…"] [--nav\|--footer]` | Scaffolds a minimal secondary page (shared head with CSP/`{{name}}` title/description, header, `h1`, one prose section, footer) at `<lang>/{slug}.html` for every language; refuses to overwrite; pairs differently named pages in `data/pages.json`; optionally appends nav entries to `data/nav.json` / `data/footer-nav.json`. |
 | `npm run remove:project -- <id>` | Deletes a project from `data/projects.json`, its pages in every language folder and its `pages.json` group; asks for confirmation (`--yes` skips the prompt). The image file is left in place. |
-| `npm run remove:afu -- <id>` | Same for a ham radio page: entry in `data/ham.json`, `<lang>/ham/{id}.html` pages and `pages.json` group. |
+| `npm run remove:afu -- <id>` | Same for a ham radio page: entry in `data/ham.json`, `de/afu/{id}.html` / `en/ham/{id}.html` pages and `pages.json` group. |
 | `npm run report` | Prints a size report of `dist/` (run `npm run build` first): total size, largest files, page sizes (overall and per language), raster images not converted to WebP, unused images (the reserved `placeholder*.svg` are excluded). |
 | `npm run check:external` | Sends a HEAD request to every external link found in `wwwroot/` (pages, partials, template, `data/*.json`) and reports the status. Manual only — never part of `build` or `check`. |
 | `npm run firmware -- <suite> --chip <family> [--chip …]` | Creates `assets/firmware/<suite>/manifest.json` with a `builds` entry per `--chip` and prints the `<esp-web-install-button>` snippet. Supported chips: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 (see Firmware section for offsets). |
@@ -266,6 +268,7 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `{{lang}}` | Language of the current page: the language folder; on the common root pages the literal `<html lang="…">` of the source (landing page `de`, `404.html` `en`). Other root files such as `robots.txt` use the default language. |
 | `{{langRoot}}` | Relative path from the page to its language folder (`""` for pages directly in it, `"../"` one level deeper); equals `{{root}}` on the common root pages. |
 | `{{t:key}}` | UI string `key` of the page language from `data/strings.json` (HTML-escaped; unknown or non-text keys fail the build). |
+| `{{folder:<key>}}` | Folder name of the collection folder `<key>` (`proj`, `ham`) in the page language from `data/folders.json`, with trailing slash (`{{folder:ham}}` → `afu/` in German, `ham/` in English). Unknown keys fail the build. Use it for hand-written links to project or ham pages: `{{langRoot}}{{folder:ham}}moxon-2m-70cm.html`. |
 | `{{name}}`, `{{year}}`, `{{email}}` | Values from `data/site.json`. |
 | `{{footerNote}}` | `footerNote` of the page language from `data/site.json`. |
 | `{{url}}`, `{{sitemapUrl}}` | Canonical base URL and `https://…/sitemap.xml` from `data/site.json` (`url`). Used by `robots.txt`. |
@@ -273,7 +276,7 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `<!-- @nav -->` | Nav list built from `data/nav.json` for the page language; sets `aria-current="page"` on the entry whose `href` is the current page. Renders nothing on common pages (brand only). Used in `partials/header.html`. |
 | `<!-- @footer-nav -->` | Footer nav list built from `data/footer-nav.json` for the page language; same `aria-current="page"` handling as `@nav`. Entries with `lang` pointing to another language get `lang`/`hreflang`. Used in `partials/footer.html`. |
 | `<!-- @lang-switch -->` | Language selector: one link per language (flag, code, language name as `aria-label`) to the same page in that language, else to that language's home; `aria-current="true"` on the current language of a language page. Renders nothing with a single configured language. Cards, status labels and the link hint word use the page language. |
-| `{{projectTitle}}`, `{{projectSummary}}` | Title/summary (in the page language) of the project whose page this is: `<lang>/proj/{id}.html` or the mapped name from `data/pages.json`. On ham pages (`<lang>/ham/{id}.html`) the same tokens hold the ham entry's title/summary. |
+| `{{projectTitle}}`, `{{projectSummary}}` | Title/summary (in the page language) of the project whose page this is: `<lang>/proj/{id}.html` or the mapped name from `data/pages.json`. On ham pages (`<lang>/<ham folder>/{id}.html`, `de/afu/`, `en/ham/`) the same tokens hold the ham entry's title/summary. |
 | `{{projectsPage}}`, `{{hamPage}}` | File name (in the page language) of the projects listing (`projekte.html` ↔ `projects.html`) / ham radio listing (`amateurfunk.html` ↔ `hamradio.html`) page, resolved from `data/pages.json` (the group is keyed by the default-language name). Used by the back link on project and ham pages, so the target is never hard-coded per language. |
 | `<!-- @project-header -->` | Project page header (h1, summary, status/date, tags, links) from `data/projects.json`; on ham pages from `data/ham.json` (status and links only when set). |
 | `<!-- @projects all\|featured level=2\|3 id=list-id -->` | Pre-rendered project card grid, newest first; drafts are skipped. |
@@ -387,8 +390,8 @@ npm run create:afu -- "T2LT Antenne" "One-sentence description." --tags antenne
 
 The command:
 
-- Derives a lowercase, hyphenated `id` from the name (e.g. `My Project` → `my-project`) and refuses to run if that `id` already exists in the data file or as a page in any `<lang>/proj/` (`<lang>/ham/`) folder (mapped names from `data/pages.json` included). Unknown flags fail.
-- Copies `templates/project-template.html` to `<lang>/proj/{id}.html` (`<lang>/ham/{id}.html`) for **every** configured language (without the master-template instruction comment; ham pages get the ham back link). The back link target is resolved per language at build time (`{{projectsPage}}` / `{{hamPage}}`, see Build-time Templating), so scaffolded pages always point at the right listing page (`projekte.html` in German, `projects.html` in English).
+- Derives a lowercase, hyphenated `id` from the name (e.g. `My Project` → `my-project`) and refuses to run if that `id` already exists in the data file or as a page in any `<lang>/proj/` (ham folder of the language, e.g. `de/afu/`, `en/ham/`) folder (mapped names from `data/pages.json` and `data/folders.json` included). Unknown flags fail.
+- Copies `templates/project-template.html` to `<lang>/proj/{id}.html` (`de/afu/{id}.html`, `en/ham/{id}.html`) for **every** configured language (without the master-template instruction comment; ham pages get the ham back link). The back link target is resolved per language at build time (`{{projectsPage}}` / `{{hamPage}}`, see Build-time Templating), so scaffolded pages always point at the right listing page (`projekte.html` in German, `projects.html` in English).
 - `create:project` appends an entry to `data/projects.json` with the required schema: `id`, `title` and `summary` per language (the default language gets the name/brief, every other language `"TODO"`), `tags` per language (the default language gets `--tags`, others start empty), `status` (`--status`, default `"in Arbeit"`), `date` (current `YYYY-MM`), `links` (`repo` from `--repo`, else `null`; `demo` `null`), the placeholder image, and `featured` (`--featured`). The project stays hidden in a language until its `TODO` texts are replaced.
 - `create:afu` appends the slim entry to `data/ham.json`: `id`, `title`, `summary`, `tags`, `date`; `status` and `links` only when `--status` / `--repo` are given. `--featured` is rejected.
 - `--dry-run` validates and prints the entry without writing anything.
@@ -405,7 +408,7 @@ npm run page -- "Petikette" --nav
 
 The command:
 
-- Derives a lowercase, hyphenated `slug` from the title (`ü`/`ä`/`ö`/`ß` are transliterated, e.g. `Über mich` → `ueber-mich`) and refuses to overwrite an existing `<lang>/{slug}.html`.
+- Derives a lowercase, hyphenated `slug` from the title (`ü`/`ä`/`ö`/`ß` are transliterated, e.g. `Über mich` → `ueber-mich`) and refuses to overwrite an existing `<lang>/{slug}.html` or to use the name of a collection folder of that language (`proj`, `afu` in German, `ham` in English).
 - Creates the page in **every** language folder. Other languages get `TODO_<title>` titles and a `TODO` text unless `--title-<lang> "…"` is given; then that language's file name follows its title and the differing names are paired in `data/pages.json`.
 - Writes a minimal template: shared `<!-- @include head -->` (CSP, title and `meta description` with `{{name}}`, stylesheets, `main.js`), `<!-- @include header -->`, an `h1`, one `prose` section, `<!-- @include footer -->`.
 - With `--nav` / `--footer` it appends `{ "label": "<Title>", "href": "{slug}.html" }` to the matching language array of `data/nav.json` / `data/footer-nav.json` (skips duplicates). `--description "…"` overrides the placeholder `meta description` of the default language.
@@ -414,10 +417,10 @@ After scaffolding, replace the placeholder body text and add the page to the REA
 
 ### Removing a Project or Ham Page (`npm run remove:project` / `remove:afu`)
 
-`npm run remove:project -- <id>` removes a project you no longer want to publish; `npm run remove:afu -- <id>` does the same for a ham radio page (`data/ham.json`, `<lang>/ham/`):
+`npm run remove:project -- <id>` removes a project you no longer want to publish; `npm run remove:afu -- <id>` does the same for a ham radio page (`data/ham.json`, `de/afu/`, `en/ham/`):
 
 - Validates `<id>` (lowercase, hyphenated) and looks it up in `data/projects.json` (or `data/ham.json`); if the id belongs to the other collection, the error names the right script.
-- Asks for a confirmation prompt (listing the files) and deletes the entry plus its page in every language folder (`<lang>/proj/{id}.html` / `<lang>/ham/{id}.html` or the mapped name) and its group in `data/pages.json`; pass `--yes` to skip the prompt.
+- Asks for a confirmation prompt (listing the files) and deletes the entry plus its page in every language folder (`<lang>/proj/{id}.html` / `de/afu/{id}.html`, `en/ham/{id}.html` or the mapped name) and its group in `data/pages.json`; pass `--yes` to skip the prompt.
 - The project's image file is left in place — images can be shared between projects. Delete it manually if nothing references it anymore (`npm run report` lists unused images).
 - Run `npm run build` afterwards and remove the now-stale files from the server on the next deploy.
 
@@ -496,7 +499,7 @@ A second collection next to the projects: `wwwroot/<lang>/hamradio.html` lists t
 
 - Required: `id`, `title`, `summary`, `tags`, `date` (same rules as in `projects.json`, schema [`scripts/schemas/ham.schema.json`](scripts/schemas/ham.schema.json)). Optional: `status`, `links`. No `image` and no `featured` (the list shows no images). A `DRAFT` title prefix marks a draft like for projects (page built, not listed).
 - Tags come from a fixed vocabulary per language, defined in `ham.schema.json` (`tags.properties.<lang>.items.enum`): `de` = `antenne`, `transceiver`, `contest`, `funkbetrieb`, `messtechnik`, `diy`; `en` = `antenna`, `transceiver`, `contest`, `operating`, `measurement`, `diy`. The build and `npm run create:afu -- … --tags` reject other tags; a new tag or language is added to that list first.
-- Pages live at `<lang>/ham/{id}.html` (or a mapped name from `data/pages.json`; a group with `ham/` pages may only contain `ham/` pages). The default-language page is required; a `TODO` or missing translation hides the entry in that language, like projects.
+- Pages live in the ham collection folder of each language: `de/afu/{id}.html`, `en/ham/{id}.html` (folder key `ham`, names from `data/folders.json`; or a mapped name from `data/pages.json`, where every path must lie in the ham folder of its language). The default-language page is required; a `TODO` or missing translation hides the entry in that language, like projects.
 - A ham page uses the same structure as a project page (`{{projectTitle}}`, `{{projectSummary}}`, `@project-header`, layouts from the project template) with the back link `<a href="{{langRoot}}{{hamPage}}">{{t:backToHam}}</a>` (`{{hamPage}}` resolves per language, see Build-time Templating).
 - Ham entries do not appear on `projects.html`, the home page or in the project tag filter.
 - Adding a ham page: `npm run create:afu -- "Name" "Brief" --tags a,b` (entry plus pages in all languages), replace the placeholder body, run `npm run build`.
@@ -509,6 +512,7 @@ A second collection next to the projects: `wwwroot/<lang>/hamradio.html` lists t
 | `data/ham.json` | Ham radio page entries, see [Ham Radio Pages](#ham-radio-pages-datahamjson). |
 | `data/nav.json`, `data/footer-nav.json` | See [Navigation](#navigation-datanavjson). |
 | `data/pages.json` | Groups of the same page under different file names per language, see [Languages](#languages). `[]` when all pages pair by identical path. |
+| `data/folders.json` | Collection folder names per language (`{ "ham": { "de": "afu" } }`), see [Languages](#languages). Optional; unmapped languages use the key. |
 | `data/site.json` | See [Site Config](#site-config-datasitejson). |
 
 ## Open Work
@@ -525,4 +529,5 @@ Standing decisions that guide further work.
 - **Build checks**: HTML rule violations (one `h1`, `<html lang>`, `alt`, no inline scripts or `style` attributes) fail the build instead of warning.
 - **Colour scheme**: follows `prefers-color-scheme`; no dark-mode toggle.
 - **Languages**: German (default) and English; one folder per language (`de/`, `en/`) plus a common landing page and 404 at the root; the root redirects by `Accept-Language` (`302`) and falls back to the landing page; tags, titles and summaries are defined per language; `status` keeps German keys with labels per language; missing translations hide a project in that language and warn; no redirects from the old `/html/` URLs; all translations come from the owner.
-- **Ham radio section**: own data file `data/ham.json` with pages in `<lang>/ham/`; listed only on `hamradio.html` (not on `projects.html` or the home page); fixed tag vocabulary per language in the schema.
+- **Ham radio section**: own data file `data/ham.json` with pages in the ham collection folder (`de/afu/`, `en/ham/`); listed only on `hamradio.html` (not on `projects.html` or the home page); fixed tag vocabulary per language in the schema.
+- **Folder mapping**: collection folders may have a name per language (`data/folders.json`); the keys (`proj`, `ham`) stay the internal names; the source tree carries the mapped names; no redirects from the old `de/ham/` URLs (site still under construction).

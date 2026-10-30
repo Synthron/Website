@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { collectionOf, isTodo, loadHam, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './data.mjs';
+import { isTodo, loadFolders, loadHam, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './data.mjs';
 import { SRC, errors, warnings } from './util.mjs';
 
 const reset = () => { errors.length = 0; warnings.length = 0; };
@@ -261,11 +261,17 @@ test('loadProjects checks pages.json groups against the project ids', async () =
 
 // --- loadHam -----------------------------------------------------------------
 
-test('collectionOf maps page folders to collections', () => {
-  assert.equal(collectionOf('proj/a.html'), 'projects');
-  assert.equal(collectionOf('ham/a.html'), 'ham');
-  assert.equal(collectionOf('hamradio.html'), undefined);
-  assert.equal(collectionOf(undefined), undefined);
+test('pages.collectionOf maps page folders to collections', async () => {
+  reset();
+  const src = await fixture({ 'data/pages.json': [] });
+  const pages = await loadPages(SITE, { src });
+  assert.equal(pages.collectionOf('de', 'proj/a.html'), 'projects');
+  assert.equal(pages.collectionOf('en', 'ham/a.html'), 'ham');
+  assert.equal(pages.collectionOf('de', 'hamradio.html'), undefined);
+  assert.equal(pages.collectionOf('de', undefined), undefined);
+  assert.equal(pages.folder('ham', 'de'), 'ham');
+  assert.equal(pages.folder('nope', 'de'), undefined);
+  assert.deepEqual(errors, []);
 });
 
 test('loadHam accepts slim entries, uses ham/ pages and mapped names', async () => {
@@ -287,5 +293,96 @@ test('loadHam accepts slim entries, uses ham/ pages and mapped names', async () 
   assert.match(text, /ham\.json\[1\]\.tags\.de\[1\]: must be equal to one of the allowed values: antenne, /);
   assert.doesNotMatch(text, /tags\.de\[0\]/);
   assert.match(warnings.join('\n'), /en\/ham\/orphan\.html: page without a data\/ham\.json entry/);
+  reset();
+});
+
+// --- Folder mapping (data/folders.json) ----------------------------------------
+
+const HAM_ENTRY = { id: 'h', title: { de: 'H', en: 'H' }, summary: { de: 'S', en: 'S' }, tags: { de: ['antenne'], en: ['antenna'] }, date: '2026-10' };
+
+test('loadFolders maps folder keys per language and defaults to the key', async () => {
+  reset();
+  const folderOf = await loadFolders(SITE, { src: await fixture({ 'data/folders.json': { ham: { de: 'afu' } } }) });
+  assert.equal(folderOf('ham', 'de'), 'afu');
+  assert.equal(folderOf('ham', 'en'), 'ham');
+  assert.equal(folderOf('proj', 'de'), 'proj');
+  assert.equal(folderOf('nope', 'de'), undefined);
+  const missing = await loadFolders(SITE, { src: await fixture({}) });
+  assert.equal(missing('ham', 'de'), 'ham');
+  assert.deepEqual(errors, []);
+});
+
+test('loadFolders reports unknown keys and languages, bad names, clashes and leftover pages', async () => {
+  reset();
+  await loadFolders(SITE, { src: await fixture({ 'data/folders.json': { blog: { de: 'x' }, ham: { fr: 'afu', en: 'Ham Radio' } } }) });
+  let text = errors.join('\n');
+  assert.match(text, /folders\.json: must NOT have additional properties "blog"/);
+  assert.match(text, /folders\.json\.ham\.en: must match pattern/);
+  reset();
+  await loadFolders(SITE, { src: await fixture({ 'data/folders.json': { ham: { fr: 'afu' } } }) });
+  assert.match(errors.join('\n'), /folders\.json\.ham: unknown language "fr"/);
+  reset();
+  await loadFolders(SITE, { src: await fixture({ 'data/folders.json': { ham: { de: 'proj' }, proj: { en: 'x' } } }) });
+  text = errors.join('\n');
+  assert.match(text, /folders\.json\.ham\.de: "proj" is the folder key of another collection/);
+  reset();
+  await loadFolders(SITE, { src: await fixture({ 'data/folders.json': { proj: { de: 'seiten' }, ham: { de: 'seiten' } } }) });
+  assert.match(errors.join('\n'), /folders\.json\.ham\.de: "seiten" is already the folder of "proj"/);
+  reset();
+  await loadFolders(SITE, { src: await fixture({ 'data/folders.json': { ham: { de: 'afu' } }, 'de/ham/old.html': '' }) });
+  assert.match(errors.join('\n'), /wwwroot\/de\/ham\/: "ham" pages of "de" live in de\/afu\//);
+  reset();
+});
+
+test('loadPages pairs mapped collection folders by key and file name', async () => {
+  reset();
+  const src = await fixture({
+    'data/folders.json': { ham: { de: 'afu' } },
+    'data/pages.json': [{ de: 'afu/h.html', en: 'ham/h-en.html' }],
+    'de/afu/x.html': '', 'en/ham/x.html': '', 'de/afu/h.html': '', 'en/ham/h-en.html': '', 'de/proj/p.html': '', 'en/proj/p.html': '',
+  });
+  const pages = await loadPages(SITE, { src });
+  assert.deepEqual(errors, []);
+  assert.deepEqual([...pages.counterparts('de', 'afu/x.html')], [['de', 'afu/x.html'], ['en', 'ham/x.html']]);
+  assert.deepEqual([...pages.counterparts('en', 'ham/x.html')], [['de', 'afu/x.html'], ['en', 'ham/x.html']]);
+  assert.deepEqual([...pages.counterparts('de', 'proj/p.html')], [['de', 'proj/p.html'], ['en', 'proj/p.html']]);
+  assert.equal(pages.projectPage('de', 'x', 'ham'), 'afu/x.html');
+  assert.equal(pages.projectPage('en', 'x', 'ham'), 'ham/x.html');
+  assert.equal(pages.projectPage('en', 'h', 'ham'), 'ham/h-en.html');
+  assert.equal(pages.projectId('en', 'ham/h-en.html'), 'h');
+  assert.equal(pages.collectionOf('de', 'afu/x.html'), 'ham');
+  assert.equal(pages.collectionOf('en', 'afu/x.html'), undefined);
+  assert.equal(pages.collectionOf('de', 'ham/x.html'), undefined);
+});
+
+test('loadPages applies the group folder rules with the folder of each language', async () => {
+  reset();
+  const src = await fixture({
+    'data/folders.json': { ham: { de: 'afu' } },
+    'data/pages.json': [{ de: 'afu/a.html', en: 'afu/a.html' }, { de: 'afu/b.html', en: 'proj/b.html' }, { de: 'afu/sub/c.html', en: 'ham/c.html' }],
+    'de/afu/a.html': '', 'en/afu/a.html': '', 'de/afu/b.html': '', 'en/proj/b.html': '', 'de/afu/sub/c.html': '', 'en/ham/c.html': '',
+  });
+  await loadPages(SITE, { src });
+  const text = errors.join('\n');
+  assert.match(text, /\[0\]: a group with ham \(de: afu\/, en: ham\/\) pages may only contain ham \(de: afu\/, en: ham\/\) pages/);
+  assert.match(text, /\[1\]: a group with ham \(de: afu\/, en: ham\/\) pages/);
+  assert.match(text, /\[2\]: a ham \(de: afu\/, en: ham\/\) group needs "de": "afu\/\{id\}\.html"/);
+  reset();
+});
+
+test('loadHam finds pages in mapped folders and reports them with the mapped name', async () => {
+  reset();
+  const src = await fixture({
+    ...BASE_FILES, 'data/folders.json': { ham: { de: 'afu' } }, 'data/pages.json': [],
+    'data/ham.json': [HAM_ENTRY, { ...HAM_ENTRY, id: 'nopage' }],
+    'de/afu/h.html': '', 'en/ham/h.html': '', 'en/ham/orphan.html': '',
+  });
+  const pages = await loadPages(SITE, { src });
+  const ham = await loadHam(SITE, pages, { src });
+  assert.equal(localize(ham.find((item) => item.id === 'h'), 'en').title, 'H');
+  assert.match(errors.join('\n'), /ham\.json\[1\]: missing page wwwroot\/de\/afu\/nopage\.html/);
+  const text = warnings.join('\n');
+  assert.match(text, /\(nopage\): no "en" page \(wwwroot\/en\/ham\/nopage\.html\)/);
+  assert.match(text, /en\/ham\/orphan\.html: page without a data\/ham\.json entry/);
   reset();
 });

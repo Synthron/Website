@@ -8,7 +8,7 @@ import { readFile, rm } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadSetup, PAGES_FILE, projectPagePath, readPages, writeJson } from './lib/scaffold.mjs';
+import { folderName, loadSetup, PAGES_FILE, projectPagePath, readFolders, readPages, writeJson } from './lib/scaffold.mjs';
 import { exists } from './lib/util.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -53,8 +53,9 @@ async function main() {
   const entry = data[index];
   const { languages, defaultLang } = await loadSetup();
   const pages = await readPages();
+  const folders = await readFolders();
   const title = typeof entry.title === 'object' ? (entry.title[defaultLang] ?? id) : entry.title;
-  const candidates = languages.map((code) => `wwwroot/${code}/${projectPagePath(pages, defaultLang, code, id, kind.folder)}`);
+  const candidates = languages.map((code) => `wwwroot/${code}/${projectPagePath(pages, defaultLang, code, id, kind.folder, folders)}`);
   const existing = [];
   for (const rel of candidates) {
     if (await exists(path.join(ROOT, rel))) existing.push(rel);
@@ -68,7 +69,7 @@ async function main() {
   data.splice(index, 1);
   await writeJson(kind.file, data);
   for (const rel of existing) await rm(path.join(ROOT, rel), { force: true });
-  const remaining = pages.filter((group) => group[defaultLang] !== `${kind.folder}/${id}.html`);
+  const remaining = pages.filter((group) => group[defaultLang] !== `${folderName(folders, kind.folder, defaultLang)}/${id}.html`);
   if (remaining.length !== pages.length) {
     await writeJson(PAGES_FILE, remaining);
     console.log('Removed its group from data/pages.json.');

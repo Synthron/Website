@@ -16,7 +16,7 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HAM_TAGS, PROJECT_TAGS, STATUS_VALUES } from './lib/data.mjs';
-import { loadSetup, readPages, projectPagePath, writeJson } from './lib/scaffold.mjs';
+import { loadSetup, readFolders, readPages, projectPagePath, writeJson } from './lib/scaffold.mjs';
 import { slugify } from './lib/util.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -114,6 +114,7 @@ async function main() {
     process.exit(1);
   }
   const pages = await readPages();
+  const folders = await readFolders();
   const dataRel = `data/${path.basename(kind.file)}`;
   const entries = JSON.parse(await readFile(kind.file, 'utf8'));
   if (entries.some((entry) => entry.id === id)) {
@@ -123,7 +124,7 @@ async function main() {
 
   const pageFiles = new Map(); // language -> page path inside the language folder
   for (const code of languages) {
-    pageFiles.set(code, projectPagePath(pages, defaultLang, code, id, kind.folder));
+    pageFiles.set(code, projectPagePath(pages, defaultLang, code, id, kind.folder, folders));
   }
   for (const [code, page] of pageFiles) {
     if (await exists(path.join(ROOT, 'wwwroot', code, page))) {

@@ -9,33 +9,7 @@ Agents never write or translate site content. The build warns about every leftov
 
 ## Deployment (User)
 
-
-## Feature: Folder Mapping per Language (planned)
-
-Goal: collection folders can have a different name per language (e.g. German `ham/` → `afu/`), the same way `data/pages.json` maps file names today. Implemented **before** the module pages, which build on it. All questions are answered; the tasks are ready.
-
-### Decisions
-
-- **Config**: new `data/folders.json`, format `{ "ham": { "de": "afu", "en": "ham" } }`; a language without a value uses the key as folder name. The keys are the internal names (`proj`, `ham`); data files, ids, command names and code keep using the keys.
-- **Token**: `{{folder:<key>}}` → mapped folder name with trailing slash, e.g. `{{langRoot}}{{folder:ham}}moxon-2m-70cm.html`.
-- **Source tree** carries the mapped names (`wwwroot/de/afu/…`); scaffolds write there. The build resolves names, it does not rename output.
-- **Scope**: collection folders (`proj/`, `ham/`) via `folders.json`. Module folders are not listed there; they follow the parent page's file name in each language (see Module Pages).
-- **Rollout**: German `ham/` becomes `afu/`. No redirects (site still under construction).
-
-### Implementation (Agent)
-
-- [ ] **A42** `data/folders.json` + `scripts/schemas/folders.schema.json` + loader in `data.mjs`: format as decided; keys limited to the collection keys; known languages; slug names; unique per language; no clash with other folders/pages in that language folder. Tests in `data.test.mjs`.
-- [ ] **A55** Token `{{folder:<key>}}` in `applyTokens` (`pipeline.mjs`): mapped name of the page language with trailing slash, fails on an unknown key, escaped with `esc()`. README templating table. Tests in `pipeline.test.mjs`.
-- [ ] **A43** Page index (`data.mjs`): `COLLECTIONS` / `FOLDERS`, `collectionOf()`, `projectPage()`, `projectId()`, `counterparts()` use the folder name of each language; pages in a collection folder pair across languages by key + file name (`de/afu/x.html` ↔ `en/ham/x.html`) without a `pages.json` entry. Tests.
-- [ ] **A44** `data/pages.json` validation: the folder rules ("a group with ham/ pages may only contain ham/ pages", default-language path `<folder>/{id}.html`) use the folder name of each language. Tests.
-- [ ] **A45** Build (`build.mjs`): collection detection, `ctx.project`, flasher detection and listings work with mapped source folders; no output renaming.
-- [ ] **A46** Generated links use the mapped folders: project/ham cards and lists, back links, canonical, `hreflang`, Open Graph URL, sitemap. Tests in `render.test.mjs` / `pipeline.test.mjs`.
-- [ ] **A47** Checks (`checkLanguageLinks`, `checkOrphanPages`, `checkTranslationCoverage`, unused assets) with mapped folders. Tests in `checks.test.mjs`.
-- [ ] **A48** Scaffolds (`create.mjs`, `remove.mjs`, `page.mjs`, `scaffold.mjs`) read/write the mapped folder per language; `page.mjs` refuses names that clash with a mapped folder. Tests in `scaffold.test.mjs`.
-- [ ] **A51** Rollout: add the `ham` → `afu` mapping for German, move `wwwroot/de/ham/` to `wwwroot/de/afu/` (`git mv`), replace hand-written `ham/` links with `{{folder:ham}}`, rebuild. Depends on A42–A48, A55.
-- [ ] **A52** Tooling and e2e: `dev`, `serve`, `lighthouse` url list, `report`; `language.spec.mjs` covers `de/afu/` ↔ `en/ham/` (selector, `hreflang`, sitemap).
-- [ ] **A53** Docs: README (outline, Languages → page pairs, folder mapping section, templating table, Ham Radio Pages) and `AGENTS.md` (Directory Responsibilities `<lang>/ham/`, Data rules, Common Tasks).
-- [ ] **A54** Verification: `build`, `check`, `test`, `lint`, `test:e2e`; before the rollout (A51) and without a mapping, `dist/` stays byte-identical.
+- [ ] **U12** Next deploy: delete the stale `de/ham/` folder on the server (German ham pages moved to `de/afu/`, no redirects).
 
 ## Feature: Module Pages (planned)
 
@@ -104,7 +78,7 @@ Tooling, tests, docs:
   - [ ] SynPLC (mit Unterseiten)
   - [ ] ModLab (mit Unterseiten)
   - [ ] 3D-Drucker?
-  - [ ] Röhrenverstärker
+  - [ ] Röhrenverstärker 6L6
   - [ ] Gitarrenverstärker
 - AFU
   - [x] Moxon Dual Band

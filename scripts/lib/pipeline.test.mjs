@@ -59,6 +59,19 @@ test('applyTokens resolves {{projectsPage}} and {{hamPage}} per page language vi
   assert.equal(applyTokens('{{projectsPage}}|{{hamPage}}', { ...ctx, rel: 'en/proj/a.html', lang: 'en' }), 'projects.html|hamradio.html');
 });
 
+test('applyTokens resolves {{folder:<key>}} to the folder of the page language and fails on unknown keys', () => {
+  errors.length = 0;
+  const names = { ham: { de: 'afu', en: 'ham' }, proj: { de: 'proj', en: 'proj' } };
+  const pages = { folder: (key, code) => names[key]?.[code] };
+  const ctx = { rel: 'de/a.html', site, lang: 'de', langRoot: '', root: '../', strings: {}, pages };
+  assert.equal(applyTokens('{{langRoot}}{{folder:ham}}x.html|{{ folder:proj }}', ctx), 'afu/x.html|proj/');
+  assert.equal(applyTokens('{{folder:ham}}', { ...ctx, rel: 'en/a.html', lang: 'en' }), 'ham/');
+  assert.equal(applyTokens('{{folder:blog}}', ctx), '');
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /unknown collection folder \{\{folder:blog\}\}/);
+  errors.length = 0;
+});
+
 test('applyDirectives renders no @nav on common pages', () => {
   const ctx = { rel: 'index.html', lang: 'de', root: '', isCommon: true, site, pages: { base: () => '' } };
   const nav = [{ label: 'Start', href: 'index.html', external: false }];

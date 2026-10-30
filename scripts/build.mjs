@@ -6,7 +6,7 @@
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DIST, ROOT, SRC, errors, exists, gitLastModified, posix, shortHash, walk, warn, warnings } from './lib/util.mjs';
-import { COLLECTIONS, collectionOf, loadHam, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
+import { loadHam, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
 import { ogImageRel, renderOpenGraph, renderSitemap } from './lib/render.mjs';
 import {
   applyCacheBusting, applyDirectives, applyIncludes, applyTokens, classifyPage, isFlasherPage,
@@ -79,9 +79,8 @@ async function build({ check = false } = {}) {
     strings: { ...stringsByLang[code], lang: code },
   }]));
   await checkFirmwareManifests();
-  // Collection name -> id -> entry; the orphan check keys the maps by page folder.
+  // Collection name -> id -> entry.
   const byId = Object.fromEntries(Object.entries(collections).map(([name, entries]) => [name, new Map(entries.map((entry) => [entry.id, entry]))]));
-  const byFolder = Object.fromEntries(Object.entries(COLLECTIONS).map(([name, { folder }]) => [folder, byId[name]]));
   const projectByRel = new Map(); // page path -> localized project or ham entry
   const infoByRel = new Map(); // page path -> { lang, pagePath, isCommon }
 
@@ -117,7 +116,7 @@ async function build({ check = false } = {}) {
     const source = await readFile(from, 'utf8');
     const page = classifyPage(rel, source, root, site, pageDir);
     const { lang } = page;
-    const collection = collectionOf(page.pagePath);
+    const collection = page.pagePath === undefined ? undefined : pageIndex.collectionOf(lang, page.pagePath);
     const projectId = collection === undefined ? undefined : pageIndex.projectId(lang, page.pagePath);
     const rawProject = projectId === undefined ? undefined : byId[collection].get(projectId);
     const project = rawProject ? localize(rawProject, lang) ?? undefined : undefined;
@@ -182,8 +181,8 @@ async function build({ check = false } = {}) {
   const base = check ? SRC : DIST;
   for (const [rel, html] of pages) await checkLinks(rel, html, base);
 
-  checkOrphanPages(infoByRel, pageIndex, byFolder);
-  checkTranslationCoverage(site, pageIndex, Object.keys(byFolder));
+  checkOrphanPages(infoByRel, pageIndex, byId);
+  checkTranslationCoverage(site, pageIndex);
   checkLanguageLinks(pages, infoByRel, site, pageDir);
   await checkUnusedAssets(pages);
   checkPlaceholderText(pages);

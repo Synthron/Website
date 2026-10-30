@@ -10,7 +10,7 @@
 import { access, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DATA_DIR, loadSetup, PAGES_FILE, readPages, writeJson } from './lib/scaffold.mjs';
+import { collectionFolders, DATA_DIR, loadSetup, PAGES_FILE, readFolders, readPages, writeJson } from './lib/scaffold.mjs';
 import { esc, slugify } from './lib/util.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -93,7 +93,12 @@ async function main() {
     }
   }
 
+  const folders = await readFolders();
   for (const code of languages) {
+    if (collectionFolders(folders, code).includes(perLang[code].slug)) {
+      console.error(`"${perLang[code].slug}" is a collection folder in wwwroot/${code}/ (data/folders.json); choose another title.`);
+      process.exit(1);
+    }
     if (await exists(path.join(ROOT, 'wwwroot', code, `${perLang[code].slug}.html`))) {
       console.error(`A page already exists at wwwroot/${code}/${perLang[code].slug}.html.`);
       process.exit(1);

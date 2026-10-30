@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { DATA_DIR, PAGES_FILE, loadSetup, projectPagePath, readPages } from './scaffold.mjs';
+import { DATA_DIR, PAGES_FILE, collectionFolders, folderName, loadSetup, projectPagePath, readPages } from './scaffold.mjs';
 
 test('projectPagePath returns the mapped name or the standard path', () => {
   const pages = [{ de: 'proj/uhr.html', en: 'proj/clock.html' }, { de: 'ham/t2lt.html', en: 'ham/t2lt-antenna.html' }];
@@ -14,6 +14,19 @@ test('projectPagePath returns the mapped name or the standard path', () => {
   assert.equal(projectPagePath(pages, 'de', 'en', 'other'), 'proj/other.html');
   assert.equal(projectPagePath(pages, 'de', 'en', 't2lt', 'ham'), 'ham/t2lt-antenna.html');
   assert.equal(projectPagePath(pages, 'de', 'fr', 'uhr'), 'proj/uhr.html');
+});
+
+test('projectPagePath and collectionFolders use the folder of each language', () => {
+  const folders = { ham: { de: 'afu' } };
+  const pages = [{ de: 'afu/t2lt.html', en: 'ham/t2lt-antenna.html' }];
+  assert.equal(projectPagePath(pages, 'de', 'en', 't2lt', 'ham', folders), 'ham/t2lt-antenna.html');
+  assert.equal(projectPagePath(pages, 'de', 'de', 'x', 'ham', folders), 'afu/x.html');
+  assert.equal(projectPagePath(pages, 'de', 'en', 'x', 'ham', folders), 'ham/x.html');
+  assert.equal(projectPagePath(pages, 'de', 'de', 'x', 'proj', folders), 'proj/x.html');
+  assert.equal(folderName(folders, 'ham', 'de'), 'afu');
+  assert.equal(folderName(folders, 'ham', 'en'), 'ham');
+  assert.deepEqual(collectionFolders(folders, 'de'), ['proj', 'afu']);
+  assert.deepEqual(collectionFolders({}, 'en'), ['proj', 'ham']);
 });
 
 test('loadSetup returns the language codes and the default language of site.json', async () => {
