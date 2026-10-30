@@ -3,6 +3,10 @@
     "EditorConfig.EditorConfig",
     "dbaeumer.vscode-eslint",
     "stylelint.vscode-stylelint",
-    "html-validate.vscode-html-validate"
+    "html-validate.vscode-html-validate",
+    "aaron-bond.better-comments",
+    "idered.npm",
+    "christian-kohler.path-intellisense",
+    "esbenp.prettier-vscode"
   ]
 }
