@@ -26,17 +26,29 @@ Agents never write or translate site content. The build warns about every leftov
 - General Projects
   - [ ] DCF77 Uhr
   - [ ] SynPLC (mit Unterseiten)
+    - [ ] CPU
+    - [ ] DI
+    - [ ] DO
+    - [ ] AI
+    - [ ] AO
+    - [ ] XT
   - [ ] ModLab (mit Unterseiten)
-  - [ ] 3D-Drucker?
+    - [ ] Main
+    - [ ] LNT
+    - [ ] SMPS
+    - [ ] Function Generator
+    - [ ] Load
+    - [ ] Diode Tester
   - [ ] Röhrenverstärker 6L6
   - [ ] Gitarrenverstärker
   - [ ] Modular 6502
+  - [ ] 3D-Drucker?
 - AFU
   - [x] Moxon Dual Band
-  - [ ] QMX Tuner
-  - [ ] QMX 10W Upgrade
   - [ ] QMX Mikro Kapsel
   - [ ] 5+8ele Yagi und SCAD Teile
-  - [ ] Signal Stick
   - [ ] Endfed?
+  - [ ] QMX Tuner
+  - [ ] QMX 10W Upgrade
+  - [ ] Signal Stick
   - [ ] SCAD Balun-Gehäuse (WIP)
