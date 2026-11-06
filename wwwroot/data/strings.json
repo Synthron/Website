@@ -21,9 +21,9 @@
     "hamCountPlural": "Seiten",
     "noHamPages": "Noch keine Seiten",
     "backToHam": "← Alle Amateurfunk-Seiten",
-    "prev": "TODO_prev",
-    "next": "TODO_next",
-    "toc": "TODO_Inhalt",
+    "prev": "Vorheriges",
+    "next": "Nächstes",
+    "toc": "Inhalt",
     "quoteOpen": "“",
     "quoteClose": "”",
     "status": {
@@ -58,7 +58,7 @@
     "backToHam": "← All amateur radio pages",
     "prev": "previous",
     "next": "next",
-    "toc": "TODO_Inhalt",
+    "toc": "Content",
     "quoteOpen": "“",
     "quoteClose": "”",
     "status": {

@@ -43,6 +43,7 @@ Agents never write or translate site content. The build warns about every leftov
   - [ ] Röhrenverstärker 6L6
   - [ ] Gitarrenverstärker
   - [ ] Modular 6502
+  - [ ] Plantomation
   - [ ] 3D-Drucker?
 - AFU
   - [x] Moxon Dual Band
