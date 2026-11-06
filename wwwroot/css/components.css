@@ -318,6 +318,20 @@
   margin-bottom: var(--space-4);
 }
 
+/* Table of contents (@toc) */
+.toc {
+  margin-bottom: var(--space-7);
+}
+
+.toc__title {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-lg);
+}
+
+.toc__list li + li {
+  margin-top: var(--space-1);
+}
+
 /* Figure: image with optional caption */
 .figure {
   margin: 0;

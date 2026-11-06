@@ -93,6 +93,27 @@ test('applyDirectives @tag-filter uses the list and count words of from=', () =>
   errors.length = 0;
 });
 
+test('applyDirectives @toc lists the h2 headings after the directive', () => {
+  errors.length = 0;
+  const ctx = { rel: 'de/proj/a.html', lang: 'de', root: '../../', site };
+  const source = '<h2 id="before">Before</h2><!-- @toc -->\n<h2 id="a">1. <em>Aufbau</em> &amp;\n  Test</h2><h3 id="sub">Sub</h3><h2 class="x" id="b">B</h2>';
+  const html = applyDirectives(source, ctx, {}, [], [], { toc: 'Inhalt' });
+  assert.match(html, /<nav class="toc" aria-labelledby="toc-title">\n<h2 class="toc__title" id="toc-title">Inhalt<\/h2>\n<ol class="toc__list">\n {2}<li><a href="#a">1\. Aufbau &amp; Test<\/a><\/li>\n {2}<li><a href="#b">B<\/a><\/li>\n<\/ol>\n<\/nav>/);
+  assert.doesNotMatch(html, /#before|#sub/);
+  assert.equal(errors.length, 0);
+});
+
+test('applyDirectives @toc fails on an h2 without id and on a page without headings', () => {
+  errors.length = 0;
+  const ctx = { rel: 'de/proj/a.html', lang: 'de', root: '../../', site };
+  applyDirectives('<!-- @toc --><h2>No id</h2><h2 id="ok">Ok</h2>', ctx, {}, [], [], { toc: 'Inhalt' });
+  assert.equal(applyDirectives('<!-- @toc --><p>Text</p>', ctx, {}, [], [], { toc: 'Inhalt' }), '<p>Text</p>');
+  assert.equal(errors.length, 2);
+  assert.match(errors[0], /@toc: <h2> "No id" has no id/);
+  assert.match(errors[1], /@toc: no <h2 id="…"> after the directive/);
+  errors.length = 0;
+});
+
 test('applyTokens resolves the module tokens on module pages', () => {
   errors.length = 0;
   const pages = { projectPage: (code, id, key) => (code === 'en' && id === 'synsps' && key === 'proj' ? 'proj/synplc.html' : null) };

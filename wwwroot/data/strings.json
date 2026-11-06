@@ -23,6 +23,7 @@
     "backToHam": "← Alle Amateurfunk-Seiten",
     "prev": "TODO_prev",
     "next": "TODO_next",
+    "toc": "TODO_Inhalt",
     "quoteOpen": "“",
     "quoteClose": "”",
     "status": {
@@ -57,6 +58,7 @@
     "backToHam": "← All amateur radio pages",
     "prev": "previous",
     "next": "next",
+    "toc": "TODO_Inhalt",
     "quoteOpen": "“",
     "quoteClose": "”",
     "status": {

@@ -113,6 +113,18 @@ export function renderModuleNav(module, modules, ctx, strings) {
   return `<p class="module-nav">\n  ${links.join('\n  ')}\n</p>`;
 }
 
+// Table of contents of a page. `headings` ({ id, html }) come from the page
+// source itself (tags stripped), so their text is inserted as is.
+export function renderToc(headings, strings) {
+  const items = headings.map(({ id, html }) => `  <li><a href="#${esc(id)}">${html}</a></li>`);
+  return `<nav class="toc" aria-labelledby="toc-title">
+<h2 class="toc__title" id="toc-title">${esc(strings.toc)}</h2>
+<ol class="toc__list">
+${items.join('\n')}
+</ol>
+</nav>`;
+}
+
 export function renderCard(project, ctx, level, strings) {
   const tag = `h${level}`;
   const page = ctx.pages.projectPage(ctx.lang, project.id) ?? `${ctx.pages.folder('proj', ctx.lang)}/${project.id}.html`;

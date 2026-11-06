@@ -292,6 +292,7 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `<!-- @module-header -->` | Module page header: parent title as `h1` (not linked), module title as `h2` (`page-header__module`), module summary, status and date. Fails outside module pages. |
 | `<!-- @module-nav -->` | Module navigation (`p.module-nav`, used at the top and the bottom of a module page): back link to the overview page (`←` + parent title), previous/next module of the same parent in `data/modules.json` order with the generic labels `strings.prev` / `strings.next` (`rel="prev"`/`"next"`); only modules shown in the page language, drafts skipped, no link at the ends. Fails outside module pages. |
 | `<!-- @projects all\|featured level=2\|3 id=list-id -->` | Pre-rendered project card grid, newest first; drafts are skipped. |
+| `<!-- @toc -->` | Linked table of contents (`nav.toc`, heading `strings.toc`, ordered list) of every `<h2>` that follows the directive in the page source; headings rendered by directives (`@module-header`) and `@raw` blocks are not listed. Every listed `<h2>` needs an `id`; a heading without one, or no heading at all, fails the build. Place it after `@project-header` / `@module-header` on longer pages. |
 | `<!-- @ham-list level=2\|3 id=list-id -->` | Pre-rendered list of the ham pages from `data/ham.json` (title link, date, status if set, summary, tags), newest first; drafts are skipped; `strings.noHamPages` when empty. |
 | `<!-- @tag-filter list-id [from=projects\|ham] -->` | Tag filter buttons and status line for the list with that `id`. `from` selects the data (default `projects`); `from=ham` uses the ham tags and the count words `hamCountSingular`/`hamCountPlural`. Hidden until `js/projects.js` runs. |
 | `<!-- @raw -->` … `<!-- @endraw -->` | Everything in between is output verbatim: no includes, tokens or directives. Use it for code samples that show `{{…}}` or `<!-- @… -->`. The markers are removed; HTML-escape the content yourself (e.g. `&lt;` inside `<pre><code>`). Unmatched markers fail the build. |
@@ -386,6 +387,7 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 
 - To write a new project page, run `npm run create:project` (it adds the project to `data/projects.json` and copies the template to `<lang>/proj/{id}.html` for every language; `npm run create:afu` does the same for ham pages), keep the includes and `@project-header`, and replace the placeholder body content.
 - Each numbered section shows one layout pattern: pure text, text with a small image, full-width image, text/image side by side, image gallery, callout, code block, lists, and table.
+- `<!-- @toc -->` after `@project-header` renders a linked table of contents of the sections (each `h2` needs an `id`, as in the template). Keep it on longer pages and delete it on short ones; it works on module pages too (after `@module-header`).
 - The styles for all patterns live in `css/components.css` (base) and `css/responsive.css` (breakpoints at 640px and 960px). Do not add inline styles.
 - To add a NEW layout pattern, append a new numbered section to the template, add its styles to `css/components.css` (and `css/responsive.css` if it needs breakpoints), and note it here.
 - Placeholder images for different aspect ratios live in `assets/img/` (`placeholder.svg` wide, `placeholder-square.svg`, `placeholder-portrait.svg`). They are reserved (template references, scaffold default image), so the build and `npm run report` never list them as unused.
@@ -556,7 +558,7 @@ de/afu/t2lt.html, de/afu/t2lt/balun.html   # ham entry with a module (mapped col
 
 | File | Content |
 | --- | --- |
-| `data/strings.json` | `{ "<lang>": { … } }`: UI strings per language (count words, labels, skip link, menu, aria labels, the connector word `projectLinkFor`, quote marks, `status` labels, ham list strings `hamCountSingular`/`hamCountPlural`/`noHamPages`/`backToHam`, module navigation `prev`/`next`). Every language needs every key; `status` needs one label per status value. Rendered via `{{t:key}}` and the directives. |
+| `data/strings.json` | `{ "<lang>": { … } }`: UI strings per language (count words, labels, skip link, menu, aria labels, the connector word `projectLinkFor`, quote marks, `status` labels, ham list strings `hamCountSingular`/`hamCountPlural`/`noHamPages`/`backToHam`, module navigation `prev`/`next`, table of contents heading `toc`). Every language needs every key; `status` needs one label per status value. Rendered via `{{t:key}}` and the directives. |
 | `data/ham.json` | Ham radio page entries, see [Ham Radio Pages](#ham-radio-pages-datahamjson). |
 | `data/modules.json` | Module pages below a project or ham entry, see [Module Pages](#module-pages-datamodulesjson). Optional; `[]` without modules. |
 | `data/nav.json`, `data/footer-nav.json` | See [Navigation](#navigation-datanavjson). |

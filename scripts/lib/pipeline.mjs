@@ -2,7 +2,7 @@
 
 import path from 'node:path';
 import { esc, fail, ref } from './util.mjs';
-import { renderEntryList, renderLangSwitch, renderModuleHeader, renderModuleNav, renderNav, renderProjectHeader, renderProjectList, renderTagFilter } from './render.mjs';
+import { renderEntryList, renderLangSwitch, renderModuleHeader, renderModuleNav, renderNav, renderProjectHeader, renderProjectList, renderTagFilter, renderToc } from './render.mjs';
 
 const RAW_BLOCK = /<!--\s*@raw\s*-->([\s\S]*?)<!--\s*@endraw\s*-->/g;
 const RAW_MARKER = /<!--\s*@(?:raw|endraw)\s*-->/g;
@@ -111,6 +111,22 @@ export function applyTokens(text, ctx) {
   });
 }
 
+// h2 headings of the page source after `offset` (directives are not expanded
+// yet, so generated headers never show up). Every heading needs an id.
+export function collectHeadings(html, offset, rel) {
+  const headings = [];
+  for (const match of html.slice(offset).matchAll(/<h2\b([^>]*)>([\s\S]*?)<\/h2>/gi)) {
+    const id = /\bid="([^"]+)"/.exec(match[1])?.[1];
+    const text = match[2].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    if (!id) {
+      fail(`${ref(rel, html, offset + match.index)}: @toc: <h2> "${text}" has no id`);
+      continue;
+    }
+    headings.push({ id, html: text });
+  }
+  return headings;
+}
+
 // `lists` holds the localized entries per collection ({ projects, ham }) and
 // the localized modules of the page language (`modules`).
 export function applyDirectives(html, ctx, lists, nav, footerNav, strings) {
@@ -137,6 +153,14 @@ export function applyDirectives(html, ctx, lists, nav, footerNav, strings) {
         // Count words of the ham list ("3 Seiten") differ from the project ones.
         const words = from === 'ham' ? { countSingular: strings.hamCountSingular, countPlural: strings.hamCountPlural } : {};
         return renderTagFilter(lists[from], args, ctx.lang, { ...strings, ...words });
+      }
+      case 'toc': {
+        const headings = collectHeadings(html, offset + match.length, ctx.rel);
+        if (headings.length === 0) {
+          fail(`${ref(ctx.rel, html, offset)}: @toc: no <h2 id="…"> after the directive`);
+          return '';
+        }
+        return renderToc(headings, strings);
       }
       case 'project-header':
         if (!ctx.project) {
