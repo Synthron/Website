@@ -32,9 +32,25 @@
       "en": "Mini Electret Microphone for the QMX Transceiver"
     },
     "tags": {
-      "de": [],
-      "en": []
+      "de": ["transceiver", "diy", "modifikation", "3d-druck"],
+      "en": ["transceiver", "diy", "modification", "3d-printing"]
     },
     "date": "2026-10"
+  },
+  {
+    "id": "efhw",
+    "title": {
+      "de": "EFHW",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "modular",
+      "en": "TODO"
+    },
+    "tags": {
+      "de": ["antenne", "diy"],
+      "en": ["antenna", "diy"]
+    },
+    "date": "2026-11"
   }
 ]
