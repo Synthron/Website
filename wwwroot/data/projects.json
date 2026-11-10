@@ -167,5 +167,28 @@
     },
     "image": "assets/img/placeholder.svg",
     "featured": false
+  },
+  {
+    "id": "modlab",
+    "title": {
+      "de": "DRAFT ModLab",
+      "en": "DRAFT ModLab"
+    },
+    "summary": {
+      "de": "Modulare Elektronik-Arbeitsstation",
+      "en": "Modular electronics workstation"
+    },
+    "tags": {
+      "de": [],
+      "en": []
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
+    "links": {
+      "repo": null,
+      "demo": null
+    },
+    "image": "assets/img/placeholder.svg",
+    "featured": false
   }
 ]

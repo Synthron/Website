@@ -13,5 +13,20 @@
     "status": "in Arbeit",
     "date": "2026-10",
     "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "modlab",
+    "id": "host",
+    "title": {
+      "de": "DRAFT Host Bus Controller",
+      "en": "DRAFT Host Bus Controller"
+    },
+    "summary": {
+      "de": "Host Bus Controller und Hauptsteuereinheit des ModLab",
+      "en": "Host Bus Controller and main control unit of the ModLab"
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
   }
 ]

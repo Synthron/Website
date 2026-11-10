@@ -6,8 +6,6 @@ Open tasks only: finished items are deleted, not ticked. Every item has an ID: `
 
 Agents never write or translate site content. The build warns about every leftover placeholder (`TODO`, `TODO_…`, "Placeholder paragraph").
 
-- [ ] **U13** German labels for the module navigation: `prev` / `next` in `data/strings.json` (`de` holds `TODO_prev` / `TODO_next`; only visible on module pages).
-- [ ] **U14** Heading of the table of contents (`@toc`): `toc` in `data/strings.json` for `de` and `en` (both hold `TODO_Inhalt`; only visible on pages using `@toc`).
 
 ## Deployment (User)
 
