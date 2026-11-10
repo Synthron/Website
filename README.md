@@ -127,8 +127,7 @@ Website/
             ├── GitHub_Invertocat_White.svg  # Github mark (leading icon in the Source button)
             ├── flag-de.svg  # German flag (language selector)
             ├── flag-gb.svg  # UK flag (language selector)
-            ├── Feed-icon.svg.webp  # RSS icon original (960×960, not referenced)
-            └── feed-icon.webp  # RSS icon 64×64 (feed link in the footer, made from the original with sharp)
+            └── feed-icon.webp  # RSS icon 64×64 (feed link in the footer)
 ```
 
 ### Languages
