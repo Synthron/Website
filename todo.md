@@ -6,10 +6,12 @@ Open tasks only: finished items are deleted, not ticked. Every item has an ID: `
 
 Agents never write or translate site content. The build warns about every leftover placeholder (`TODO`, `TODO_…`, "Placeholder paragraph").
 
+- [x] **U15** Translate `en.feedDescription` in `data/strings.json` (channel description of `en/feed.xml`; currently `TODO_…`) and check the German one.
 
 ## Deployment (User)
 
 - [ ] **U12** Next deploy: delete the stale `de/ham/` folder on the server (German ham pages moved to `de/afu/`, no redirects).
+- [ ] **U17** After the next deploy: check that `https://dm7wb.de/de/feed.xml` and `/en/feed.xml` load, carry `Cache-Control: no-cache` and validate (e.g. validator.w3.org/feed).
 
 ## Release Checks
 

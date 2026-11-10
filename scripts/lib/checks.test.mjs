@@ -56,6 +56,15 @@ test('checkLinks ignores external and same-page schemes', async () => {
   assert.deepEqual(errors, []);
 });
 
+test('checkLinks accepts generated files that are written later', async () => {
+  errors.length = 0;
+  const html = '<link rel="alternate" href="../../de/feed.xml"><a href="../../en/feed.xml">x</a>';
+  await checkLinks('de/proj/a.html', html, base, new Set(['de/feed.xml']));
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /broken link "\.\.\/\.\.\/en\/feed\.xml"/);
+  errors.length = 0;
+});
+
 // --- language-aware checks ---------------------------------------------------
 
 const site = { defaultLang: 'de', languages: [{ code: 'de' }, { code: 'en' }] };

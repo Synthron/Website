@@ -14,14 +14,16 @@ function urls(value, attr) {
 }
 
 // `base` is the tree the targets are resolved against: `dist/` when building,
-// `wwwroot/` when running `--check` (which writes nothing).
-export async function checkLinks(rel, html, base = DIST) {
+// `wwwroot/` when running `--check` (which writes nothing). `generated` holds
+// output files the build writes after the pages (feeds).
+export async function checkLinks(rel, html, base = DIST, generated = new Set()) {
   const dir = path.posix.dirname(rel);
   for (const match of html.matchAll(LINK_ATTRS)) {
     const [, attr, value] = match;
     for (const url of urls(value, attr)) {
       if (url === '' || SCHEME.test(url)) continue;
       const target = path.posix.normalize(path.posix.join(dir, url.split(/[?#]/)[0]));
+      if (generated.has(target)) continue;
       if (target.startsWith('..') || !await exists(path.join(base, target))) {
         fail(`${ref(rel, html, match.index)}: broken link "${url}"`);
       }

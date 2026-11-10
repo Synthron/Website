@@ -174,6 +174,25 @@ test('sitemap.xml lists every page except 404.html and drafts, nothing else', ()
   expect(listed).toEqual(expected);
 });
 
+test('<lang>/feed.xml lists the non-draft collection pages of its language; every page links the feed of its language', () => {
+  for (const code of codes) {
+    const xml = readFileSync(path.join(DIST, code, 'feed.xml'), 'utf8');
+    expect(xml).toContain(`<language>${code}</language>`);
+    const items = [...xml.matchAll(/<item>\s*<title>[^<]*<\/title>\s*<link>([^<]+)<\/link>/g)].map((match) => match[1]).sort();
+    const expected = pages
+      .filter((rel) => langOf(rel) === code && KEYS.some((key) => rel.startsWith(`${code}/${folderOf(key, code)}/`)) && !draftPages.includes(rel))
+      .map((rel) => `${url}/${rel}`)
+      .sort();
+    expect(items, `${code}/feed.xml items`).toEqual(expected);
+  }
+  for (const rel of pages) {
+    const href = /<link rel="alternate" type="application\/rss\+xml"[^>]*href="([^"]+)">/.exec(html.get(rel))?.[1];
+    expect(href, `${rel}: feed link`).toBeDefined();
+    const target = href.startsWith('/') ? href.slice(1) : resolve(rel, href);
+    expect(target, `${rel}: feed link target`).toBe(`${langOf(rel) ?? htmlLang(rel)}/feed.xml`);
+  }
+});
+
 test('root redirect follows Accept-Language; other languages get the landing page', async ({ request }) => {
   for (const [header, location] of [['de-AT,de;q=0.9,en;q=0.8', '/de/'], ['en-GB', '/en/']]) {
     const res = await request.get('/', { headers: { 'Accept-Language': header }, maxRedirects: 0 });

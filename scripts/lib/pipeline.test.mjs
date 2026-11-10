@@ -72,6 +72,13 @@ test('applyTokens resolves {{folder:<key>}} to the folder of the page language a
   errors.length = 0;
 });
 
+test('applyTokens resolves {{feedHref}} to the feed of the page language', () => {
+  const pages = { base: (code) => `${code}/` };
+  const ctx = { rel: 'de/proj/a.html', site, lang: 'de', langRoot: '../', root: '../../', strings: {}, pages };
+  assert.equal(applyTokens('{{feedHref}}', ctx), '../../de/feed.xml');
+  assert.equal(applyTokens('{{feedHref}}', { ...ctx, rel: '404.html', lang: 'en', root: '/' }), '/en/feed.xml');
+});
+
 test('applyDirectives renders no @nav on common pages', () => {
   const ctx = { rel: 'index.html', lang: 'de', root: '', isCommon: true, site, pages: { base: () => '' } };
   const nav = [{ label: 'Start', href: 'index.html', external: false }];

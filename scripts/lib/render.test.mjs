@@ -3,7 +3,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ogImageRel, renderCard, renderEntryList, renderLangSwitch, renderLinks, renderMeta, renderModuleHeader, renderModuleNav, renderNav, renderOpenGraph, renderSitemap } from './render.mjs';
+import { ogImageRel, renderCard, renderEntryList, renderFeed, renderLangSwitch, renderLinks, renderMeta, renderModuleHeader, renderModuleNav, renderNav, renderOpenGraph, renderSitemap } from './render.mjs';
 
 // --- renderNav --------------------------------------------------------------
 
@@ -158,6 +158,29 @@ test('renderSitemap maps pages, lastmod for projects and git pages, skips 404 an
 test('renderSitemap XML-escapes the URLs', () => {
   const xml = renderSitemap([['de/a.html', '<html>']], 'https://example.com/x?a=1&b=2', new Map());
   assert.match(xml, /<loc>https:\/\/example\.com\/x\?a=1&amp;b=2\/de\/a\.html<\/loc>/);
+});
+
+// --- renderFeed --------------------------------------------------------------
+
+const FEED = { title: 'DM7WB', description: 'Neue <Seiten>', lang: 'de', homeUrl: 'https://dm7wb.de/de/', feedUrl: 'https://dm7wb.de/de/feed.xml' };
+
+test('renderFeed writes an RSS 2.0 channel with self link and escaped texts', () => {
+  const xml = renderFeed({ ...FEED, items: [] });
+  assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>\n<rss version="2\.0" xmlns:atom="http:\/\/www\.w3\.org\/2005\/Atom">/);
+  assert.match(xml, /<title>DM7WB<\/title>\n {4}<link>https:\/\/dm7wb\.de\/de\/<\/link>\n {4}<description>Neue &lt;Seiten&gt;<\/description>\n {4}<language>de<\/language>/);
+  assert.match(xml, /<atom:link href="https:\/\/dm7wb\.de\/de\/feed\.xml" rel="self" type="application\/rss\+xml"\/>/);
+  assert.doesNotMatch(xml, /<item>/);
+});
+
+test('renderFeed sorts items newest first and formats pubDate as RFC 822', () => {
+  const items = [
+    { title: 'Alt', url: 'https://dm7wb.de/de/proj/a.html', summary: 'A', date: '2026-05-01', tags: [] },
+    { title: 'R&D', url: 'https://dm7wb.de/de/afu/b.html', summary: 'B <x>', date: '2026-10-28T21:19:02+01:00', tags: ['antenne', 'diy'] },
+  ];
+  const xml = renderFeed({ ...FEED, items });
+  assert.ok(xml.indexOf('afu/b.html') < xml.indexOf('proj/a.html'));
+  assert.match(xml, /<item>\n {6}<title>R&amp;D<\/title>\n {6}<link>https:\/\/dm7wb\.de\/de\/afu\/b\.html<\/link>\n {6}<guid isPermaLink="true">https:\/\/dm7wb\.de\/de\/afu\/b\.html<\/guid>\n {6}<description>B &lt;x&gt;<\/description>\n {6}<pubDate>Wed, 28 Oct 2026 20:19:02 GMT<\/pubDate>\n {6}<category>antenne<\/category>\n {6}<category>diy<\/category>\n {4}<\/item>/);
+  assert.match(xml, /<pubDate>Fri, 01 May 2026 00:00:00 GMT<\/pubDate>/);
 });
 
 // --- Open Graph / canonical --------------------------------------------------

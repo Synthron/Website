@@ -19,7 +19,7 @@
       "required": [
         "countSingular", "countPlural", "withTag", "tagFilterLabel", "tagsLabel", "all", "noProjects", "repo", "demo",
         "skipLink", "menu", "mainNavLabel", "footerNavLabel", "languageLabel", "projectLinkFor", "backToProjects",
-        "hamCountSingular", "hamCountPlural", "noHamPages", "backToHam", "prev", "next", "toc",
+        "hamCountSingular", "hamCountPlural", "noHamPages", "backToHam", "prev", "next", "toc", "feedDescription",
         "quoteOpen", "quoteClose", "status"
       ],
       "additionalProperties": false,
@@ -47,6 +47,7 @@
         "prev": { "description": "Link to the previous module page (@module-nav).", "$ref": "#/definitions/text" },
         "next": { "description": "Link to the next module page (@module-nav).", "$ref": "#/definitions/text" },
         "toc": { "description": "Heading of the table of contents (@toc).", "$ref": "#/definitions/text" },
+        "feedDescription": { "description": "Channel description of the RSS feed <lang>/feed.xml.", "$ref": "#/definitions/text" },
         "quoteOpen": { "$ref": "#/definitions/text" },
         "quoteClose": { "$ref": "#/definitions/text" },
         "status": {

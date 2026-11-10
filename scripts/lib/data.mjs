@@ -598,6 +598,29 @@ export async function loadModules(site, pages, collections, { src = SRC } = {}) 
   return modules;
 }
 
+// Feed entries of one language from its localized `lists` ({ projects, ham,
+// modules }): every visible, non-draft entry and module (modules of a draft
+// parent left out) with its page path below wwwroot/. Module titles are
+// prefixed with the parent title like the page title.
+export function feedEntries(lang, lists, pages) {
+  const entries = [];
+  const parents = new Map();
+  for (const [name, { folder }] of Object.entries(COLLECTIONS)) {
+    for (const entry of lists[name] ?? []) {
+      parents.set(entry.id, entry);
+      const page = pages.projectPage(lang, entry.id, folder);
+      if (!entry.draft && page !== null) entries.push({ entry, title: entry.title, rel: `${pages.dir(lang)}/${page}` });
+    }
+  }
+  for (const module of lists.modules ?? []) {
+    const parent = parents.get(module.parent);
+    const page = pages.modulePage(lang, module.parent, module.id, module.folder);
+    if (module.draft || !parent || parent.draft || page === null) continue;
+    entries.push({ entry: module, title: `${parent.title} — ${module.title}`, rel: `${pages.dir(lang)}/${page}` });
+  }
+  return entries;
+}
+
 // Flat view of a project (or ham entry, module) in one language (`title`,
 // `summary`, `tags` are plain values); null when it is not available there.
 export function localize(project, lang) {

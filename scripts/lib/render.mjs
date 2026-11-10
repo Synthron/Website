@@ -231,6 +231,38 @@ export function renderOpenGraph(rel, html, site, imageUrl, { lang = site.default
   return `  ${tags.join('\n  ')}\n`;
 }
 
+// RSS 2.0 feed of one language. `items` ({ title, url, summary, date, tags };
+// `date` parseable by Date) are sorted newest first, ties by URL.
+export function renderFeed({ title, description, lang, homeUrl, feedUrl, items }) {
+  const sorted = items
+    .map((item) => ({ ...item, time: Date.parse(item.date) }))
+    .sort((a, b) => b.time - a.time || a.url.localeCompare(b.url));
+  const entries = sorted.map((item) => [
+    '    <item>',
+    `      <title>${esc(item.title)}</title>`,
+    `      <link>${esc(item.url)}</link>`,
+    `      <guid isPermaLink="true">${esc(item.url)}</guid>`,
+    `      <description>${esc(item.summary)}</description>`,
+    `      <pubDate>${new Date(item.time).toUTCString()}</pubDate>`,
+    ...(item.tags ?? []).map((tag) => `      <category>${esc(tag)}</category>`),
+    '    </item>',
+  ].join('\n'));
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
+    '  <channel>',
+    `    <title>${esc(title)}</title>`,
+    `    <link>${esc(homeUrl)}</link>`,
+    `    <description>${esc(description)}</description>`,
+    `    <language>${esc(lang)}</language>`,
+    `    <atom:link href="${esc(feedUrl)}" rel="self" type="application/rss+xml"/>`,
+    ...entries,
+    '  </channel>',
+    '</rss>',
+    '',
+  ].join('\n');
+}
+
 // `projectByRel`: page path -> localized project for project pages. Pages that
 // are not built (projects hidden in a language) never reach this list.
 // `moduleByRel`: page path -> { draft } for module pages (draft module or

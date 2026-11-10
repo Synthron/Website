@@ -5,9 +5,9 @@
 
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { DIST, ROOT, SRC, errors, exists, gitLastModified, posix, shortHash, walk, warn, warnings } from './lib/util.mjs';
-import { checkSharedIds, loadHam, loadModules, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
-import { ogImageRel, renderOpenGraph, renderSitemap } from './lib/render.mjs';
+import { DIST, ROOT, SRC, errors, exists, gitFirstAdded, gitLastModified, posix, shortHash, walk, warn, warnings } from './lib/util.mjs';
+import { checkSharedIds, feedEntries, loadHam, loadModules, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
+import { ogImageRel, renderFeed, renderOpenGraph, renderSitemap } from './lib/render.mjs';
 import {
   applyCacheBusting, applyDirectives, applyIncludes, applyTokens, classifyPage, isFlasherPage,
   protectRaw, restoreRaw, versionCssUrls, versionJsImports,
@@ -199,7 +199,10 @@ async function build({ check = false } = {}) {
 
   // In --check mode nothing was written, so resolve links against wwwroot/.
   const base = check ? SRC : DIST;
-  for (const [rel, html] of pages) await checkLinks(rel, html, base);
+  // RSS feed per language (<lang>/feed.xml), written after the checks.
+  const feedRel = (code) => `${pageDir(code)}/feed.xml`;
+  const feeds = new Set(site.languages.map(({ code }) => feedRel(code)));
+  for (const [rel, html] of pages) await checkLinks(rel, html, base, feeds);
 
   checkOrphanPages(infoByRel, pageIndex, byId);
   checkModuleLinks(pages, moduleLinks);
@@ -226,6 +229,26 @@ async function build({ check = false } = {}) {
       if (lastmod) lastmodByRel.set(rel, lastmod);
     }
     await writeFile(path.join(DIST, 'sitemap.xml'), renderSitemap(pages, site.url, projectByRel, lastmodByRel, moduleByRel));
+
+    // Feed items: pubDate = date the page source was first committed
+    // (today while uncommitted), else the entry date.
+    for (const { code } of site.languages) {
+      const items = await Promise.all(feedEntries(code, perLang[code].lists, pageIndex).map(async ({ entry, title, rel }) => ({
+        title,
+        url: `${site.url}/${rel}`,
+        summary: entry.summary,
+        date: await gitFirstAdded(rel) ?? `${entry.date}-01`,
+        tags: entry.tags,
+      })));
+      await writeFile(path.join(DIST, feedRel(code)), renderFeed({
+        title: site.name,
+        description: stringsByLang[code].feedDescription,
+        lang: code,
+        homeUrl: `${site.url}/${pageIndex.base(code)}`,
+        feedUrl: `${site.url}/${feedRel(code)}`,
+        items,
+      }));
+    }
   }
   return pages.length;
 }

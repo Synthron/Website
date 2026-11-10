@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { checkSharedIds, isTodo, loadFolders, loadHam, loadModules, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './data.mjs';
+import { checkSharedIds, feedEntries, isTodo, loadFolders, loadHam, loadModules, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './data.mjs';
 import { SRC, errors, warnings } from './util.mjs';
 
 const reset = () => { errors.length = 0; warnings.length = 0; };
@@ -54,6 +54,24 @@ test('isTodo detects TODO placeholders only', () => {
 test('localize returns a flat view or null', () => {
   assert.deepEqual(localize(project, 'de'), { ...project, title: 'Titel', summary: 'Text', tags: ['hardware'] });
   assert.equal(localize(project, 'en'), null);
+});
+
+test('feedEntries lists visible non-draft entries and modules with their page path', () => {
+  const pages = {
+    dir: (code) => code,
+    projectPage: (code, id, key) => (id === 'nopage' ? null : `${key === 'ham' ? 'afu' : 'proj'}/${id}.html`),
+    modulePage: (code, parent, id) => `proj/${parent}/${id}.html`,
+  };
+  const lists = {
+    projects: [{ id: 'a', title: 'A' }, { id: 'd', title: 'DRAFT D', draft: true }, { id: 'nopage', title: 'N' }],
+    ham: [{ id: 'h', title: 'H' }],
+    modules: [{ parent: 'a', id: 'm', title: 'M', folder: 'proj' }, { parent: 'a', id: 'x', title: 'X', folder: 'proj', draft: true }, { parent: 'd', id: 'y', title: 'Y', folder: 'proj' }],
+  };
+  assert.deepEqual(feedEntries('de', lists, pages).map(({ title, rel }) => [title, rel]), [
+    ['A', 'de/proj/a.html'],
+    ['H', 'de/afu/h.html'],
+    ['A — M', 'de/proj/a/m.html'],
+  ]);
 });
 
 // --- loadSite ----------------------------------------------------------------
