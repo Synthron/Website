@@ -22,33 +22,40 @@ Agents never write or translate site content. The build warns about every leftov
 
 ## Topics (User)
 
-- General Projects
-  - [ ] DCF77 Uhr
-  - [ ] SynPLC (mit Unterseiten)
-    - [ ] CPU
-    - [ ] DI
-    - [ ] DO
-    - [ ] AI
-    - [ ] AO
-    - [ ] XT
-  - [ ] ModLab (mit Unterseiten)
-    - [ ] Main
-    - [ ] LNT
-    - [ ] SMPS
-    - [ ] Function Generator
-    - [ ] Load
-    - [ ] Diode Tester
-  - [ ] Röhrenverstärker 6L6
-  - [ ] Gitarrenverstärker
-  - [ ] Modular 6502
-  - [ ] Plantomation
-  - [ ] 3D-Drucker?
-- AFU
-  - [x] Moxon Dual Band
-  - [ ] QMX Mikro Kapsel
-  - [ ] 5+8ele Yagi und SCAD Teile
-  - [ ] Endfed?
-  - [ ] QMX Tuner
-  - [ ] QMX 10W Upgrade
-  - [ ] Signal Stick
-  - [ ] SCAD Balun-Gehäuse (WIP)
+### General Projects
+
+| Project                    | Page created | Page written | Page translated |
+| -------------------------- | :----------: | :----------: | :-------------: |
+| DCF77 Uhr                  | [x]          | [ ]          | [ ]             |
+| SynPLC (mit Unterseiten)   | [x]          | [ ]          | [ ]             |
+| ↳ CPU                      | [x]          | [ ]          | [ ]             |
+| ↳ DI                       | [ ]          | [ ]          | [ ]             |
+| ↳ DO                       | [ ]          | [ ]          | [ ]             |
+| ↳ AI                       | [ ]          | [ ]          | [ ]             |
+| ↳ AO                       | [ ]          | [ ]          | [ ]             |
+| ↳ XT                       | [ ]          | [ ]          | [ ]             |
+| ModLab (mit Unterseiten)   | [x]          | [ ]          | [ ]             |
+| ↳ Main                     | [x]          | [ ]          | [ ]             |
+| ↳ LNT                      | [ ]          | [ ]          | [ ]             |
+| ↳ SMPS                     | [ ]          | [ ]          | [ ]             |
+| ↳ Function Generator       | [ ]          | [ ]          | [ ]             |
+| ↳ Load                     | [ ]          | [ ]          | [ ]             |
+| ↳ Diode Tester             | [ ]          | [ ]          | [ ]             |
+| Röhrenverstärker 6L6       | [x]          | [ ]          | [ ]             |
+| Gitarrenverstärker         | [x]          | [ ]          | [ ]             |
+| Modular 6502               | [ ]          | [ ]          | [ ]             |
+| Plantomation               | [ ]          | [ ]          | [ ]             |
+| 3D-Drucker?                | [ ]          | [ ]          | [ ]             |
+
+### AFU
+
+| Project                    | Page created | Page written | Page translated |
+| -------------------------- | :----------: | :----------: | :-------------: |
+| Moxon Dual Band            | [x]          | [x]          | [x]             |
+| QMX Mikro Kapsel           | [x]          | [ ]          | [ ]             |
+| 5+8ele Yagi und SCAD Teile | [ ]          | [ ]          | [ ]             |
+| Endfed mit Spule           | [x]          | [ ]          | [ ]             |
+| QMX Tuner                  | [ ]          | [ ]          | [ ]             |
+| QMX 10W Upgrade            | [ ]          | [ ]          | [ ]             |
+| Signal Stick               | [ ]          | [ ]          | [ ]             |
+| SCAD Balun-Gehäuse (WIP)   | [ ]          | [ ]          | [ ]             |
