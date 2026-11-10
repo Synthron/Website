@@ -24,7 +24,8 @@
     "prev": "Vorheriges",
     "next": "Nächstes",
     "toc": "Inhalt",
-    "feedDescription": "Neue Projekt- und Amateurfunk-Seiten",
+    "feedDescription": "DM7WB - Private Projekt- und Amateurfunk-Seiten",
+    "feedLink": "RSS",
     "quoteOpen": "“",
     "quoteClose": "”",
     "status": {
@@ -60,7 +61,8 @@
     "prev": "previous",
     "next": "next",
     "toc": "Content",
-    "feedDescription": "New project and amateur radio pages",
+    "feedDescription": "DM7WB - personal project and amateur radio pages",
+    "feedLink": "RSS",
     "quoteOpen": "“",
     "quoteClose": "”",
     "status": {

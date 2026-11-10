@@ -71,7 +71,7 @@ Website/
     │   ├── head.html      # Shared <head> content (charset, CSP, favicon, CSS, main.js)
     │   ├── header.html    # Shared skip link, header, language selector and nav (language pages)
     │   ├── header-common.html  # Skip link, brand and language selector only (common pages)
-    │   └── footer.html    # Shared footer (copyright, footer nav)
+    │   └── footer.html    # Shared footer (copyright, footer nav, RSS icon)
     ├── templates/         # Source-only templates (not built, not deployed)
     │   ├── project-template.html  # Master project write-up template (all layouts)
     │   └── module-template.html   # Module page template (copied by create:project / create:afu --module)
@@ -105,7 +105,7 @@ Website/
     │       └── esp-web-tools/  # ESP Web Tools web flasher (self-contained)
     ├── data/              # Build input only (not copied to dist/)
     │   ├── nav.json        # Header navigation entries per language (label + href)
-    │   ├── footer-nav.json # Footer navigation entries per language (label + href; includes the RSS feed link)
+    │   ├── footer-nav.json # Footer navigation entries per language (label + href)
     │   ├── pages.json      # Pages with different file names per language (empty: pair by identical path)
     │   ├── folders.json    # Collection folder names per language (de: ham -> afu)
     │   ├── projects.json   # Project entries (single source of truth)
@@ -126,7 +126,9 @@ Website/
         └── icons/         # SVG icons
             ├── GitHub_Invertocat_White.svg  # Github mark (leading icon in the Source button)
             ├── flag-de.svg  # German flag (language selector)
-            └── flag-gb.svg  # UK flag (language selector)
+            ├── flag-gb.svg  # UK flag (language selector)
+            ├── Feed-icon.svg.webp  # RSS icon original (960×960, not referenced)
+            └── feed-icon.webp  # RSS icon 64×64 (feed link in the footer, made from the original with sharp)
 ```
 
 ### Languages
@@ -194,7 +196,7 @@ The build writes one RSS 2.0 feed per language to `dist/<lang>/feed.xml` (`https
 - **Items**: every project, ham radio and module page visible in that language (same rules as the lists: drafts, modules of a draft parent and entries hidden in the language are left out). Title and summary come from the data files (module titles as `Parent — Module`), tags become `<category>` elements. `<link>` and `<guid>` are the absolute page URL, so an item stays the same item when its texts change; renaming or moving a page makes it a new item.
 - **pubDate**: the author date of the commit that added the page source file (renames followed), so a page shows up as new when it is first committed; a page that is not committed yet gets today; without git the entry `date` (first of the month). Items are sorted newest first. Translations get their own date (when the page in that language was added).
 - **Channel**: title `name` from `data/site.json`, link to the language home, description `strings.<lang>.feedDescription`, `<language>` and an `atom:link rel="self"`.
-- **Discovery**: `partials/head.html` adds `<link rel="alternate" type="application/rss+xml">` with `{{feedHref}}` (feed readers and browser extensions find it on every page); the footer nav (`data/footer-nav.json`) has a visible "RSS" link. The link check treats the feeds as existing (they are written after the pages and not at all by `npm run check`).
+- **Discovery**: `partials/head.html` adds `<link rel="alternate" type="application/rss+xml">` with `{{feedHref}}` (feed readers and browser extensions find it on every page); the footer (`partials/footer.html`) shows the RSS icon (`assets/icons/feed-icon.webp`, alt text `strings.<lang>.feedLink`) after the footer nav, linking the feed of the page language. The link check treats the feeds as existing (they are written after the pages and not at all by `npm run check`).
 - **Caching**: `.htaccess` revalidates `.xml` on every request (`no-cache`), so readers never get a stale feed.
 - Feeds are written only when `url` in `data/site.json` is set (like the sitemap).
 
@@ -291,7 +293,7 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `{{name}}`, `{{year}}`, `{{email}}` | Values from `data/site.json`. |
 | `{{footerNote}}` | `footerNote` of the page language from `data/site.json`. |
 | `{{url}}`, `{{sitemapUrl}}` | Canonical base URL and `https://…/sitemap.xml` from `data/site.json` (`url`). Used by `robots.txt`. |
-| `{{feedHref}}` | Relative path to the RSS feed of the page language (`{{root}}<lang>/feed.xml`; root-relative on `404.html`). Used by the feed autodiscovery link in `partials/head.html`. |
+| `{{feedHref}}` | Relative path to the RSS feed of the page language (`{{root}}<lang>/feed.xml`; root-relative on `404.html`). Used by the feed autodiscovery link in `partials/head.html` and the RSS icon in `partials/footer.html`. |
 | `{{root}}` | Relative path to the web root (`""` for root pages, `"../"` for pages directly in a language folder). |
 | `<!-- @nav -->` | Nav list built from `data/nav.json` for the page language; sets `aria-current="page"` on the entry whose `href` is the current page. Renders nothing on common pages (brand only). Used in `partials/header.html`. |
 | `<!-- @footer-nav -->` | Footer nav list built from `data/footer-nav.json` for the page language; same `aria-current="page"` handling as `@nav`. Entries with `lang` pointing to another language get `lang`/`hreflang`. Used in `partials/footer.html`. |

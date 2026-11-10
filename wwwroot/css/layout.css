@@ -192,7 +192,20 @@ body {
 }
 
 .site-footer__nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
   flex-basis: 100%;
+}
+
+.site-footer__feed {
+  display: inline-flex;
+}
+
+.site-footer__feed-icon {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .site-footer__list {

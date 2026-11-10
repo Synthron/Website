@@ -6,8 +6,6 @@ Open tasks only: finished items are deleted, not ticked. Every item has an ID: `
 
 Agents never write or translate site content. The build warns about every leftover placeholder (`TODO`, `TODO_…`, "Placeholder paragraph").
 
-- [x] **U15** Translate `en.feedDescription` in `data/strings.json` (channel description of `en/feed.xml`; currently `TODO_…`) and check the German one.
-
 ## Deployment (User)
 
 - [ ] **U12** Next deploy: delete the stale `de/ham/` folder on the server (German ham pages moved to `de/afu/`, no redirects).
