@@ -17,11 +17,40 @@
 
         <div class="project-content">
 
-          <!-- 1. PURE TEXT -------------------------------------- -->
-          <section class="project-section" aria-labelledby="layout-text">
-            <h2 id="layout-text">1. Pure text</h2>
+          <!-- 1. The Idea -------------------------------------- -->
+          <section class="project-section" aria-labelledby="idee">
+            <h2 id="idee">The Idea</h2>
             <div class="prose">
+              <figure class="figure figure--small">
+                <img src="{{root}}assets/img/placeholder-square.svg" alt="Placeholder: small square image" width="400" height="400" loading="lazy" decoding="async">
+                <figcaption>Finished microphone</figcaption>
+              </figure>
+              <p>A fellow club member has the QMX from QRP-Labs and wanted a small and compact microphone for it. Since I also have a QMX+, he came to me and asked if we could recreate the <a href="https://www.printables.com/model/320559-mini-microphone-for-qmx-trusdx-usdx-kx2-and-kx3">microphone capsule</a> linked by QRP Labs.</p>
+              <p>So I downloaded the STL files and modified the case so that our respective callsigns
+                are layed in the print, while my colleague ordered the hardware for it.</p>
+            </div>
+          </section>
 
+          <!-- 2. Case and Electronics --------------------------- -->
+          <section class="project-section" aria-labelledby="parts">
+            <h2 id="parts">2. Case and Electronics</h2>
+            <div class="prose">
+              <figure class="figure figure--small">
+                <img src="{{root}}assets/img/placeholder-square.svg" alt="Placeholder: small square image" width="400" height="400" loading="lazy" decoding="async">
+                <figcaption>Case and interior</figcaption>
+              </figure>
+              <p>The microphone itself is very simple. Two 3D-printed shells enclose a jack, a push button, and the electret capsule.</p>
+              <p>The only important thing was to find the right capsule. The original link specifies a capsule from Digikey, but since it was relatively expensive at around €4, we looked for an alternative capsule with the same internal resistance. Our capsule has slightly more gain but less SNR.</p>
+              <p>I myself have not used the microphone for a QSO yet, but via the QMX+ terminal I could see that there is a clear response when speaking. My colleague took the microphone on a trip and was able to make some QSOs with it, so the little gadget seems to work well enough.</p>
+            </div>
+          </section>
+
+          <!-- 3. Conclusion -------------------------------------- -->
+          <section class="project-section" aria-labelledby="conclusion">
+            <h2 id="conclusion">Conclusion</h2>
+            <div class="prose">
+              <p>For what is inside the microphone, it seems to work very well. Price-wise, it is almost unbeatable. With the original capsule, the material costs would be around €8, but we were able to reduce this to around €3-4 with a cheaper electret capsule.</p>
+              <p>In my opinion, it is worth making, especially if you have to work with a very tight budget.</p>
             </div>
           </section>
 

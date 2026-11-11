@@ -38,7 +38,7 @@ Agents never write or translate site content. The build warns about every leftov
 | Project                    | Page created | Page written | Page translated |
 | -------------------------- | :----------: | :----------: | :-------------: |
 | Moxon Dual Band            | [x]          | [x]          | [x]             |
-| QMX Mikro Kapsel           | [x]          | [ ]          | [ ]             |
+| QMX Mikro Kapsel           | [x]          | [x]          | [x]             |
 | 5+8ele Yagi und SCAD Teile | [ ]          | [ ]          | [ ]             |
 | Endfed mit Spule           | [x]          | [ ]          | [ ]             |
 | QMX Tuner                  | [ ]          | [ ]          | [ ]             |
