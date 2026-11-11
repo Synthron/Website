@@ -32,6 +32,7 @@ Agents never write or translate site content. The build warns about every leftov
 | Modular 6502               | [ ]          | [ ]          | [ ]             |
 | Plantomation               | [ ]          | [ ]          | [ ]             |
 | 3D-Drucker?                | [ ]          | [ ]          | [ ]             |
+| Kalkulationsprogramm       | [ ]          | [ ]          | [ ]             |
 
 ### AFU
 
