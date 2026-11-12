@@ -27,6 +27,7 @@ Agents never write or translate site content. The build warns about every leftov
 | ↳ Function Generator       | [ ]          | [ ]          | [ ]             |
 | ↳ Load                     | [ ]          | [ ]          | [ ]             |
 | ↳ Diode Tester             | [ ]          | [ ]          | [ ]             |
+| S65 (mit Unterseiten)      | [ ]          | [ ]          | [ ]             |
 | Röhrenverstärker 6L6       | [x]          | [ ]          | [ ]             |
 | Gitarrenverstärker         | [x]          | [ ]          | [ ]             |
 | Modular 6502               | [ ]          | [ ]          | [ ]             |
