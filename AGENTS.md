@@ -56,7 +56,7 @@ All site sources live under `wwwroot/`. `npm run build` compiles them into `dist
 | Root config files | `eslint.config.js`, `.stylelintrc.json`, `.htmlvalidate.json`, `svgo.config.mjs`, `playwright.config.mjs`, `lighthouserc.json` | One per tool; ignore protected and generated paths. |
 | `wwwroot/index.html` | Common landing page (fallback of the root redirect) | Literal `<html lang="de">` with text blocks marked by `lang`; uses `header-common`. No inline styles or scripts. |
 | `wwwroot/404.html` | Common not-found page (English) | Served at any path, so the build uses root-relative links (`{{root}}` = `/`); literal `<html lang="en">`; uses `header-common`. |
-| `wwwroot/favicon.svg` | Logo favicon, also used as header brand icon | Keep it small (simplified trace). |
+| `wwwroot/favicon.svg` | Logo favicon, also used as header brand icon | Keep it small (stroke-based vector redraw). |
 | `wwwroot/robots.txt` | Crawler rules | `Sitemap:` line comes from `{{sitemapUrl}}`. |
 | `wwwroot/.htaccess` | Apache config for `dm7wb.de` (error pages, HTTPS redirect, headers, caching) | Applies only on the production server, not in `npm run serve`. |
 | `wwwroot/partials/` | `head.html`, `header.html` (language pages), `header-common.html` (landing page, 404), `footer.html` | Single copy of the shared markup; texts via `{{t:key}}`. Not copied to `dist/`. |
