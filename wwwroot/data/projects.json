@@ -107,7 +107,7 @@
         "3d-printing"
       ]
     },
-    "status": "in Arbeit",
+    "status": "pausiert",
     "date": "2026-10",
     "links": {
       "repo": "https://github.com/Synthron/SynPLC",
@@ -136,7 +136,7 @@
         "tubes"
       ]
     },
-    "status": "in Arbeit",
+    "status": "fertig",
     "date": "2026-10",
     "links": {
       "repo": null,
@@ -159,7 +159,7 @@
       "de": [],
       "en": []
     },
-    "status": "in Arbeit",
+    "status": "fertig",
     "date": "2026-10",
     "links": {
       "repo": null,
@@ -182,7 +182,7 @@
       "de": [],
       "en": []
     },
-    "status": "in Arbeit",
+    "status": "pausiert",
     "date": "2026-11",
     "links": {
       "repo": null,
