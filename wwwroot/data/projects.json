@@ -1,6 +1,6 @@
 [
   {
-    "id": "nixie-clock",
+    "id": "nixie-uhr",
     "title": {
       "de": "Nixie Uhr",
       "en": "Nixie Clock"
@@ -62,7 +62,7 @@
     "featured": true
   },
   {
-    "id": "dcf77-clock",
+    "id": "dcf77-uhr",
     "title": {
       "de": "DRAFT DCF77 Uhr und Dekoder",
       "en": "DRAFT DCF77 Clock and Decoder"
@@ -77,6 +77,113 @@
     },
     "status": "in Arbeit",
     "date": "2026-10",
+    "links": {
+      "repo": null,
+      "demo": null
+    },
+    "image": "assets/img/placeholder.svg",
+    "featured": false
+  },
+  {
+    "id": "synplc",
+    "title": {
+      "de": "DRAFT SynPLC",
+      "en": "DRAFT SynPLC"
+    },
+    "summary": {
+      "de": "Selbstbau-SPS auf STM32-Basis",
+      "en": "DIY PLC based on STM32"
+    },
+    "tags": {
+      "de": [
+        "elektronik",
+        "stm32",
+        "software",
+        "3d-druck"
+      ],
+      "en": [
+        "electronics",
+        "stm32",
+        "3d-printing"
+      ]
+    },
+    "status": "in Arbeit",
+    "date": "2026-10",
+    "links": {
+      "repo": "https://github.com/Synthron/SynPLC",
+      "demo": null
+    },
+    "image": "assets/img/placeholder.svg",
+    "featured": false
+  },
+  {
+    "id": "6l6-amp",
+    "title": {
+      "de": "DRAFT 6L6 Audioverstärker",
+      "en": "DRAFT 6L6 Tube Amplifier"
+    },
+    "summary": {
+      "de": "Eintakt-Röhrenverstärker mit 6L6, EF86 und selbstgewickelten Trafos",
+      "en": "Single-ended tube amplifier with 6L6, EF86 and custom-wound transformers"
+    },
+    "tags": {
+      "de": [
+        "elektronik",
+        "roehren"
+      ],
+      "en": [
+        "electronics",
+        "tubes"
+      ]
+    },
+    "status": "in Arbeit",
+    "date": "2026-10",
+    "links": {
+      "repo": null,
+      "demo": null
+    },
+    "image": "assets/img/placeholder.svg",
+    "featured": false
+  },
+  {
+    "id": "gitarren-verstaerker",
+    "title": {
+      "de": "DRAFT Röhren-Gitarrenverstärker",
+      "en": "DRAFT Tube Guitar Amplifier"
+    },
+    "summary": {
+      "de": "DIY PSE Gitarrenverstärker mit Röhren",
+      "en": "DIY PSE guitar tube amplifier"
+    },
+    "tags": {
+      "de": [],
+      "en": []
+    },
+    "status": "in Arbeit",
+    "date": "2026-10",
+    "links": {
+      "repo": null,
+      "demo": null
+    },
+    "image": "assets/img/placeholder.svg",
+    "featured": false
+  },
+  {
+    "id": "modlab",
+    "title": {
+      "de": "DRAFT ModLab",
+      "en": "DRAFT ModLab"
+    },
+    "summary": {
+      "de": "Modulare Elektronik-Arbeitsstation",
+      "en": "Modular electronics workstation"
+    },
+    "tags": {
+      "de": [],
+      "en": []
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
     "links": {
       "repo": null,
       "demo": null

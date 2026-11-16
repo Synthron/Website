@@ -81,9 +81,53 @@ export function renderProjectHeader(project, ctx, strings) {
   ].filter(Boolean).join('\n');
 }
 
+// Module page header: parent title as h1 (not linked), module title as h2,
+// module summary and meta (status, date).
+export function renderModuleHeader(project, module, strings) {
+  return [
+    '<header class="page-header">',
+    `<h1>${esc(project.title)}</h1>`,
+    `<h2 class="page-header__module">${esc(module.title)}</h2>`,
+    `<p class="page-header__lead">${esc(module.summary)}</p>`,
+    renderMeta(module, strings),
+    '</header>',
+  ].join('\n');
+}
+
+// Back link to the overview page plus previous/next within the same parent
+// (order of data/modules.json). `modules` holds the modules visible in the page
+// language; drafts are skipped (except the current page); no link at the ends.
+export function renderModuleNav(module, modules, ctx, strings) {
+  const href = (page) => esc(`${ctx.root}${ctx.pages.dir(ctx.lang)}/${page}`);
+  const siblings = modules.filter((other) => other.collection === module.collection && other.parent === module.parent && (!other.draft || other.id === module.id));
+  const index = siblings.findIndex((other) => other.id === module.id);
+  const pageOf = (other) => ctx.pages.modulePage(ctx.lang, other.parent, other.id, other.folder);
+  const prev = index > 0 ? pageOf(siblings[index - 1]) : null;
+  const next = index >= 0 && index < siblings.length - 1 ? pageOf(siblings[index + 1]) : null;
+  const parent = ctx.pages.projectPage(ctx.lang, module.parent, module.folder);
+  const links = [
+    parent ? `<a class="module-nav__back" href="${href(parent)}"><span aria-hidden="true">←</span> ${esc(ctx.project.title)}</a>` : '',
+    prev ? `<a class="module-nav__prev" href="${href(prev)}" rel="prev"><span aria-hidden="true">←</span> ${esc(strings.prev)}</a>` : '',
+    next ? `<a class="module-nav__next" href="${href(next)}" rel="next">${esc(strings.next)} <span aria-hidden="true">→</span></a>` : '',
+  ].filter(Boolean);
+  return `<p class="module-nav">\n  ${links.join('\n  ')}\n</p>`;
+}
+
+// Table of contents of a page. `headings` ({ id, html }) come from the page
+// source itself (tags stripped), so their text is inserted as is.
+export function renderToc(headings, strings) {
+  const items = headings.map(({ id, html }) => `  <li><a href="#${esc(id)}">${html}</a></li>`);
+  return `<nav class="toc" aria-labelledby="toc-title">
+<h2 class="toc__title" id="toc-title">${esc(strings.toc)}</h2>
+<ol class="toc__list">
+${items.join('\n')}
+</ol>
+</nav>`;
+}
+
 export function renderCard(project, ctx, level, strings) {
   const tag = `h${level}`;
-  const page = ctx.pages.projectPage(ctx.lang, project.id) ?? `proj/${project.id}.html`;
+  const page = ctx.pages.projectPage(ctx.lang, project.id) ?? `${ctx.pages.folder('proj', ctx.lang)}/${project.id}.html`;
   const href = `${ctx.root}${ctx.pages.dir(ctx.lang)}/${page}`;
   return `<article class="project-card" data-tags="${esc(JSON.stringify(project.tags))}">
   <a class="project-card__image-link" href="${esc(href)}" tabindex="-1" aria-hidden="true"><img class="project-card__image" src="${esc(ctx.root + project.image)}" alt="" loading="lazy" decoding="async"></a>
@@ -122,7 +166,7 @@ export function renderEntryList(entries, args, ctx, strings) {
   const visible = published(entries);
   if (visible.length === 0) return `<p class="message"${id}>${esc(strings.noHamPages)}</p>`;
   const items = visible.map((entry) => {
-    const page = ctx.pages.projectPage(ctx.lang, entry.id, 'ham') ?? `ham/${entry.id}.html`;
+    const page = ctx.pages.projectPage(ctx.lang, entry.id, 'ham') ?? `${ctx.pages.folder('ham', ctx.lang)}/${entry.id}.html`;
     const href = `${ctx.root}${ctx.pages.dir(ctx.lang)}/${page}`;
     return `<li class="entry-list__item" data-tags="${esc(JSON.stringify(entry.tags))}">
   <${tag} class="entry-list__title"><a class="entry-list__link" href="${esc(href)}">${esc(entry.title)}</a></${tag}>
@@ -147,10 +191,11 @@ ${buttons.join('\n')}
 <p class="filter-status" role="status" data-filter-status="${esc(listId)}" data-count-singular="${esc(strings.countSingular)}" data-count-plural="${esc(strings.countPlural)}" data-with-tag="${esc(strings.withTag)}" data-quote-open="${esc(strings.quoteOpen)}" data-quote-close="${esc(strings.quoteClose)}" data-lang="${esc(lang)}">${esc(format(visible.length))}</p>`;
 }
 
-// Project pages use their raster project image for Open Graph; everything
-// else (and projects whose image is an SVG) falls back to the OG default PNG.
-// The build warns until that file exists.
-export const ogImageRel = (project) => (project && /\.(png|jpe?g|webp)$/i.test(project.image) ? project.image : 'assets/img/og-default.png');
+// Project pages use their raster project image for Open Graph; module pages
+// their module image, else the parent's. Everything else (and SVG images)
+// falls back to the OG default PNG. The build warns until that file exists.
+const isRaster = (entry) => Boolean(entry) && /\.(png|jpe?g|webp)$/i.test(entry.image);
+export const ogImageRel = (project, module) => [module, project].find(isRaster)?.image ?? 'assets/img/og-default.png';
 
 // Canonical + Open Graph tags. Title and description are read back from
 // the rendered page so they match what the page shows; og:image (added by the
@@ -186,14 +231,48 @@ export function renderOpenGraph(rel, html, site, imageUrl, { lang = site.default
   return `  ${tags.join('\n  ')}\n`;
 }
 
+// RSS 2.0 feed of one language. `items` ({ title, url, summary, date, tags };
+// `date` parseable by Date) are sorted newest first, ties by URL.
+export function renderFeed({ title, description, lang, homeUrl, feedUrl, items }) {
+  const sorted = items
+    .map((item) => ({ ...item, time: Date.parse(item.date) }))
+    .sort((a, b) => b.time - a.time || a.url.localeCompare(b.url));
+  const entries = sorted.map((item) => [
+    '    <item>',
+    `      <title>${esc(item.title)}</title>`,
+    `      <link>${esc(item.url)}</link>`,
+    `      <guid isPermaLink="true">${esc(item.url)}</guid>`,
+    `      <description>${esc(item.summary)}</description>`,
+    `      <pubDate>${new Date(item.time).toUTCString()}</pubDate>`,
+    ...(item.tags ?? []).map((tag) => `      <category>${esc(tag)}</category>`),
+    '    </item>',
+  ].join('\n'));
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
+    '  <channel>',
+    `    <title>${esc(title)}</title>`,
+    `    <link>${esc(homeUrl)}</link>`,
+    `    <description>${esc(description)}</description>`,
+    `    <language>${esc(lang)}</language>`,
+    `    <atom:link href="${esc(feedUrl)}" rel="self" type="application/rss+xml"/>`,
+    ...entries,
+    '  </channel>',
+    '</rss>',
+    '',
+  ].join('\n');
+}
+
 // `projectByRel`: page path -> localized project for project pages. Pages that
 // are not built (projects hidden in a language) never reach this list.
-export function renderSitemap(pages, baseUrl, projectByRel, lastmodByRel = new Map()) {
+// `moduleByRel`: page path -> { draft } for module pages (draft module or
+// parent); their lastmod comes from `lastmodByRel` like other pages.
+export function renderSitemap(pages, baseUrl, projectByRel, lastmodByRel = new Map(), moduleByRel = new Map()) {
   const entries = [];
   for (const [rel] of pages) {
     if (rel === '404.html') continue;
     const project = projectByRel.get(rel);
-    if (project?.draft) continue;
+    if (project?.draft || moduleByRel.get(rel)?.draft) continue;
     const loc = rel === 'index.html' ? `${baseUrl}/` : `${baseUrl}/${rel}`;
     const lines = [`    <loc>${esc(loc)}</loc>`];
     // Project pages use their date; other pages use the last git

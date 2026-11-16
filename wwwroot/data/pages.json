@@ -2,5 +2,9 @@
   { "de": "rechtliches.html", "en": "disclaimers.html" },
   { "de": "projekte.html", "en": "projects.html" },
   { "de": "datenschutz.html", "en": "privacy.html" },
-  { "de": "amateurfunk.html", "en": "hamradio.html" }
+  { "de": "amateurfunk.html", "en": "hamradio.html" },
+  { "de": "proj/nixie-uhr.html", "en": "proj/nixie-clock.html"},
+  { "de": "proj/dcf77-uhr.html", "en": "proj/dcf77-clock.html"},
+  { "de": "proj/gitarren-verstaerker.html", "en": "proj/guitar-amp.html"},
+  { "de": "afu/qmx-mikrofon.html", "en": "ham/qmx-microphone.html"}
 ]

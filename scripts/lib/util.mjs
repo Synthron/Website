@@ -112,3 +112,16 @@ export async function gitLastModified(rel) {
   }
 }
 
+// Author date (ISO 8601) of the newest commit that added a wwwroot-relative
+// source file (renames followed), used as the feed pubDate. Not committed yet
+// -> today; git unavailable -> null.
+export async function gitFirstAdded(rel) {
+  const file = posix(`wwwroot/${rel}`);
+  try {
+    const { stdout } = await execFileAsync('git', ['log', '--follow', '--diff-filter=A', '--format=%aI', '--', file], { cwd: ROOT });
+    return stdout.trim().split('\n')[0] || isoDate(new Date());
+  } catch {
+    return null;
+  }
+}
+

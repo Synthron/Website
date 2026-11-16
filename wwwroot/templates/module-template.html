@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!--
+        ============================================================
+        MODULE PAGE TEMPLATE
+        ============================================================
+        npm run create:project -- --module <parent-id> "Name" "Brief"
+        (create:afu for ham entries) copies this file to
+        <lang>/<folder>/<parent page>/<module>.html in every language
+        and registers the module in data/modules.json. Replace the
+        placeholder body; every layout of project-template.html
+        works here too. Link the module from its overview page.
+        ============================================================
+      -->
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!-- @module-header -->
+
+        <div class="project-content">
+          <section class="project-section" aria-labelledby="module-text">
+            <h2 id="module-text">TODO: heading</h2>
+            <div class="prose">
+              <p>Placeholder paragraph. Describe the module here; use the layouts of the project template for images, galleries, code and tables.</p>
+            </div>
+          </section>
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

@@ -14,14 +14,16 @@ function urls(value, attr) {
 }
 
 // `base` is the tree the targets are resolved against: `dist/` when building,
-// `wwwroot/` when running `--check` (which writes nothing).
-export async function checkLinks(rel, html, base = DIST) {
+// `wwwroot/` when running `--check` (which writes nothing). `generated` holds
+// output files the build writes after the pages (feeds).
+export async function checkLinks(rel, html, base = DIST, generated = new Set()) {
   const dir = path.posix.dirname(rel);
   for (const match of html.matchAll(LINK_ATTRS)) {
     const [, attr, value] = match;
     for (const url of urls(value, attr)) {
       if (url === '' || SCHEME.test(url)) continue;
       const target = path.posix.normalize(path.posix.join(dir, url.split(/[?#]/)[0]));
+      if (generated.has(target)) continue;
       if (target.startsWith('..') || !await exists(path.join(base, target))) {
         fail(`${ref(rel, html, match.index)}: broken link "${url}"`);
       }
@@ -96,16 +98,32 @@ export async function checkFirmwareManifests(src = SRC) {
 }
 
 // --- Page-level diagnostics -------------------------------------------------
-// Warn about project (and ham) pages without data in their language.
+// Warn about project (and ham) pages without data in their language. Module
+// pages are checked by the module loader.
 // `infoByRel` maps built page paths to { lang, pagePath, isCommon } (see build.mjs);
-// `byFolder` maps a collection folder (proj, ham) to its entries by id.
-export function checkOrphanPages(infoByRel, pageIndex, byFolder) {
+// `byCollection` maps a collection name (projects, ham) to its entries by id.
+export function checkOrphanPages(infoByRel, pageIndex, byCollection) {
   for (const [rel, info] of infoByRel) {
-    const folder = info.pagePath?.split('/')[0];
-    if (!info.pagePath?.includes('/') || !(folder in byFolder)) continue;
-    const project = byFolder[folder].get(pageIndex.projectId(info.lang, info.pagePath));
+    if (!info.pagePath?.includes('/')) continue;
+    const collection = pageIndex.collectionOf(info.lang, info.pagePath);
+    if (!(collection in byCollection) || pageIndex.isModulePage(info.lang, info.pagePath)) continue;
+    const folder = info.pagePath.split('/')[0];
+    const project = byCollection[collection].get(pageIndex.projectId(info.lang, info.pagePath));
     if (!project) warn(`wwwroot/${rel}: ${folder}/ page without a data entry`);
     else if (!Object.hasOwn(project.title, info.lang)) warn(`wwwroot/${rel}: entry "${project.id}" has no "${info.lang}" data`);
+  }
+}
+
+// Visible, non-draft module pages should be linked from their overview page
+// (warn). `expected`: [overview page, module page] pairs of built pages.
+export function checkModuleLinks(pages, expected) {
+  const htmlByRel = new Map(pages);
+  for (const [parentRel, moduleRel] of expected) {
+    const html = htmlByRel.get(parentRel);
+    if (html === undefined) continue;
+    const linked = [...html.matchAll(/<a\b[^>]*\bhref="([^"]*)"/gi)].some(([, href]) => !SCHEME.test(href)
+      && path.posix.normalize(path.posix.join(path.posix.dirname(parentRel), href.split(/[?#]/)[0])) === moduleRel);
+    if (!linked) warn(`wwwroot/${parentRel}: no link to its module page ${moduleRel}`);
   }
 }
 
@@ -121,8 +139,8 @@ export function checkHtmlLang(rel, html, info) {
 
 // Every page of a non-default language needs a default-language
 // counterpart (fail); default-language pages without a counterpart are
-// reported (warn). Entry pages (proj/, ham/) are covered by the data warnings.
-export function checkTranslationCoverage(site, pageIndex, entryFolders = ['proj', 'ham']) {
+// reported (warn). Entry pages (collection folders) are covered by the data warnings.
+export function checkTranslationCoverage(site, pageIndex) {
   const { defaultLang, languages } = site;
   if (languages.length < 2) return;
   const seen = new Set();
@@ -134,7 +152,7 @@ export function checkTranslationCoverage(site, pageIndex, entryFolders = ['proj'
       seen.add(key);
       if (!counterparts.has(defaultLang)) {
         fail(`wwwroot/${pageIndex.dir(code)}/${file}: page has no "${defaultLang}" counterpart (required)`);
-      } else if (!entryFolders.some((folder) => file.startsWith(`${folder}/`)) && counterparts.size < languages.length) {
+      } else if (pageIndex.collectionOf(code, file) === undefined && counterparts.size < languages.length) {
         const missing = languages.filter(({ code: other }) => !counterparts.has(other)).map(({ code: other }) => other);
         warn(`wwwroot/${pageIndex.dir(defaultLang)}/${counterparts.get(defaultLang)}: no counterpart in ${missing.map((other) => `"${other}"`).join(', ')}`);
       }

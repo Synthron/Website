@@ -59,6 +59,26 @@ test('applyTokens resolves {{projectsPage}} and {{hamPage}} per page language vi
   assert.equal(applyTokens('{{projectsPage}}|{{hamPage}}', { ...ctx, rel: 'en/proj/a.html', lang: 'en' }), 'projects.html|hamradio.html');
 });
 
+test('applyTokens resolves {{folder:<key>}} to the folder of the page language and fails on unknown keys', () => {
+  errors.length = 0;
+  const names = { ham: { de: 'afu', en: 'ham' }, proj: { de: 'proj', en: 'proj' } };
+  const pages = { folder: (key, code) => names[key]?.[code] };
+  const ctx = { rel: 'de/a.html', site, lang: 'de', langRoot: '', root: '../', strings: {}, pages };
+  assert.equal(applyTokens('{{langRoot}}{{folder:ham}}x.html|{{ folder:proj }}', ctx), 'afu/x.html|proj/');
+  assert.equal(applyTokens('{{folder:ham}}', { ...ctx, rel: 'en/a.html', lang: 'en' }), 'ham/');
+  assert.equal(applyTokens('{{folder:blog}}', ctx), '');
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /unknown collection folder \{\{folder:blog\}\}/);
+  errors.length = 0;
+});
+
+test('applyTokens resolves {{feedHref}} to the feed of the page language', () => {
+  const pages = { base: (code) => `${code}/` };
+  const ctx = { rel: 'de/proj/a.html', site, lang: 'de', langRoot: '../', root: '../../', strings: {}, pages };
+  assert.equal(applyTokens('{{feedHref}}', ctx), '../../de/feed.xml');
+  assert.equal(applyTokens('{{feedHref}}', { ...ctx, rel: '404.html', lang: 'en', root: '/' }), '/en/feed.xml');
+});
+
 test('applyDirectives renders no @nav on common pages', () => {
   const ctx = { rel: 'index.html', lang: 'de', root: '', isCommon: true, site, pages: { base: () => '' } };
   const nav = [{ label: 'Start', href: 'index.html', external: false }];
@@ -77,5 +97,56 @@ test('applyDirectives @tag-filter uses the list and count words of from=', () =>
   assert.match(html, />2 Seiten<\/p>/);
   assert.equal(applyDirectives('<!-- @tag-filter x from=nope -->', ctx, lists, [], [], strings), '');
   assert.equal(errors.length, 1);
+  errors.length = 0;
+});
+
+test('applyDirectives @toc lists the h2 headings after the directive', () => {
+  errors.length = 0;
+  const ctx = { rel: 'de/proj/a.html', lang: 'de', root: '../../', site };
+  const source = '<h2 id="before">Before</h2><!-- @toc -->\n<h2 id="a">1. <em>Aufbau</em> &amp;\n  Test</h2><h3 id="sub">Sub</h3><h2 class="x" id="b">B</h2>';
+  const html = applyDirectives(source, ctx, {}, [], [], { toc: 'Inhalt' });
+  assert.match(html, /<nav class="toc" aria-labelledby="toc-title">\n<h2 class="toc__title" id="toc-title">Inhalt<\/h2>\n<ol class="toc__list">\n {2}<li><a href="#a">1\. Aufbau &amp; Test<\/a><\/li>\n {2}<li><a href="#b">B<\/a><\/li>\n<\/ol>\n<\/nav>/);
+  assert.doesNotMatch(html, /#before|#sub/);
+  assert.equal(errors.length, 0);
+});
+
+test('applyDirectives @toc fails on an h2 without id and on a page without headings', () => {
+  errors.length = 0;
+  const ctx = { rel: 'de/proj/a.html', lang: 'de', root: '../../', site };
+  applyDirectives('<!-- @toc --><h2>No id</h2><h2 id="ok">Ok</h2>', ctx, {}, [], [], { toc: 'Inhalt' });
+  assert.equal(applyDirectives('<!-- @toc --><p>Text</p>', ctx, {}, [], [], { toc: 'Inhalt' }), '<p>Text</p>');
+  assert.equal(errors.length, 2);
+  assert.match(errors[0], /@toc: <h2> "No id" has no id/);
+  assert.match(errors[1], /@toc: no <h2 id="…"> after the directive/);
+  errors.length = 0;
+});
+
+test('applyTokens resolves the module tokens on module pages', () => {
+  errors.length = 0;
+  const pages = { projectPage: (code, id, key) => (code === 'en' && id === 'synsps' && key === 'proj' ? 'proj/synplc.html' : null) };
+  const ctx = {
+    rel: 'en/proj/synplc/cpu.html', site, lang: 'en', langRoot: '../../', root: '../../../', strings: {}, pages,
+    project: { title: 'SynPLC', summary: 'P' }, module: { parent: 'synsps', folder: 'proj', title: 'CPU <1>', summary: 'M' },
+  };
+  assert.equal(applyTokens('{{projectTitle}} — {{moduleTitle}}|{{moduleSummary}}|{{langRoot}}{{parentPage}}', ctx), 'SynPLC — CPU &lt;1&gt;|M|../../proj/synplc.html');
+  assert.equal(applyTokens('{{moduleTitle}}{{parentPage}}', { ...ctx, module: undefined }), '');
+  assert.equal(errors.length, 2);
+  errors.length = 0;
+});
+
+test('applyDirectives renders @module-header and @module-nav and fails outside module pages', () => {
+  errors.length = 0;
+  const pages = { dir: (code) => code, projectPage: () => 'proj/synplc.html', modulePage: (code, parent, id) => `proj/synplc/${id}.html` };
+  const module = { parent: 'synsps', id: 'cpu', collection: 'projects', folder: 'proj', title: 'CPU', summary: 'M', status: 'fertig', date: '2026-09' };
+  const ctx = { rel: 'en/proj/synplc/cpu.html', lang: 'en', root: '../../../', site, pages, project: { title: 'SynPLC' }, module };
+  const strings = { lang: 'en', status: { fertig: 'finished' }, prev: 'previous', next: 'next' };
+  const lists = { modules: [module, { ...module, id: 'io', title: 'IO' }] };
+  const html = applyDirectives('<!-- @module-nav -->\n<!-- @module-header -->', ctx, lists, [], [], strings);
+  assert.match(html, /<p class="module-nav">/);
+  assert.match(html, /href="\.\.\/\.\.\/\.\.\/en\/proj\/synplc\/io\.html" rel="next"/);
+  assert.match(html, /<h1>SynPLC<\/h1>\n<h2 class="page-header__module">CPU<\/h2>/);
+  assert.equal(applyDirectives('<!-- @module-header --><!-- @module-nav -->', { ...ctx, module: undefined }, lists, [], [], strings), '');
+  assert.equal(errors.length, 2);
+  assert.match(errors[0], /@module-header needs a module page/);
   errors.length = 0;
 });

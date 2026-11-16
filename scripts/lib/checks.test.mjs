@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { errors, SRC, warnings } from './util.mjs';
 import {
-  checkAnchors, checkFirmwareManifests, checkFlasherHtaccess, checkHtmlLang, checkLanguageLinks, checkLinks, checkOrphanPages,
+  checkAnchors, checkFirmwareManifests, checkFlasherHtaccess, checkHtmlLang, checkLanguageLinks, checkLinks, checkModuleLinks, checkOrphanPages,
   checkPlaceholderText, checkTranslationCoverage, isPlaceholderImg,
 } from './checks.mjs';
 
@@ -56,18 +56,30 @@ test('checkLinks ignores external and same-page schemes', async () => {
   assert.deepEqual(errors, []);
 });
 
+test('checkLinks accepts generated files that are written later', async () => {
+  errors.length = 0;
+  const html = '<link rel="alternate" href="../../de/feed.xml"><a href="../../en/feed.xml">x</a>';
+  await checkLinks('de/proj/a.html', html, base, new Set(['de/feed.xml']));
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /broken link "\.\.\/\.\.\/en\/feed\.xml"/);
+  errors.length = 0;
+});
+
 // --- language-aware checks ---------------------------------------------------
 
 const site = { defaultLang: 'de', languages: [{ code: 'de' }, { code: 'en' }] };
 const pageDir = (code) => code;
 const reset = () => { errors.length = 0; warnings.length = 0; };
 
-// Page index stub: pages pair by identical path.
-const indexOf = (files) => ({
+// Page index stub: pages pair by identical path; `folders` maps folder keys per language ({ ham: { de: 'afu' } }).
+const COLLECTION_OF_KEY = { proj: 'projects', ham: 'ham' };
+const indexOf = (files, folders = {}) => ({
   dir: pageDir,
   files: (code) => files[code] ?? [],
   counterparts: (code, file) => new Map(Object.keys(files).filter((other) => files[other].includes(file)).map((other) => [other, file])),
   projectId: (code, file) => path.posix.basename(file, '.html'),
+  collectionOf: (code, file) => COLLECTION_OF_KEY[Object.keys(COLLECTION_OF_KEY).find((key) => file.startsWith(`${folders[key]?.[code] ?? key}/`))],
+  isModulePage: (code, file) => file.split('/').length === 3,
 });
 
 test('checkLinks and checkAnchors work across language folders', async () => {
@@ -95,12 +107,48 @@ test('checkOrphanPages warns about project and ham pages without data in their l
     ['de/ham/a.html', { lang: 'de', pagePath: 'ham/a.html' }],
     ['de/about.html', { lang: 'de', pagePath: 'about.html' }],
     ['de/other/x.html', { lang: 'de', pagePath: 'other/x.html' }],
+    ['de/proj/a/modul.html', { lang: 'de', pagePath: 'proj/a/modul.html' }],
+    ['de/proj/b/modul.html', { lang: 'de', pagePath: 'proj/b/modul.html' }],
   ]);
-  checkOrphanPages(info, indexOf({}), { proj: byId, ham: new Map() });
+  checkOrphanPages(info, indexOf({}), { projects: byId, ham: new Map() });
   assert.equal(warnings.length, 3);
   assert.match(warnings[0], /en\/proj\/a\.html: entry "a" has no "en" data/);
   assert.match(warnings[1], /de\/proj\/b\.html: proj\/ page without a data entry/);
   assert.match(warnings[2], /de\/ham\/a\.html: ham\/ page without a data entry/);
+  reset();
+});
+
+test('checkOrphanPages and checkTranslationCoverage use the mapped folder of each language', () => {
+  reset();
+  const folders = { ham: { de: 'afu' } };
+  const info = new Map([
+    ['de/afu/a.html', { lang: 'de', pagePath: 'afu/a.html' }],
+    ['de/ham/b.html', { lang: 'de', pagePath: 'ham/b.html' }],
+    ['en/ham/c.html', { lang: 'en', pagePath: 'ham/c.html' }],
+  ]);
+  checkOrphanPages(info, indexOf({}, folders), { projects: new Map(), ham: new Map([['c', { id: 'c', title: { de: 'C', en: 'C' } }]]) });
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /de\/afu\/a\.html: afu\/ page without a data entry/);
+  reset();
+  checkTranslationCoverage(site, indexOf({ de: ['afu/h.html', 'ham/x.html'], en: [] }, folders));
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /de\/ham\/x\.html: no counterpart in "en"/);
+  reset();
+});
+
+test('checkModuleLinks warns when an overview page does not link a module page', () => {
+  reset();
+  checkModuleLinks([
+    ['de/proj/a.html', '<a href="a/eins.html">1</a><a href="../proj/a/zwei.html?x#top">2</a><a href="https://example.com/a/drei.html">3</a>'],
+    ['de/proj/a/eins.html', '<a href="../a.html">back</a>'],
+  ], [
+    ['de/proj/a.html', 'de/proj/a/eins.html'],
+    ['de/proj/a.html', 'de/proj/a/zwei.html'],
+    ['de/proj/a.html', 'de/proj/a/drei.html'],
+    ['de/proj/missing.html', 'de/proj/missing/x.html'],
+  ]);
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /^wwwroot\/de\/proj\/a\.html: no link to its module page de\/proj\/a\/drei\.html/);
   reset();
 });
 
@@ -116,10 +164,10 @@ test('checkHtmlLang requires the folder language on language pages', () => {
 
 test('checkTranslationCoverage fails without a default counterpart and warns about missing translations', () => {
   reset();
-  checkTranslationCoverage(site, indexOf({ de: ['a.html', 'b.html', 'proj/p.html', 'ham/h.html'], en: ['a.html', 'only-en.html'] }));
+  checkTranslationCoverage(site, indexOf({ de: ['a.html', 'b.html', 'proj/p.html', 'proj/p/m.html', 'ham/h.html'], en: ['a.html', 'only-en.html'] }));
   assert.equal(errors.length, 1);
   assert.match(errors[0], /en\/only-en\.html: page has no "de" counterpart/);
-  assert.equal(warnings.length, 1); // b.html; proj/ and ham/ pages are covered by the data warnings
+  assert.equal(warnings.length, 1); // b.html; proj/ and ham/ pages (module pages included) are covered by the data warnings
   assert.match(warnings[0], /de\/b\.html: no counterpart in "en"/);
   reset();
   checkTranslationCoverage({ ...site, languages: [{ code: 'de' }] }, indexOf({ de: ['a.html'] }));

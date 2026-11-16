@@ -3,9 +3,12 @@
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { SRC, exists, readJson } from './util.mjs';
+import { COLLECTIONS } from './data.mjs';
 
 export const DATA_DIR = path.join(SRC, 'data');
 export const PAGES_FILE = path.join(DATA_DIR, 'pages.json');
+export const FOLDERS_FILE = path.join(DATA_DIR, 'folders.json');
+export const MODULES_FILE = path.join(DATA_DIR, 'modules.json');
 
 export const writeJson = (file, data) => writeFile(file, `${JSON.stringify(data, null, 2)}\n`);
 
@@ -27,10 +30,40 @@ export async function readPages() {
   return pages;
 }
 
-// Page path of a project (or ham page, folder "ham") in a language, relative
-// to the language folder: the mapped name from pages.json, else <folder>/{id}.html.
-export function projectPagePath(pages, defaultLang, lang, id, folder = 'proj') {
-  const standard = `${folder}/${id}.html`;
-  const group = pages.find((entry) => entry[defaultLang] === standard);
-  return group?.[lang] ?? standard;
+// Page path of a project (or ham page, folder key "ham") in a language, relative
+// to the language folder: the mapped name from pages.json, else
+// <folder>/{id}.html with the folder name of that language from `folders`.
+export function projectPagePath(pages, defaultLang, lang, id, key = 'proj', folders = {}) {
+  const group = pages.find((entry) => entry[defaultLang] === `${folderName(folders, key, defaultLang)}/${id}.html`);
+  return group?.[lang] ?? `${folderName(folders, key, lang)}/${id}.html`;
+}
+
+// data/folders.json ({ <key>: { <lang>: <name> } }); empty when the file is missing.
+export async function readFolders() {
+  if (!await exists(FOLDERS_FILE)) return {};
+  const folders = await readJson(FOLDERS_FILE);
+  if (typeof folders !== 'object' || folders === null || Array.isArray(folders)) throw new Error('data/folders.json: expected an object');
+  return folders;
+}
+
+// Folder name of a collection folder key in a language (the key when unmapped).
+export const folderName = (folders, key, lang) => (typeof folders[key]?.[lang] === 'string' ? folders[key][lang] : key);
+
+// Every collection folder name (keys and mapped names) of a language.
+export const collectionFolders = (folders, lang) => Object.values(COLLECTIONS).map(({ folder }) => folderName(folders, folder, lang));
+
+// Page path of a module in a language, relative to the language folder: the
+// mapped name from pages.json, else {id}.html in the module folder next to the
+// parent's page of that language (mapped page and folder names included).
+export function modulePagePath(pages, defaultLang, lang, parentId, id, key = 'proj', folders = {}) {
+  const group = pages.find((entry) => entry[defaultLang] === `${folderName(folders, key, defaultLang)}/${parentId}/${id}.html`);
+  return group?.[lang] ?? `${projectPagePath(pages, defaultLang, lang, parentId, key, folders).slice(0, -5)}/${id}.html`;
+}
+
+// data/modules.json entries; empty when the file is missing.
+export async function readModules() {
+  if (!await exists(MODULES_FILE)) return [];
+  const modules = await readJson(MODULES_FILE);
+  if (!Array.isArray(modules)) throw new Error('data/modules.json: expected an array');
+  return modules;
 }

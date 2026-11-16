@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "folders.schema.json",
+  "title": "wwwroot/data/folders.json",
+  "description": "Collection folder name per language, keyed by the internal folder name (proj, ham). A language without a value uses the key.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "proj": { "$ref": "#/definitions/names" },
+    "ham": { "$ref": "#/definitions/names" }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "names": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z]{2,3}$": {
+          "description": "Folder name: lowercase, hyphenated.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

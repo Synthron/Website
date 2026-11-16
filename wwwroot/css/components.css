@@ -241,6 +241,27 @@
   font-size: var(--text-sm);
 }
 
+/* Module pages: back to the overview, previous/next (top and bottom) */
+.module-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-block: var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.module-nav__back {
+  flex-basis: 100%;
+}
+
+.module-nav__next {
+  margin-inline-start: auto;
+}
+
+.page-header__module {
+  margin-top: var(--space-2);
+}
+
 .project-detail__body {
   display: flex;
   flex-direction: column;
@@ -295,6 +316,20 @@
 
 .project-section > h2 {
   margin-bottom: var(--space-4);
+}
+
+/* Table of contents (@toc) */
+.toc {
+  margin-bottom: var(--space-7);
+}
+
+.toc__title {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-lg);
+}
+
+.toc__list li + li {
+  margin-top: var(--space-1);
 }
 
 /* Figure: image with optional caption */

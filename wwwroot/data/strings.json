@@ -21,6 +21,11 @@
     "hamCountPlural": "Seiten",
     "noHamPages": "Noch keine Seiten",
     "backToHam": "← Alle Amateurfunk-Seiten",
+    "prev": "Vorheriges",
+    "next": "Nächstes",
+    "toc": "Inhalt",
+    "feedDescription": "DM7WB - Private Projekt- und Amateurfunk-Seiten",
+    "feedLink": "RSS",
     "quoteOpen": "“",
     "quoteClose": "”",
     "status": {
@@ -53,6 +58,11 @@
     "hamCountPlural": "Pages",
     "noHamPages": "No pages yet",
     "backToHam": "← All amateur radio pages",
+    "prev": "previous",
+    "next": "next",
+    "toc": "Content",
+    "feedDescription": "DM7WB - personal project and amateur radio pages",
+    "feedLink": "RSS",
     "quoteOpen": "“",
     "quoteClose": "”",
     "status": {

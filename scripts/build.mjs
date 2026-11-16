@@ -5,16 +5,16 @@
 
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { DIST, ROOT, SRC, errors, exists, gitLastModified, posix, shortHash, walk, warn, warnings } from './lib/util.mjs';
-import { COLLECTIONS, collectionOf, loadHam, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
-import { ogImageRel, renderOpenGraph, renderSitemap } from './lib/render.mjs';
+import { DIST, ROOT, SRC, errors, exists, gitFirstAdded, gitLastModified, posix, shortHash, walk, warn, warnings } from './lib/util.mjs';
+import { checkSharedIds, feedEntries, loadHam, loadModules, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
+import { ogImageRel, renderFeed, renderOpenGraph, renderSitemap } from './lib/render.mjs';
 import {
   applyCacheBusting, applyDirectives, applyIncludes, applyTokens, classifyPage, isFlasherPage,
   protectRaw, restoreRaw, versionCssUrls, versionJsImports,
 } from './lib/pipeline.mjs';
 import {
   checkAnchors, checkFirmwareManifests, checkFlasherHtaccess, checkFlasherScript, checkHtmlLang,
-  checkHtmlRules, checkLanguageLinks, checkLinks, checkOrphanPages, checkPlaceholderText,
+  checkHtmlRules, checkLanguageLinks, checkLinks, checkModuleLinks, checkOrphanPages, checkPlaceholderText,
   checkTranslationCoverage, checkUnusedAssets,
 } from './lib/checks.mjs';
 
@@ -67,22 +67,28 @@ async function build({ check = false } = {}) {
   const pageIndex = await loadPages(site);
   const pageDir = pageIndex.dir;
   const collections = { projects: await loadProjects(site, pageIndex), ham: await loadHam(site, pageIndex) };
+  checkSharedIds(collections);
+  const modules = await loadModules(site, pageIndex, collections);
   const navs = await loadNav('nav.json', site);
   const footerNavs = await loadNav('footer-nav.json', site);
   const stringsByLang = await loadStrings(site);
   // Everything a page needs in its own language; `lang` is merged into the
   // strings for formatDate().
   const perLang = Object.fromEntries(site.languages.map(({ code }) => [code, {
-    lists: Object.fromEntries(Object.entries(collections).map(([name, entries]) => [name, entries.map((entry) => localize(entry, code)).filter(Boolean)])),
+    lists: {
+      ...Object.fromEntries(Object.entries(collections).map(([name, entries]) => [name, entries.map((entry) => localize(entry, code)).filter(Boolean)])),
+      modules: modules.map((module) => localize(module, code)).filter(Boolean),
+    },
     nav: navs[code] ?? [],
     footerNav: footerNavs[code] ?? [],
     strings: { ...stringsByLang[code], lang: code },
   }]));
   await checkFirmwareManifests();
-  // Collection name -> id -> entry; the orphan check keys the maps by page folder.
+  // Collection name -> id -> entry.
   const byId = Object.fromEntries(Object.entries(collections).map(([name, entries]) => [name, new Map(entries.map((entry) => [entry.id, entry]))]));
-  const byFolder = Object.fromEntries(Object.entries(COLLECTIONS).map(([name, { folder }]) => [folder, byId[name]]));
   const projectByRel = new Map(); // page path -> localized project or ham entry
+  const moduleByRel = new Map(); // module page path -> { draft } (module or parent draft)
+  const moduleLinks = []; // [overview page, module page] of visible non-draft modules
   const infoByRel = new Map(); // page path -> { lang, pagePath, isCommon }
 
   const partials = {};
@@ -117,17 +123,25 @@ async function build({ check = false } = {}) {
     const source = await readFile(from, 'utf8');
     const page = classifyPage(rel, source, root, site, pageDir);
     const { lang } = page;
-    const collection = collectionOf(page.pagePath);
+    const collection = page.pagePath === undefined ? undefined : pageIndex.collectionOf(lang, page.pagePath);
     const projectId = collection === undefined ? undefined : pageIndex.projectId(lang, page.pagePath);
     const rawProject = projectId === undefined ? undefined : byId[collection].get(projectId);
     const project = rawProject ? localize(rawProject, lang) ?? undefined : undefined;
+    // Module pages (<folder>/<parent page>/<module>.html) carry their parent and module.
+    const isModule = collection !== undefined && pageIndex.isModulePage(lang, page.pagePath);
+    const moduleId = isModule ? pageIndex.moduleId(lang, page.pagePath) : undefined;
+    const rawModule = isModule ? modules.find((entry) => entry.collection === collection && entry.parent === projectId && entry.id === moduleId) : undefined;
+    const module = rawModule ? localize(rawModule, lang) ?? undefined : undefined;
     // A project page whose project is hidden in this language (TODO or missing
-    // data, already warned about by the loader) is not built.
+    // data, already warned about by the loader) is not built; module pages
+    // also need their module.
     if (projectId !== undefined && !project && lang !== defaultLang) continue;
+    if (isModule && !module && lang !== defaultLang) continue;
 
-    // Available language versions of this page; hidden projects get none.
+    // Available language versions of this page; hidden projects and modules get none.
     const langVersions = page.pagePath === undefined ? [] : [...pageIndex.counterparts(lang, page.pagePath)]
       .filter(([code]) => projectId === undefined || (rawProject && Object.hasOwn(rawProject.title, code)))
+      .filter(([code]) => !isModule || (rawModule && Object.hasOwn(rawModule.title, code)))
       .map(([code, file]) => ({ lang: code, rel: `${pageDir(code)}/${file}` }));
 
     const ctx = {
@@ -142,6 +156,7 @@ async function build({ check = false } = {}) {
       // The 404 page can be served at any path, so its links must be root-relative.
       root,
       project,
+      module,
     };
     const { lists, nav, footerNav, strings } = perLang[lang];
     const raw = [];
@@ -158,7 +173,7 @@ async function build({ check = false } = {}) {
     // (never indexed). Until the OG image exists the image tag is omitted and
     // the build warns once.
     if (isHtml && rel !== '404.html') {
-      const imageRel = ogImageRel(ctx.project);
+      const imageRel = ogImageRel(ctx.project, ctx.module);
       let imageUrl = '';
       if (await exists(path.join(SRC, imageRel))) {
         const hash = versions.get(imageRel);
@@ -169,7 +184,11 @@ async function build({ check = false } = {}) {
       }
       output = output.replace('</head>', renderOpenGraph(rel, output, site, imageUrl, { lang, versions: langVersions }) + '</head>');
     }
-    if (project) projectByRel.set(rel, project);
+    if (project && !isModule) projectByRel.set(rel, project);
+    if (module) {
+      moduleByRel.set(rel, { draft: module.draft || Boolean(project?.draft) });
+      if (!module.draft) moduleLinks.push([`${pageDir(lang)}/${pageIndex.parentPage(lang, page.pagePath)}`, rel]);
+    }
     if (!check) {
       await mkdir(path.dirname(to), { recursive: true });
       await writeFile(to, output);
@@ -180,10 +199,14 @@ async function build({ check = false } = {}) {
 
   // In --check mode nothing was written, so resolve links against wwwroot/.
   const base = check ? SRC : DIST;
-  for (const [rel, html] of pages) await checkLinks(rel, html, base);
+  // RSS feed per language (<lang>/feed.xml), written after the checks.
+  const feedRel = (code) => `${pageDir(code)}/feed.xml`;
+  const feeds = new Set(site.languages.map(({ code }) => feedRel(code)));
+  for (const [rel, html] of pages) await checkLinks(rel, html, base, feeds);
 
-  checkOrphanPages(infoByRel, pageIndex, byFolder);
-  checkTranslationCoverage(site, pageIndex, Object.keys(byFolder));
+  checkOrphanPages(infoByRel, pageIndex, byId);
+  checkModuleLinks(pages, moduleLinks);
+  checkTranslationCoverage(site, pageIndex);
   checkLanguageLinks(pages, infoByRel, site, pageDir);
   await checkUnusedAssets(pages);
   checkPlaceholderText(pages);
@@ -205,7 +228,27 @@ async function build({ check = false } = {}) {
       const lastmod = await gitLastModified(rel);
       if (lastmod) lastmodByRel.set(rel, lastmod);
     }
-    await writeFile(path.join(DIST, 'sitemap.xml'), renderSitemap(pages, site.url, projectByRel, lastmodByRel));
+    await writeFile(path.join(DIST, 'sitemap.xml'), renderSitemap(pages, site.url, projectByRel, lastmodByRel, moduleByRel));
+
+    // Feed items: pubDate = date the page source was first committed
+    // (today while uncommitted), else the entry date.
+    for (const { code } of site.languages) {
+      const items = await Promise.all(feedEntries(code, perLang[code].lists, pageIndex).map(async ({ entry, title, rel }) => ({
+        title,
+        url: `${site.url}/${rel}`,
+        summary: entry.summary,
+        date: await gitFirstAdded(rel) ?? `${entry.date}-01`,
+        tags: entry.tags,
+      })));
+      await writeFile(path.join(DIST, feedRel(code)), renderFeed({
+        title: site.name,
+        description: stringsByLang[code].feedDescription,
+        lang: code,
+        homeUrl: `${site.url}/${pageIndex.base(code)}`,
+        feedUrl: `${site.url}/${feedRel(code)}`,
+        items,
+      }));
+    }
   }
   return pages.length;
 }

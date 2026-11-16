@@ -6,32 +6,44 @@ Open tasks only: finished items are deleted, not ticked. Every item has an ID: `
 
 Agents never write or translate site content. The build warns about every leftover placeholder (`TODO`, `TODO_…`, "Placeholder paragraph").
 
-
-## Deployment (User)
-
-
-## Release Checks
-
-- [ ] **A16** Manual W3C validator check (validator.w3.org/nu) of the built HTML and CSS.
-- [ ] **A17** Manual keyboard pass over every page type: focus order, mobile menu (toggle, Escape), language selector, tag filter. `npm run test:e2e` already checks visible focus.
-
-## Tests
-
-- [ ] **A18** Optional: e2e check in `scripts/e2e/` that the ham tag filter on `hamradio.html` hides and shows list items.
-
 ## Topics (User)
 
-- General Projects
-  - [ ] DCF77 Uhr
-  - [ ] SynPLC (mit Unterseiten)
-  - [ ] ModLab (mit Unterseiten)
-  - [ ] 3D-Drucker?
-- AFU
-  - [x] Moxon Dual Band
-  - [ ] QMX Tuner
-  - [ ] QMX 10W Upgrade
-  - [ ] QMX Mikro Kapsel
-  - [ ] 5+8ele Yagi und SCAD Teile
-  - [ ] Signal Stick
-  - [ ] Endfed?
-  - [ ] SCAD Balun-Gehäuse (WIP)
+### General Projects
+
+| Project                    | Page created | Page written | Page translated |
+| -------------------------- | :----------: | :----------: | :-------------: |
+| DCF77 Uhr                  | [x]          | [ ]          | [ ]             |
+| SynPLC (mit Unterseiten)   | [x]          | [ ]          | [ ]             |
+| ↳ CPU                      | [x]          | [ ]          | [ ]             |
+| ↳ DI                       | [ ]          | [ ]          | [ ]             |
+| ↳ DO                       | [ ]          | [ ]          | [ ]             |
+| ↳ AI                       | [ ]          | [ ]          | [ ]             |
+| ↳ AO                       | [ ]          | [ ]          | [ ]             |
+| ↳ XT                       | [ ]          | [ ]          | [ ]             |
+| ModLab (mit Unterseiten)   | [x]          | [ ]          | [ ]             |
+| ↳ Main                     | [x]          | [ ]          | [ ]             |
+| ↳ LNT                      | [ ]          | [ ]          | [ ]             |
+| ↳ SMPS                     | [ ]          | [ ]          | [ ]             |
+| ↳ Function Generator       | [ ]          | [ ]          | [ ]             |
+| ↳ Load                     | [ ]          | [ ]          | [ ]             |
+| ↳ Diode Tester             | [ ]          | [ ]          | [ ]             |
+| S65 (mit Unterseiten)      | [ ]          | [ ]          | [ ]             |
+| Röhrenverstärker 6L6       | [x]          | [ ]          | [ ]             |
+| Gitarrenverstärker         | [x]          | [ ]          | [ ]             |
+| Modular 6502               | [ ]          | [ ]          | [ ]             |
+| Plantomation               | [ ]          | [ ]          | [ ]             |
+| 3D-Drucker?                | [ ]          | [ ]          | [ ]             |
+| Kalkulationsprogramm       | [ ]          | [ ]          | [ ]             |
+
+### AFU
+
+| Project                    | Page created | Page written | Page translated |
+| -------------------------- | :----------: | :----------: | :-------------: |
+| Moxon Dual Band            | [x]          | [x]          | [x]             |
+| QMX Mikro Kapsel           | [x]          | [x]          | [x]             |
+| 5+8ele Yagi und SCAD Teile | [ ]          | [ ]          | [ ]             |
+| Endfed mit Spule           | [x]          | [ ]          | [ ]             |
+| QMX Tuner                  | [ ]          | [ ]          | [ ]             |
+| QMX 10W Upgrade            | [ ]          | [ ]          | [ ]             |
+| Signal Stick               | [ ]          | [ ]          | [ ]             |
+| SCAD Balun-Gehäuse (WIP)   | [ ]          | [ ]          | [ ]             |

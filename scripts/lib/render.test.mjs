@@ -3,7 +3,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ogImageRel, renderCard, renderEntryList, renderLangSwitch, renderLinks, renderMeta, renderNav, renderOpenGraph, renderSitemap } from './render.mjs';
+import { ogImageRel, renderCard, renderEntryList, renderFeed, renderLangSwitch, renderLinks, renderMeta, renderModuleHeader, renderModuleNav, renderNav, renderOpenGraph, renderSitemap } from './render.mjs';
 
 // --- renderNav --------------------------------------------------------------
 
@@ -118,6 +118,15 @@ test('renderCard links the project page of the page language', () => {
   assert.match(english, /href="\.\.\/en\/proj\/sy317-regulator\.html"/);
 });
 
+test('renderCard and renderEntryList fall back to the mapped folder of the page language', () => {
+  const pages = { ...pageIndex, projectPage: () => null, folder: (key, code) => (key === 'ham' && code === 'de' ? 'afu' : key) };
+  const card = renderCard(PROJECT, ctxFor('html/projects.html', '../', { pages }), 3, STRINGS);
+  assert.match(card, /href="\.\.\/html\/proj\/sy317\.html"/);
+  const entry = { id: 't2lt', title: 'T2LT', summary: 'S', tags: [], date: '2026-10' };
+  assert.match(renderEntryList([entry], [], ctxFor('html/hamradio.html', '../', { pages }), STRINGS), /href="\.\.\/html\/afu\/t2lt\.html"/);
+  assert.match(renderEntryList([entry], [], ctxFor('en/hamradio.html', '../', { lang: 'en', pages }), STRINGS), /href="\.\.\/en\/ham\/t2lt\.html"/);
+});
+
 // --- renderSitemap -----------------------------------------------------------
 
 const projectByRel = new Map([
@@ -149,6 +158,29 @@ test('renderSitemap maps pages, lastmod for projects and git pages, skips 404 an
 test('renderSitemap XML-escapes the URLs', () => {
   const xml = renderSitemap([['de/a.html', '<html>']], 'https://example.com/x?a=1&b=2', new Map());
   assert.match(xml, /<loc>https:\/\/example\.com\/x\?a=1&amp;b=2\/de\/a\.html<\/loc>/);
+});
+
+// --- renderFeed --------------------------------------------------------------
+
+const FEED = { title: 'DM7WB', description: 'Neue <Seiten>', lang: 'de', homeUrl: 'https://dm7wb.de/de/', feedUrl: 'https://dm7wb.de/de/feed.xml' };
+
+test('renderFeed writes an RSS 2.0 channel with self link and escaped texts', () => {
+  const xml = renderFeed({ ...FEED, items: [] });
+  assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>\n<rss version="2\.0" xmlns:atom="http:\/\/www\.w3\.org\/2005\/Atom">/);
+  assert.match(xml, /<title>DM7WB<\/title>\n {4}<link>https:\/\/dm7wb\.de\/de\/<\/link>\n {4}<description>Neue &lt;Seiten&gt;<\/description>\n {4}<language>de<\/language>/);
+  assert.match(xml, /<atom:link href="https:\/\/dm7wb\.de\/de\/feed\.xml" rel="self" type="application\/rss\+xml"\/>/);
+  assert.doesNotMatch(xml, /<item>/);
+});
+
+test('renderFeed sorts items newest first and formats pubDate as RFC 822', () => {
+  const items = [
+    { title: 'Alt', url: 'https://dm7wb.de/de/proj/a.html', summary: 'A', date: '2026-05-01', tags: [] },
+    { title: 'R&D', url: 'https://dm7wb.de/de/afu/b.html', summary: 'B <x>', date: '2026-10-28T21:19:02+01:00', tags: ['antenne', 'diy'] },
+  ];
+  const xml = renderFeed({ ...FEED, items });
+  assert.ok(xml.indexOf('afu/b.html') < xml.indexOf('proj/a.html'));
+  assert.match(xml, /<item>\n {6}<title>R&amp;D<\/title>\n {6}<link>https:\/\/dm7wb\.de\/de\/afu\/b\.html<\/link>\n {6}<guid isPermaLink="true">https:\/\/dm7wb\.de\/de\/afu\/b\.html<\/guid>\n {6}<description>B &lt;x&gt;<\/description>\n {6}<pubDate>Wed, 28 Oct 2026 20:19:02 GMT<\/pubDate>\n {6}<category>antenne<\/category>\n {6}<category>diy<\/category>\n {4}<\/item>/);
+  assert.match(xml, /<pubDate>Fri, 01 May 2026 00:00:00 GMT<\/pubDate>/);
 });
 
 // --- Open Graph / canonical --------------------------------------------------
@@ -241,4 +273,56 @@ test('renderSitemap lists every language folder, skips drafts and uses project d
   assert.doesNotMatch(xml, /draft|404/);
   assert.equal(xml.match(/<lastmod>2026-05-01<\/lastmod>/g).length, 2);
   assert.match(xml, /<lastmod>2026-10-01<\/lastmod>/);
+});
+
+// --- module pages --------------------------------------------------------------
+
+const MODULE_PAGES = { cpu: 'proj/synplc/cpu.html', netzteil: 'proj/synplc/power-supply.html', io: 'proj/synplc/io.html', bus: 'proj/synplc/bus.html' };
+const moduleCtx = (extra = {}) => ({
+  rel: 'en/proj/synplc/cpu.html', root: '../../../', lang: 'en', project: { title: 'Syn<PLC>' },
+  pages: { dir: (code) => code, projectPage: () => 'proj/synplc.html', modulePage: (code, parent, id) => MODULE_PAGES[id] ?? null },
+  ...extra,
+});
+const mod = (id, extra = {}) => ({ parent: 'synsps', id, collection: 'projects', folder: 'proj', title: id, summary: 'S', status: 'fertig', date: '2026-09', ...extra });
+
+test('renderModuleHeader shows the parent title as h1 and the module as h2 with meta', () => {
+  const html = renderModuleHeader({ title: 'Syn<PLC>' }, mod('cpu', { title: 'CPU & IO', summary: 'Sum' }), STRINGS);
+  assert.match(html, /<h1>Syn&lt;PLC&gt;<\/h1>\n<h2 class="page-header__module">CPU &amp; IO<\/h2>\n<p class="page-header__lead">Sum<\/p>/);
+  assert.match(html, /data-status="fertig">done</);
+  assert.doesNotMatch(html, /<a /);
+});
+
+test('renderModuleNav links the overview, skips drafts and other parents and has no link at the ends', () => {
+  const strings = { prev: 'previous', next: 'next' };
+  const modules = [mod('cpu'), mod('io', { draft: true }), mod('x', { parent: 'other' }), mod('netzteil'), mod('bus')];
+  const first = renderModuleNav(modules[0], modules, moduleCtx(), strings);
+  assert.match(first, /<a class="module-nav__back" href="\.\.\/\.\.\/\.\.\/en\/proj\/synplc\.html"><span aria-hidden="true">←<\/span> Syn&lt;PLC&gt;<\/a>/);
+  assert.doesNotMatch(first, /module-nav__prev/);
+  assert.match(first, /<a class="module-nav__next" href="\.\.\/\.\.\/\.\.\/en\/proj\/synplc\/power-supply\.html" rel="next">next <span aria-hidden="true">→<\/span><\/a>/);
+  const middle = renderModuleNav(modules[3], modules, moduleCtx(), strings);
+  assert.match(middle, /href="[^"]*\/cpu\.html" rel="prev"><span aria-hidden="true">←<\/span> previous/);
+  assert.match(middle, /href="[^"]*\/bus\.html" rel="next"/);
+  const last = renderModuleNav(modules[4], modules, moduleCtx(), strings);
+  assert.doesNotMatch(last, /module-nav__next/);
+  // A draft page still gets its neighbours.
+  const draft = renderModuleNav(modules[1], modules, moduleCtx(), strings);
+  assert.match(draft, /\/cpu\.html" rel="prev"/);
+  assert.match(draft, /\/power-supply\.html" rel="next"/);
+  assert.doesNotMatch(renderModuleNav(modules[2], modules, moduleCtx(), strings), /rel="(prev|next)"/);
+});
+
+test('ogImageRel prefers a raster module image, then the parent image', () => {
+  const webp = { image: 'assets/img/m.webp' };
+  const svg = { image: 'assets/img/placeholder.svg' };
+  assert.equal(ogImageRel({ image: 'assets/img/p.webp' }, webp), 'assets/img/m.webp');
+  assert.equal(ogImageRel({ image: 'assets/img/p.webp' }, svg), 'assets/img/p.webp');
+  assert.equal(ogImageRel(svg, svg), 'assets/img/og-default.png');
+});
+
+test('renderSitemap lists module pages with git lastmod and skips draft modules', () => {
+  const built = ['de/proj/a/m.html', 'de/proj/a/draft.html'].map((rel) => [rel, '<html>']);
+  const modules = new Map([['de/proj/a/m.html', { draft: false }], ['de/proj/a/draft.html', { draft: true }]]);
+  const xml = renderSitemap(built, 'https://dm7wb.de', new Map(), new Map([['de/proj/a/m.html', '2026-10-02']]), modules);
+  assert.match(xml, /<loc>https:\/\/dm7wb\.de\/de\/proj\/a\/m\.html<\/loc>\n {4}<lastmod>2026-10-02<\/lastmod>/);
+  assert.doesNotMatch(xml, /draft/);
 });

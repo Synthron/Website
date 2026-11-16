@@ -24,17 +24,33 @@
   {
     "id": "qmx-mikrofon",
     "title": {
-      "de": "DRAFT QMX Mikrofon",
-      "en": "DRAFT QMX Microphone"
+      "de": "QMX Mikrofon",
+      "en": "QMX Microphone"
     },
     "summary": {
       "de": "Mini Elektret-Mikrofon für den QMX Transceiver",
       "en": "Mini Electret Microphone for the QMX Transceiver"
     },
     "tags": {
-      "de": [],
-      "en": []
+      "de": ["transceiver", "diy", "modifikation", "3d-druck"],
+      "en": ["transceiver", "diy", "modification", "3d-printing"]
     },
     "date": "2026-10"
+  },
+  {
+    "id": "efhw",
+    "title": {
+      "de": "DRAFT Endfed Halfwave Kurzwellenantenne",
+      "en": "DRAFT Endfed Halfwave Shortwave Antenna"
+    },
+    "summary": {
+      "de": "modular",
+      "en": "TODO"
+    },
+    "tags": {
+      "de": ["antenne", "diy"],
+      "en": ["antenna", "diy"]
+    },
+    "date": "2026-11"
   }
 ]
