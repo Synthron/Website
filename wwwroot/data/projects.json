@@ -113,7 +113,7 @@
       "repo": "https://github.com/Synthron/SynPLC",
       "demo": null
     },
-    "image": "assets/img/placeholder.svg",
+    "image": "assets/img/SynPLC.svg",
     "featured": false
   },
   {
@@ -188,7 +188,7 @@
       "repo": null,
       "demo": null
     },
-    "image": "assets/img/placeholder.svg",
+    "image": "assets/img/modlab_logo.webp",
     "featured": false
   },
   {
@@ -216,7 +216,7 @@
       "repo": "https://github.com/Synthron/Plantomation",
       "demo": null
     },
-    "image": "assets/img/placeholder.svg",
+    "image": "assets/img/plantomation_logo_notext.svg",
     "featured": false
   }
 ]

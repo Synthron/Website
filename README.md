@@ -120,6 +120,8 @@ Website/
         │   ├── placeholder.svg  # Placeholder project image (wide)
         │   ├── placeholder-square.svg  # Placeholder (square)
         │   ├── placeholder-portrait.svg  # Placeholder (portrait)
+        │   ├── plantomation_logo*.svg  # Plantomation logo, with and without text (traced from the PNGs)
+        │   ├── SynPLC.svg  # SynPLC logo (traced from SynPLC.png)
         │   └── sy317_*    # sy317 project images (pic, render, schematic)
         ├── firmware/      # Web-flasher suites (one folder per firmware variant)
         │   ├── nixie-clock/  # bootloader.bin, partitions.bin, firmware.bin, manifest.json
