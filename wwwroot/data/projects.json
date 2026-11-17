@@ -58,7 +58,7 @@
       "repo": "https://github.com/Synthron/SY317",
       "demo": null
     },
-    "image": "assets/img/sy317_render.webp",
+    "image": "assets/img/sy317/sy317_render.webp",
     "featured": true
   },
   {
@@ -113,7 +113,7 @@
       "repo": "https://github.com/Synthron/SynPLC",
       "demo": null
     },
-    "image": "assets/img/SynPLC.svg",
+    "image": "assets/img/synplc/SynPLC.svg",
     "featured": false
   },
   {
@@ -142,7 +142,7 @@
       "repo": null,
       "demo": null
     },
-    "image": "assets/img/placeholder.svg",
+    "image": "assets/img/6l6/6l6_glow.jpg",
     "featured": false
   },
   {
@@ -188,7 +188,7 @@
       "repo": null,
       "demo": null
     },
-    "image": "assets/img/modlab_logo.webp",
+    "image": "assets/img/modlab/modlab_logo.webp",
     "featured": false
   },
   {
@@ -216,7 +216,7 @@
       "repo": "https://github.com/Synthron/Plantomation",
       "demo": null
     },
-    "image": "assets/img/plantomation_logo_notext.svg",
+    "image": "assets/img/plantomation/plantomation_logo_notext.svg",
     "featured": false
   }
 ]
