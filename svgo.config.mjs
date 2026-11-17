@@ -1,4 +1,4 @@
-// SVGO config (npm run images). Keeps viewBox so SVGs scale with CSS.
+// SVGO config (npm run images, npm run vectorize). Keeps viewBox so SVGs scale with CSS.
 
 export default {
   multipass: true,

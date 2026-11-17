@@ -30,7 +30,7 @@ Website/
 ├── eslint.config.js       # ESLint flat config (npm run lint:js)
 ├── .stylelintrc.json      # Stylelint config (npm run lint:css)
 ├── .htmlvalidate.json     # html-validate config (npm run lint:html)
-├── svgo.config.mjs        # SVGO config (npm run images)
+├── svgo.config.mjs        # SVGO config (npm run images, npm run vectorize)
 ├── playwright.config.mjs  # Playwright config (npm run test:e2e)
 ├── lighthouserc.json      # Lighthouse CI config (npm run lighthouse)
 ├── scripts/
@@ -44,7 +44,8 @@ Website/
 │   │   ├── scaffold.mjs   # Shared helpers of create/page/remove (languages, pages.json, folders.json)
 │   │   ├── preview.mjs    # Shared helpers of serve/dev (root redirect, flasher detection)
 │   │   ├── lighthouse.mjs # Overview page of the Lighthouse CI reports
-│   │   └── *.test.mjs     # Unit tests (node --test): util, data, render, pipeline, checks, scaffold, preview, lighthouse
+│   │   ├── vectorize.mjs  # Raster -> SVG tracing (palette detection, colour layers, potrace, mismatch)
+│   │   └── *.test.mjs     # Unit tests (node --test): util, data, render, pipeline, checks, scaffold, preview, lighthouse, vectorize
 │   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects, ham, modules, pages, folders)
 │   ├── e2e/               # Playwright specs (*.spec.mjs)
 │   │   ├── pages.spec.mjs # Every built page: 320/768/1280 px, console, requests, storage, focus
@@ -60,7 +61,8 @@ Website/
 │   ├── remove.mjs         # Delete a project / ham entry (or module page, --module) and its pages in all languages (npm run remove:project / remove:afu)
 │   ├── report.mjs         # Report dist/ size, largest files, unused assets
 │   ├── check-external.mjs # Manual HEAD checks of external links
-│   └── serve.mjs          # Local preview server for dist/
+│   ├── serve.mjs          # Local preview server for dist/
+│   └── vectorize.mjs      # Trace flat-colour raster images (logos) to SVG (npm run vectorize)
 ├── dist/                  # Build output (generated, git-ignored, deploy this; includes sitemap.xml and <lang>/feed.xml)
 └── wwwroot/               # Source (build input)
     ├── index.html         # Common bilingual landing page (fallback of the root redirect)
@@ -180,6 +182,7 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | `npm run lint:css` | Stylelint over `wwwroot/css/`. |
 | `npm run lint:html` | Builds, then runs html-validate over `dist/**/*.html`. |
 | `npm run images [-- --dry-run]` | WebP next to raster originals in `assets/img/` (skipped when not smaller), creates `assets/img/og-default.png` if missing, optimises SVGs in place. Never overwrites existing outputs or originals. |
+| `npm run vectorize -- <image> [<image> …] [--colors 0071bc,b32027] [--force] [--dry-run]` | Traces flat-colour raster images (logos, icons; `.png`/`.jpg`/`.webp`) to `<name>.svg` next to the original: detects the flat colours (or takes `--colors`; write them without `#` or quote them in PowerShell), traces one potrace layer per colour (larger layers extend under smaller ones, so no hairline gaps), optimises with `svgo.config.mjs`, then renders the SVG and prints the share of differing pixels. Warns above 5 % mismatch or when the SVG is larger than the original (photos, renders, gradients: keep the raster image). `<image>` is a path or a file name in `assets/img/`. Skips existing SVGs unless `--force`; `--dry-run` traces and reports without writing. The original stays. |
 | `npm run test:e2e` | Builds, then runs the Playwright specs in `scripts/e2e/` against `scripts/serve.mjs` on port 8010: every page at 320/768/1280 px (`pages.spec.mjs`), the language setup of the built site (`language.spec.mjs`: `<html lang>`, canonical, `og:locale`, hreflang alternates, selector targets and `aria-current`, hidden projects, sitemap, RSS feeds, root redirect, keyboard use of the selector) and the module pages (`modules.spec.mjs`: header, back link and previous/next at the top and the bottom, language pairs, hidden modules; no tests while `data/modules.json` is empty) and the ham tag filter (`filter.spec.mjs`: each tag button shows exactly the tagged entries, "All" shows every entry, status count; an untagged entry is injected to prove hiding). |
 | `npm run lighthouse` | Builds, then refreshes the `url` list in `lighthouserc.json` from the built pages in `dist/` (so every page is audited even after pages are added, renamed or removed) and runs Lighthouse CI (`scripts/lighthouse.mjs`) against `scripts/serve.mjs` on port 8020; reports go to `.lighthouseci/reports/` (never uploaded). Afterwards `.lighthouseci/reports/index.html` lists every page with its category scores (scores below a `categories:*` `minScore` assertion are framed) and links to its report; it is written even when assertions fail (the exit code stays the lhci status). |
 | `npm run serve` | Serves `dist/` at `http://localhost:8000/` (`PORT` and `HOST` env vars override) with `Cache-Control: no-cache` (revalidates every request but, unlike `no-store`, keeps the back/forward cache usable) and the same security headers as production (mirrors `.htaccess`, flasher CSP exception detected from the served page); redirects directory requests to add the trailing slash and mirrors the root redirect (`/` → `/de/` or `/en/` by the first `Accept-Language` entry, `302` + `Vary: Accept-Language`; other languages get the landing page). `HOST=0.0.0.0` works for phone testing on the LAN, but WebSerial needs a secure context, so the web flasher will not work there. |
@@ -213,7 +216,8 @@ Installed as `devDependencies`; none of them ship to `dist/`. Use these packages
 | `html-validate` | HTML validation and accessibility rules (lowercase `<!doctype html>`) | `npm run lint:html`, `.htmlvalidate.json` | built pages in `dist/` (sources contain `{{tokens}}`) |
 | `ajv` | JSON Schema validation of the data files | `scripts/schemas/*.schema.json`, used by `scripts/lib/data.mjs` | `wwwroot/data/*.json` |
 | `sharp` | Raster → WebP, OG default image 1200×630 from `favicon.svg` | `npm run images`, `scripts/images.mjs` | `wwwroot/assets/img/`, `wwwroot/favicon.svg` |
-| `svgo` | SVG optimisation | `npm run images`, `svgo.config.mjs` | `wwwroot/assets/img/`, `wwwroot/assets/icons/`, `wwwroot/favicon.svg` |
+| `svgo` | SVG optimisation | `npm run images`, `npm run vectorize`, `svgo.config.mjs` | `wwwroot/assets/img/`, `wwwroot/assets/icons/`, `wwwroot/favicon.svg` |
+| `potrace` | Raster → SVG tracing of flat-colour logos (with `sharp` for the colour masks) | `npm run vectorize`, `scripts/vectorize.mjs`, `scripts/lib/vectorize.mjs` | images given on the command line (default folder `wwwroot/assets/img/`) |
 | `@playwright/test` | Browser checks: 320/768/1280 px (no horizontal overflow), console errors, external requests, cookies/storage, visible keyboard focus | `npm run test:e2e`, `playwright.config.mjs`, `scripts/e2e/*.spec.mjs` | `dist/` via `scripts/serve.mjs` (port 8010) |
 | `@lhci/cli` | Lighthouse scores (accessibility and performance ≥ 95) | `npm run lighthouse`, `lighthouserc.json`, `scripts/lighthouse.mjs` | `dist/` via `scripts/serve.mjs` (port 8020) |
 
