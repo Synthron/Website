@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/Plantomation/pages/v1.md, pages/author-notes.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Revision label "Version 1.0", schematic date 2023-11-24 (only "November 2023" on the overview page)
+          - Exact connector part numbers (Lumberg 2411 02, CK PTS636), mounting holes
+          - Full file table of the firmware (main.cpp, classes, server.cpp, web.cpp, config.h, html/, pictures.h)
+          - Boot LED code table of the tech note (not implemented in the firmware, author notes)
+          - Troubleshooting rows "spill alarm, acknowledge with Boot0" and "empty reservoir" (not implemented)
+          - "Empty the SD card, valid default files are created" (not implemented)
+          - Article ideas section
+          - Author notes section 2: tech note vs. firmware differences (sampling interval, logging, NTP re-sync);
+            the page follows the firmware
+          - Author notes section 3: firmware bugs (time/volume swap, interval overflow, timer prescaler, ...)
+
+          Derived / own wording (please verify):
+          - "etwa alle 100 Durchlaeufe ... bei vier Kanaelen im Feuchtemodus grob alle acht bis neun Minuten":
+            computed in the author notes, not measured
+          - Reason for the 418 route ("fuer alle, die sich vertippen") is my framing
+          - Reasons for the gate pull-downs ("beim Booten nichts ungewollt") and the auto-reset ("nicht staendig Knoepfe") are mine
+          - Closing sentence of the status section is invented framing
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Die V1 ist der erste Plantomation-Controller und der, der aktuell tatsächlich gießt. Er versorgt <strong>bis zu vier Pflanzen</strong> mit <strong>einer Pumpe</strong> und <strong>vier Ventilen</strong>, liest vier kapazitive Bodenfeuchtesensoren und einen Leckagesensor und wird komplett über das Webinterface eingestellt.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des V1-Controllers</caption>
+                <tbody>
+                  <tr><th scope="row">Stand</th><td>Entworfen, bestellt, bestückt und getestet</td></tr>
+                  <tr><th scope="row">Controller</th><td>ESP32-WROOM-32, 240MHz, Dual-Core</td></tr>
+                  <tr><th scope="row">Versorgung</th><td>12V DC, 3A (JST-XH)</td></tr>
+                  <tr><th scope="row">Ausgänge</th><td>1 × Pumpe, 4 × Ventil, alle 12V, Low-Side geschaltet</td></tr>
+                  <tr><th scope="row">Eingänge</th><td>4 × kapazitiver Feuchtesensor (5V, analog), 1 × Leckagesensor (3,3V, analog)</td></tr>
+                  <tr><th scope="row">Speicher</th><td>SD-Karte (SPI) und interner SPIFFS</td></tr>
+                  <tr><th scope="row">Schnittstellen</th><td>USB-B (CP2102N), Webinterface per WLAN, OTA-Updates, 4 Status-LEDs</td></tr>
+                  <tr><th scope="row">Platine</th><td>100 × 80mm, 2 Lagen</td></tr>
+                  <tr><th scope="row">Firmware</th><td>PlatformIO mit Arduino-Framework</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <p>Die Schaltung ist eigentlich recht überschaubar. Hier ein schneller Abriss der einzelnen Teile.</p>
+              <h3>Controller und USB</h3>
+              <p>Herz der Platine ist ein <strong>ESP32-WROOM-32</strong>. Programmiert wird über eine USB-B-Buchse und einen <strong>CP2102N</strong> als USB-UART-Wandler. Zwei BC846-Transistoren erledigen das automatische Reset und den Boot-Modus, damit man beim Flashen nicht ständig Knöpfe drücken muss. Die Datenleitungen schützt ein <strong>USBLC6-2SC6</strong> gegen ESD, auf VBUS sitzt eine Ferritperle. Über den Jumper „VBUS Enable“ lässt sich die Platine zum Programmieren auch direkt aus dem USB versorgen. Für alle Fälle gibt es außerdem noch Taster für <strong>RST</strong> und <strong>BOOT</strong>.</p>
+              <h3>Spannungsversorgung</h3>
+              <p>Aus den 12V macht ein <strong>L7805</strong> im D-PAK die 5V für die Feuchtesensoren. Damit der nicht zu heiß wird, sitzt er auf einem kleinen SMD-Kühlkörper (Fischer FK 244 13). Ein <strong>AMS1117-3.3</strong> erzeugt daraus die 3,3V für ESP32, SD-Karte und Leckagesensor. Pumpe und Ventile laufen direkt an den 12V.</p>
+              <h3>Ventil- und Pumpentreiber</h3>
+              <p>Die vier Ventile werden Low-Side von je einem <strong>BSS138</strong> geschaltet, mit 1kΩ Gate-Widerstand und 100kΩ Pull-Down, damit beim Booten nichts ungewollt aufgeht. Für die Pumpe ist ein <strong>DMG1012UW7</strong> zuständig. Alle Spulen haben eine <strong>LL4148</strong> als Freilaufdiode.</p>
+              <h3>Sensoreingänge</h3>
+              <p>Die Sensorsignale gehen über einen kleinen RC-Filter (100Ω / 1nF) auf die ADC-Pins des ESP32. Und zwar bewusst alle auf <strong>ADC1</strong>, denn ADC2 teilt sich der ESP32 mit dem WLAN-Funk und ist bei aktivem WLAN nicht nutzbar.</p>
+              <h3>SD-Karte, LEDs und Stecker</h3>
+              <p>Die SD-Karte sitzt in einem Sockel mit Schaltern für Karten- und Schreibschutzerkennung und hängt per SPI am ESP32. Vier LEDs zeigen an, welcher Kanal gerade gegossen wird. Angeschlossen wird alles über JST-XH mit 2,5mm Raster: 3-polig für die Sensoren S1–S4, 2-polig für die Ventile V1–V4, Pumpe, 12V und Leckagesensor.</p>
+              <h3>Pinbelegung</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Pinbelegung des ESP32 auf der V1</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Funktion</th>
+                    <th scope="col">GPIO</th>
+                    <th scope="col">Funktion</th>
+                    <th scope="col">GPIO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Pumpe</td><td>4</td><td>Sensor 1</td><td>34</td></tr>
+                  <tr><td>Ventil 1</td><td>23</td><td>Sensor 2</td><td>35</td></tr>
+                  <tr><td>Ventil 2</td><td>25</td><td>Sensor 3</td><td>32</td></tr>
+                  <tr><td>Ventil 3</td><td>26</td><td>Sensor 4</td><td>33</td></tr>
+                  <tr><td>Ventil 4</td><td>27</td><td>Leckagesensor</td><td>36</td></tr>
+                  <tr><td>LED 1</td><td>21</td><td>SD CS</td><td>5</td></tr>
+                  <tr><td>LED 2</td><td>17</td><td>SD SCK / MISO / MOSI</td><td>18 / 19 / 22</td></tr>
+                  <tr><td>LED 3</td><td>16</td><td>SD Card Detect</td><td>13</td></tr>
+                  <tr><td>LED 4</td><td>15</td><td>SD Schreibschutz</td><td>14</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <h3>Bestückungsdruck</h3>
+              <p>Auf der Platine steht „PLANTOMATION Version 1.0“ mit Logo, „Synthron“ und der GitHub-Adresse. Jeder Stecker ist beschriftet, neben den LEDs steht „Channel 1–4“, und es gibt die beschreibbaren Felder „SN:“ und „IP:“. Dazu kommen OSHW-, ESD- und WEEE-Logo und natürlich das „approved – theBrutzler“ vom Review.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware</h2>
+            <div class="prose">
+              <h3>Bootablauf</h3>
+              <ol>
+                <li>Pins konfigurieren, LEDs schalten und vier Hardware-Timer vorbereiten, einen pro Kanal für die Zeitsteuerung.</li>
+                <li>SPIFFS einbinden und, falls eine SD-Karte erkannt wird, die auch.</li>
+                <li><code>control.json</code>, <code>plant1–4.json</code> und <code>wifi.json</code> laden. Entweder von der SD-Karte (und dann ins SPIFFS kopieren) oder aus dem SPIFFS.</li>
+                <li>WLAN starten. Im Stationsmodus gibt es 2 Sekunden für die Verbindung, sonst geht die Platine in den Access-Point-Modus.</li>
+                <li>Im Stationsmodus die Uhrzeit von <code>pool.ntp.org</code> holen (UTC+1).</li>
+                <li>ArduinoOTA starten.</li>
+                <li>Den Webserver als Task auf <strong>Kern 0</strong> starten. Die Gießlogik läuft in <code>loop()</code> auf <strong>Kern 1</strong>.</li>
+              </ol>
+              <h3>Hauptschleife</h3>
+              <p>In jedem Durchlauf werden alle Kanäle im Feuchtemodus und der Leckagesensor gelesen, jeweils als Mittelwert aus 10 Messungen im Abstand von 100ms. Etwa alle 100 Durchläufe werden dann, sofern nichts ausgelaufen ist, die Kanäle abgearbeitet: Im Feuchtemodus wird gegossen, wenn die gemessene Feuchte unter der Schwelle liegt, im Zeitmodus, wenn der Timer des Kanals abgelaufen ist. Bei vier Kanälen im Feuchtemodus kommt man so grob auf alle acht bis neun Minuten.</p>
+              <h3>Feuchte in Prozent</h3>
+              <p>Aus dem ADC-Wert wird die Feuchte so berechnet:</p>
+              <p><code>Feuchte [%] = 100 − (ADC − 1600) / ((3400 − 1600) / 100)</code></p>
+              <p>3400 Counts sind also trocken (0%), 1600 Counts nass (100%). Die beiden Konstanten <code>moist_dry</code> und <code>moist_wet</code> stehen in <code>config.h</code>. Eine Kalibrierung über die Webseite ist geplant.</p>
+              <h3>HTTP-Schnittstelle</h3>
+              <p>Das Webinterface spricht mit der Firmware über ein paar einfache Routen:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">HTTP-Routen der V1-Firmware</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Route</th>
+                    <th scope="col">Methode</th>
+                    <th scope="col">Zweck</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>/</code></td><td>GET</td><td>Control-Seite</td></tr>
+                  <tr><td><code>/config</code></td><td>GET</td><td>Configuration-Seite</td></tr>
+                  <tr><td><code>/about</code></td><td>GET</td><td>About-Seite</td></tr>
+                  <tr><td><code>/initial</code></td><td>GET</td><td>JSON: Namen, Betriebsarten, Schwellen, Intervalle und Mengen aller Kanäle</td></tr>
+                  <tr><td><code>/cyclic</code></td><td>GET</td><td>JSON: Systemstatus mit Farbe, Förderrate, aktuelle Feuchte in Prozent (alle 2 Sekunden abgefragt)</td></tr>
+                  <tr><td><code>/conf</code></td><td>GET</td><td>JSON: Systemstatus, Förderrate, Betriebsarten, Debug- und Log-Level</td></tr>
+                  <tr><td><code>/ch1</code> … <code>/ch4</code></td><td>GET</td><td>Name, Schwelle, Intervall und Menge eines Kanals speichern</td></tr>
+                  <tr><td><code>/modes</code></td><td>GET</td><td>Betriebsart aller Kanäle speichern, Timer ein- und ausschalten</td></tr>
+                  <tr><td><code>/sysconf</code></td><td>GET</td><td>Förderrate, Log-Level und Debug-Level speichern</td></tr>
+                  <tr><td><code>/wifi_set</code></td><td>POST</td><td>WLAN-Einstellungen speichern und neu starten</td></tr>
+                  <tr><td><em>alles andere</em></td><td>–</td><td><code>418: I am a teapot!</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Die letzte Zeile ist kein Tippfehler. Wer sich bei der Adresse vertippt, bekommt eben eine Teekanne. :)</p>
+              <h3>Build-Umgebungen</h3>
+              <p>In der <code>platformio.ini</code> gibt es zwei Umgebungen: <code>esp32dev</code> lädt die Firmware per OTA (<code>espota</code>) auf die eingestellte IP-Adresse, <code>esp32dev-debug</code> lädt und debuggt über einen <strong>ESP-Prog</strong> als JTAG-Adapter. Als Partitionstabelle kommt <code>min_spiffs.csv</code> zum Einsatz, der serielle Monitor läuft mit 115200 Baud.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="setup">
+            <h2 id="setup">Inbetriebnahme</h2>
+            <div class="prose">
+              <p>Die Inbetriebnahme ist schnell erledigt:</p>
+              <ol>
+                <li><strong>Optional eine SD-Karte vorbereiten:</strong> als FAT32 formatieren und die Ordner <code>config/</code> und <code>log/</code> anlegen. Die JSON-Dateien kann man hier schon vorbefüllen. Ohne SD-Karte fällt dieser Schritt einfach weg.</li>
+                <li><strong>Einschalten:</strong> 12V anlegen und die Platine booten lassen.</li>
+                <li><strong>Verbinden:</strong> Ist schon ein WLAN eingestellt, die IP-Adresse aus der seriellen Ausgabe im Browser öffnen. Sonst mit dem WLAN <code>Plantomation-XX-XX-XX</code> (Passwort <code>Planto1!</code>) verbinden und <code>http://4.3.2.1</code> aufrufen.</li>
+                <li><strong>Konfigurieren:</strong> Auf dem Tab <em>Configuration</em> die Betriebsarten der Kanäle, die Förderrate der Pumpe, Log- und Debug-Level und das WLAN einstellen.</li>
+                <li><strong>Kanäle einrichten:</strong> Zurück auf <em>Control</em> die Pflanzen benennen und Schwellen oder Intervall und Menge einstellen.</li>
+              </ol>
+              <p>Und das war's auch schon!</p>
+              <h3>Fehlersuche</h3>
+              <ul>
+                <li><strong>Dateisystemfehler beim Booten:</strong> <code>FORMAT_SPIFFS_IF_FAILED</code> auf <code>true</code> setzen, Firmware hochladen, wieder auf <code>false</code> setzen und nochmal hochladen.</li>
+                <li><strong>JSON-Konfiguration kaputt:</strong> Die Dateien auf der SD-Karte auf Tippfehler prüfen. Da die Konfiguration ganz normaler Text ist, geht das mit jedem Editor.</li>
+                <li><strong>Leckagealarm:</strong> Alle Ventile zu, Pumpe aus. Die Ursache trockenlegen, danach geht es automatisch weiter.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>Hardware und Firmware laufen. Was noch fehlt, sind die Kalibrierung der Sensoren über die Webseite, ein interner Zähler für die verbrauchte Wassermenge, der Alarm bei leerem Tank und die Doku zur Oberfläche. In der technischen Doku sind außerdem schon Blinkcodes für die vier LEDs beim Booten beschrieben, in der Firmware sind die aber noch nicht drin.</p>
+              <p>Viele der Erfahrungen aus der V1 sind direkt in die <a href="v2.html">V2</a> eingeflossen.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{projectSummary}}">
+  <title>{{projectTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <p class="back-link"><a href="{{langRoot}}{{projectsPage}}">{{t:backToProjects}}</a></p>
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/Plantomation/plantomation.md, pages/author-notes.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Mermaid diagrams (system architecture V1/V2, valve/pump sequence, boot flow); described in the text instead
+          - License row: there is no license file in the repository (author notes); please decide and add it
+          - Repository structure and Media & Downloads sections, suggested website additions
+          - Exact file names of the 3D parts (carrier_plate.FCStd, base.3mf, fixer.3mf, hose_fix.3mf, Valve_Bar.3mf, ...)
+          - Author notes section 3 (firmware bugs: time/volume swapped in pump_channel(), handle_channel() by value,
+            log always to plant1, interval overflow >= 2 h, timer prescaler, moisture > 100 %); the page describes the
+            intended behaviour of moisture and time control
+          - Boot LED codes, spill acknowledge via Boot0, default files on an empty SD card (documented, not implemented)
+          - Name of the friend with the original idea (kept anonymous, see open questions in the author notes)
+
+          Derived / own wording (please verify):
+          - Opening quote of the tech note rewritten in German as first-person text
+          - "lag erst mal auf Eis" after the friend left: own framing
+          - Spill lockdown "geht automatisch weiter, wenn alles trocken ist": current firmware (author notes), not the tech note
+          - Security hint (no login, OTA without password, same default password): from the author notes, own wording
+          - Purpose of the 3D parts is inferred from file names in the source
+          - Status "in Arbeit" in projects.json is the scaffold default; maybe "pausiert" (last activity March 2024)?
+          - Closing sentence of the status section is invented framing
+        -->
+        <!-- @project-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <!-- 1. Übersicht -------------------------------------- -->
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Plantomation ist ein selbstgebautes, automatisches <strong>Bewässerungssystem für Zimmerpflanzen</strong> auf Basis eines ESP32. Eine Steuerplatine treibt eine Pumpe und eine Reihe von <strong>Magnetventilen</strong>, eins pro Pflanze. Kapazitive <strong>Bodenfeuchtesensoren</strong> im Topf verraten dem Controller, wann eine Pflanze Durst hat.</p>
+              <p>Eingestellt wird alles über ein kleines <strong>Webinterface</strong>: Pflanzen benennen, festlegen, wie jede einzelne gegossen werden soll, und live zuschauen, wie feucht die Erde gerade ist. Konfiguration und Logs liegen als Dateien auf einer SD-Karte. Cloud, App oder Smart-Home-Server braucht es dafür nicht.</p>
+              <p>Das Projekt gibt es in zwei Hardware-Generationen:</p>
+              <ul>
+                <li><a href="plantomation/v1.html">V1</a> mit ESP32, <strong>4 Kanälen</strong> und einer Pumpe. Gebaut, getestet und mit vollständigem Webinterface im Einsatz.</li>
+                <li><a href="plantomation/v2.html">V2</a> mit ESP32-S3, <strong>12 Kanälen</strong> und <strong>zwei Pumpen</strong> für Wasser und Dünger, externen 12-Bit-ADCs und Erweiterungsanschlüssen. Platine fertig entworfen, Firmware noch am Anfang.</li>
+              </ul>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten von Plantomation</caption>
+                <tbody>
+                  <tr><th scope="row">Zweck</th><td>Automatisches Gießen von Zimmerpflanzen nach Bodenfeuchte oder nach Zeitplan</td></tr>
+                  <tr><th scope="row">Kanäle</th><td>V1: 4 Pflanzen, 1 Pumpe · V2: 12 Pflanzen, 2 Pumpen</td></tr>
+                  <tr><th scope="row">Versorgung</th><td>12V DC (V1: 3A), Pumpen und Ventile laufen direkt an 12V</td></tr>
+                  <tr><th scope="row">Controller</th><td>V1: ESP32-WROOM-32 mit 240MHz · V2: ESP32-S3-WROOM-1</td></tr>
+                  <tr><th scope="row">Sensoren</th><td>Kapazitive Bodenfeuchtesensoren (analog), Leckagesensor. V2 zusätzlich Lufttemperatur, Luftfeuchte und Sonnenlicht</td></tr>
+                  <tr><th scope="row">Bedienung</th><td>Webinterface per WLAN, Status-LEDs, serieller Monitor über USB</td></tr>
+                  <tr><th scope="row">Speicher</th><td>SD-Karte für Konfiguration und Logs, Fallback auf den internen Flash (SPIFFS)</td></tr>
+                  <tr><th scope="row">Updates</th><td>Per USB oder Over-the-Air (ArduinoOTA)</td></tr>
+                  <tr><th scope="row">Werkzeuge</th><td>KiCad, FreeCAD, PlatformIO mit Arduino-Framework, LaTeX</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- 2. Entstehungsgeschichte -------------------------- -->
+          <section class="project-section" aria-labelledby="history">
+            <h2 id="history">Entstehungsgeschichte</h2>
+            <div class="prose">
+              <h3>Die Idee</h3>
+              <p>Angefangen hat Plantomation eigentlich gar nicht bei mir. Ein Freund wollte einen <strong>„smarten Blumentopf“</strong> bauen. Die Aufgaben waren schnell verteilt: Ich mache die Hardware, er die Software. Leider ist er recht bald aus persönlichen Gründen ausgestiegen, und das Projekt lag erst mal auf Eis.</p>
+              <h3>Der Neustart</h3>
+              <p>Einige Zeit später habe ich es wieder ausgegraben, und zwar aus einem sehr praktischen Grund: Ich vergesse ständig, meine Zimmerpflanzen zu gießen, und irgendwann gehen sie alle ein. Damit sollte endlich Schluss sein!</p>
+              <p>Also habe ich den Schaltplan aktualisiert und eine Platine entworfen. Dass es genau vier Kanäle geworden sind, war übrigens weniger durchdachte Planung als Zufall. Und schlicht die Anzahl an Pins, die am ESP32 noch frei waren.</p>
+              <h3>Hilfe aus der Community</h3>
+              <p>Das Projekt habe ich dann auf dem Discord-Server <strong>„Freie Maker“</strong> vorgestellt. Ein paar Leute sind direkt mit eingestiegen, haben beim Code geholfen, Features vorgeschlagen und sich vor allem um das Frontend gekümmert. Danke euch! Die V1-Platine hat außerdem <strong>theBrutzler</strong> reviewt, das „approved“ ist auf dem Bestückungsdruck verewigt.</p>
+              <h3>V1 und V2</h3>
+              <p>Der Schaltplan der <a href="plantomation/v1.html">V1</a> ist vom November 2023. Die Platine wurde bestellt, bestückt und getestet, die Firmware hat ein komplettes Webinterface, Dateiverwaltung auf SD-Karte und internem Flash, Feuchte- und Zeitsteuerung, Leckageerkennung und Logging bekommen. Dazu gibt es eine technische Doku in LaTeX zu Konfiguration, Inbetriebnahme und Fehlersuche.</p>
+              <p>Und weil vier Pflanzen dann doch etwas wenig sind, ging es schon im Dezember 2023 mit der <a href="plantomation/v2.html">V2</a> los. Mehr Kanäle, eine zweite Pumpe für Dünger, Sensoren für das Raumklima und Erweiterungsanschlüsse. Im März 2024 kam dann noch die Mechanik für die V2 dazu.</p>
+            </div>
+          </section>
+
+          <!-- 3. Grundsätze ------------------------------------- -->
+          <section class="project-section" aria-labelledby="principles">
+            <h2 id="principles">Grundsätze</h2>
+            <div class="prose">
+              <ul>
+                <li><strong>Eine Pumpe, viele Ventile:</strong> Pumpen sind der teure und sperrige Teil. Eine einzige Pumpe plus günstige 12V-Magnetventile skaliert deutlich besser als eine Pumpe pro Pflanze.</li>
+                <li><strong>Kapazitive statt resistive Sensoren:</strong> Kapazitive Bodenfeuchtesensoren korrodieren in nasser Erde nicht so wie Sensoren mit blanken Elektroden.</li>
+                <li><strong>Sicherheit zuerst:</strong> Ein eigener Leckagesensor stoppt sofort jedes Gießen, wenn irgendwo Wasser ist, wo es nicht hingehört.</li>
+                <li><strong>Keine Infrastruktur nötig:</strong> Keine Cloud, keine App, kein Smart-Home-Server. Wenn es sein muss, macht das Gerät sein eigenes WLAN auf und liefert seine Webseite selbst aus.</li>
+                <li><strong>Lesbare Konfiguration:</strong> Alle Einstellungen sind einfache JSON-Dateien auf der SD-Karte. Die kann man im Browser ändern <em>oder</em> einfach im Texteditor.</li>
+                <li><strong>Sanfter Rückfall:</strong> Keine SD-Karte? Dann nimmt die Firmware den internen Flash. WLAN geht nicht? Dann eben ein eigener Access Point.</li>
+                <li><strong>Hackbar:</strong> PlatformIO, Arduino-Framework und gut lesbare C++-Klassen. Dank OTA-Updates lässt sich die Firmware auch dann noch ändern, wenn die Platine schon zwischen den Pflanzen steht.</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- 4. So wird gegossen ------------------------------- -->
+          <section class="project-section" aria-labelledby="watering">
+            <h2 id="watering">So wird gegossen</h2>
+            <div class="prose">
+              <p>Plantomation steht neben den Pflanzen und einem Wasservorrat. Jede Pflanze bekommt einen <strong>Feuchtesensor</strong> in den Topf und ein <strong>Magnetventil</strong>, von dem ein Schlauch zum Topf führt. Alle Ventile hängen an derselben Pumpe (bei V2 an zwei Pumpen). Zum Gießen öffnet der Controller das Ventil der Pflanze, lässt die Pumpe für eine berechnete Zeit laufen und schließt das Ventil wieder. Weil sich alle die Pumpe teilen, wird immer nur ein Kanal gleichzeitig gegossen.</p>
+              <p>Jeder Kanal kann in einer von drei Betriebsarten laufen:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Betriebsarten der Kanäle</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Betriebsart</th>
+                    <th scope="col">Verhalten</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Deaktiviert</td><td>Der Kanal macht gar nichts.</td></tr>
+                  <tr><td>Feuchtesteuerung</td><td>Der Controller liest den Bodensensor und gießt, sobald die Feuchte unter eine Schwelle fällt. Die Schwelle (0–100%) wird per Schieberegler eingestellt.</td></tr>
+                  <tr><td>Zeitsteuerung</td><td>Der Controller gießt in einem festen Intervall (in Stunden) eine eingestellte Menge (in ml).</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <h3>Feuchtesteuerung</h3>
+              <p>Für jeden aktiven Sensor wird mehrfach gemessen und gemittelt, bei V1 sind das 10 Messungen im Abstand von 100ms. Den ADC-Rohwert rechnet die Firmware dann über zwei Kalibrierpunkte in Prozent um: Etwa <strong>3400</strong> ADC-Counts bedeuten trocken (0%), etwa <strong>1600</strong> nass (100%). Laut Kommentar im Code liefert der Sensor an trockener Luft etwa 2,8V und im Wasser etwa 1,5V. Liegt die Feuchte unter der eingestellten Schwelle, wird gegossen.</p>
+              <h3>Zeitsteuerung</h3>
+              <p>Hier bekommt jeder Kanal einen eigenen Hardware-Timer. Läuft das eingestellte Intervall ab, wird der Kanal mit der eingestellten Menge gegossen. Ganz ohne Sensor, falls eine Pflanze einfach nach Plan versorgt werden soll.</p>
+              <h3>Von Millilitern zur Pumpzeit</h3>
+              <p>Die Pumpe weiß natürlich nicht, was ein Milliliter ist. Deshalb gibt man im Webinterface einmal die <strong>Förderrate der Pumpe in ml/min</strong> an, und die Firmware rechnet die gewünschte Menge in eine Laufzeit um:</p>
+              <p><code>Pumpzeit [s] = 60 × Menge [ml] / Förderrate [ml/min]</code></p>
+              <p>Bei 100ml und einer Pumpe mit 200ml/min sind das also 30 Sekunden.</p>
+              <h3>Ventil zuerst, Pumpe danach</h3>
+              <p>Die Reihenfolge beim Gießen ist bewusst gewählt: Erst geht das Ventil auf und die LED des Kanals an, dann wird 100ms gewartet und die Pumpe gestartet. Nach Ablauf der Pumpzeit geht die Pumpe aus, nach weiteren 100ms schließt das Ventil. So drückt die Pumpe nie gegen ein geschlossenes System.</p>
+            </div>
+          </section>
+
+          <!-- 5. Sicherheit ------------------------------------- -->
+          <section class="project-section" aria-labelledby="safety">
+            <h2 id="safety">Sicherheit</h2>
+            <div class="prose">
+              <p>Wasser und Elektronik sind ja bekanntlich keine besten Freunde. Deshalb gibt es ein paar Schutzmaßnahmen:</p>
+              <ul>
+                <li><strong>Leckageerkennung:</strong> Ein analoger Leckagesensor wird ständig ausgelesen. Überschreitet er eine Schwelle (bei V1 ein ADC-Wert ab 200), geht das System in den <strong>Lockdown</strong>: Kein Kanal wird mehr gegossen, im Webinterface steht in Rot „Spill Detected“ und das Ereignis landet im Log. Ist alles wieder trocken, geht es automatisch weiter.</li>
+                <li><strong>Freilaufdioden:</strong> Jeder Ventil- und Pumpenausgang hat eine LL4148 gegen Spannungsspitzen beim Abschalten der Spulen.</li>
+                <li><strong>ESD-Schutz am USB:</strong> Ein USBLC6-2SC6 schützt die Datenleitungen.</li>
+                <li><strong>Getrennte Kerne:</strong> Webserver und OTA laufen auf Kern 0, die Gießlogik auf Kern 1. Eine hängende Webseite kann also das Gießen nicht blockieren und umgekehrt.</li>
+              </ul>
+              <p>Geplant ist außerdem eine Erkennung für einen <strong>leeren Wassertank</strong>: Ändert sich die Feuchte nach fünf Gießvorgängen nicht, soll das System „Water Reservoir Empty“ melden und so lange anhalten, bis jemand nachgefüllt hat. Das steht aber noch auf der To-do-Liste.</p>
+              <p>Und noch ein Hinweis, falls jemand das Ganze nachbauen will: Das Webinterface hat keine Anmeldung, OTA-Updates gehen ohne Passwort und der Standard-Access-Point hat auf jedem Gerät dasselbe Passwort. Plantomation gehört also ins vertrauenswürdige Heimnetz und auf gar keinen Fall direkt ins Internet.</p>
+            </div>
+          </section>
+
+          <!-- 6. Webinterface ----------------------------------- -->
+          <section class="project-section" aria-labelledby="webinterface">
+            <h2 id="webinterface">Webinterface</h2>
+            <div class="prose">
+              <p>Der ESP32 liefert drei Seiten aus, ganz passend in erdigem Braun und Blattgrün gehalten. Die Werte aktualisieren sich per AJAX von selbst.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Seiten des Webinterfaces</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Seite</th>
+                    <th scope="col">Inhalt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Control (<code>/</code>)</td><td>Eine Karte pro Kanal mit Pflanzenname, Betriebsart, Schieberegler für die Feuchteschwelle (trocken / mittel / nass) <em>oder</em> Intervall und Menge sowie der aktuellen Feuchte in Prozent. Oben der Systemstatus, alle 2 Sekunden aktualisiert.</td></tr>
+                  <tr><td>Configuration (<code>/config</code>)</td><td>Betriebsart pro Kanal, Förderrate der Pumpe, Log-Level, Debug-Level und WLAN-Einstellungen (SSID, Passwort, Station oder Access Point, Hostname). Bei V2 kommen eine zweite Förderrate und ein Knopf zum Kalibrieren der Sensoren dazu.</td></tr>
+                  <tr><td>About (<code>/about</code>)</td><td>Die Geschichte des Projekts und ein Link zu GitHub.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Oben auf jeder Seite zeigt eine farbige Statusanzeige, wie es dem System gerade geht:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Systemstatus und Farben</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Status</th>
+                    <th scope="col">Farbe</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Operational</td><td>Grün</td></tr>
+                  <tr><td>Spill Detected</td><td>Karminrot</td></tr>
+                  <tr><td>Setup Fail</td><td>Orange</td></tr>
+                  <tr><td>SD Fail – Internal Fallback</td><td>Orange</td></tr>
+                  <tr><td>Reservoir Empty</td><td>Hellblau</td></tr>
+                  <tr><td>System Error</td><td>Karminrot</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <h3>Die erste Verbindung</h3>
+              <p>Ohne WLAN-Konfiguration macht Plantomation sein eigenes Netz auf:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Zugangsdaten des Access Points</caption>
+                <tbody>
+                  <tr><th scope="row">SSID</th><td><code>Plantomation-XX-XX-XX</code> (die letzten drei Bytes der MAC-Adresse)</td></tr>
+                  <tr><th scope="row">Passwort</th><td><code>Planto1!</code></td></tr>
+                  <tr><th scope="row">IP-Adresse</th><td><code>4.3.2.1</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Hängt das Gerät im Heimnetz, wird seine IP-Adresse beim Booten auf der seriellen Schnittstelle ausgegeben. Damit man sie nicht jedes Mal suchen muss, hat die Platine ein weißes Feld mit <strong>„IP:“</strong> und <strong>„SN:“</strong> zum Draufschreiben.</p>
+            </div>
+          </section>
+
+          <!-- 7. Konfiguration und Speicher --------------------- -->
+          <section class="project-section" aria-labelledby="storage">
+            <h2 id="storage">Konfiguration und Speicher</h2>
+            <div class="prose">
+              <p>Beim Booten schaut die Firmware über den Card-Detect-Pin nach, ob eine SD-Karte steckt.</p>
+              <ul>
+                <li><strong>Mit SD-Karte</strong> werden die Konfigurationsdateien aus <code>/config/</code> geladen und zusätzlich in den internen Flash kopiert. Logs landen in <code>/log/</code>.</li>
+                <li><strong>Ohne SD-Karte</strong> kommen die Konfigurationsdateien aus dem internen SPIFFS. Geloggt wird dann nicht.</li>
+              </ul>
+            </div>
+            <pre class="code-block"><code>SD-Karte                       Interner SPIFFS
+/                              /
+├── config/                    ├── control.json
+│   ├── control.json           ├── plant1.json … plant4.json
+│   ├── plant1.json … 4.json   └── wifi.json
+│   └── wifi.json
+└── log/
+    ├── plant1.log … 4.log
+    └── events.log</code></pre>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Konfigurationsdateien und ihre Schlüssel</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Datei</th>
+                    <th scope="col">Inhalt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>control.json</code></td><td><code>pumprate</code> (ml/min), <code>log_level</code> (0 nichts, 1 Fehler, 2 alles), <code>debug_level</code> (0 nichts, 1 Aktionen, 2 alles), <code>sysstate</code></td></tr>
+                  <tr><td><code>plantN.json</code></td><td><code>name</code>, <code>op_mode</code>, <code>moisture</code> (0–100), <code>interval_time</code> (h), <code>volume</code> (ml), <code>log_enable</code></td></tr>
+                  <tr><td><code>wifi.json</code></td><td><code>mode</code> (0 Access Point, 1 Station), <code>ssid</code>, <code>password</code>, <code>hostname</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Die Logzeilen sind durch Semikolons getrennt (<code>Datum;Uhrzeit;Ereignis;Wert</code>) und lassen sich damit direkt in einer Tabellenkalkulation öffnen. Im Stationsmodus holt sich das Gerät die Uhrzeit per NTP von <code>pool.ntp.org</code> (UTC+1), damit stimmen dann auch die Zeitstempel.</p>
+            </div>
+          </section>
+
+          <!-- 8. Software --------------------------------------- -->
+          <section class="project-section" aria-labelledby="software">
+            <h2 id="software">Software</h2>
+            <div class="prose">
+              <p>Die Firmware entsteht mit <strong>PlatformIO</strong> auf der Plattform <code>espressif32</code> mit dem <strong>Arduino-Framework</strong>. An Bibliotheken kommen ArduinoJson, AsyncTCP, ESPAsyncWebServer, ArduinoOTA, SD und SPIFFS zum Einsatz.</p>
+              <p>Die Webseiten sind ganz normales HTML, CSS und JavaScript. Ein kleines Python-Skript (<code>html-save.py</code>) packt sie vor jedem Build als C-Strings in die Datei <code>sites.h</code>, so landen sie direkt in der Firmware. Hochgeladen wird per USB oder per OTA an die IP-Adresse des Geräts. Zum Debuggen gibt es bei V1 einen ESP-Prog als JTAG-Adapter, beim ESP32-S3 der V2 ist JTAG über USB schon eingebaut.</p>
+              <p>Der Code ist in kleine Klassen aufgeteilt: <code>Wifi</code>, <code>Plant</code> (ein Objekt pro Kanal) und <code>SysConf</code>. Jede Klasse kann sich mit <code>load_config()</code> und <code>save_config()</code> selbst laden und speichern, egal ob von der SD-Karte oder aus dem SPIFFS.</p>
+              <h3>Ablauf</h3>
+              <ol>
+                <li>Beim Booten werden LEDs und Timer eingerichtet.</li>
+                <li>Steckt eine SD-Karte, wird sie eingebunden, die JSON-Dateien werden geladen und ins SPIFFS kopiert. Sonst kommen die Dateien direkt aus dem SPIFFS.</li>
+                <li>Dann wird das WLAN gestartet. Im Stationsmodus hat das Gerät 2 Sekunden Zeit für die Verbindung, klappt das nicht, macht es stattdessen den Access Point <code>Plantomation-XX-XX-XX</code> auf. Mit Verbindung wird noch die Uhrzeit per NTP geholt.</li>
+                <li>ArduinoOTA wird gestartet, danach der Webserver als eigener FreeRTOS-Task auf Kern 0.</li>
+                <li>Auf Kern 1 läuft die Hauptschleife: Sensoren und Leckagesensor lesen und, wenn nichts ausgelaufen ist, etwa alle 100 Durchläufe die einzelnen Kanäle abarbeiten.</li>
+              </ol>
+            </div>
+          </section>
+
+          <!-- 9. Mechanik --------------------------------------- -->
+          <section class="project-section" aria-labelledby="mechanics">
+            <h2 id="mechanics">Mechanik</h2>
+            <div class="prose">
+              <p>Die mechanischen Teile sind in <strong>FreeCAD</strong> konstruiert und 3D-gedruckt. Für V1 gibt es eine Trägerplatte, auf der die Platine auf Abstandshaltern sitzt, mit passenden Aussparungen für die vier Ventile, dazu eine Klemmleiste, die die Ventile festhält, und einen Schlauchhalter.</p>
+              <p>Für V2 ist die Grundplatte entsprechend gewachsen: Sie hat eine ganze Reihe an Ventilhalterungen und zwei Aufnahmen für Pumpe 1 und Pumpe 2. Dazu kommen eine Leiste, die die Ventilreihe hält, eine Klemmleiste für die Grundplatte und ein Unterbau für die V2-Platine.</p>
+            </div>
+          </section>
+
+          <!-- 10. Die Controller -------------------------------- -->
+          <section class="project-section" aria-labelledby="controllers">
+            <h2 id="controllers">Die Controller</h2>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Vergleich von V1 und V2</caption>
+                <thead>
+                  <tr>
+                    <th scope="col"><span class="visually-hidden">Merkmal</span></th>
+                    <th scope="col"><a href="plantomation/v1.html">V1</a></th>
+                    <th scope="col"><a href="plantomation/v2.html">V2</a></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><th scope="row">Kanäle</th><td>4</td><td>12</td></tr>
+                  <tr><th scope="row">Pumpen</th><td>1</td><td>2 (Wasser und Dünger)</td></tr>
+                  <tr><th scope="row">Controller</th><td>ESP32</td><td>ESP32-S3</td></tr>
+                  <tr><th scope="row">Ausgänge</th><td>direkt über GPIOs</td><td>2 × 74HC595-Schieberegister</td></tr>
+                  <tr><th scope="row">Sensor-ADC</th><td>interner ADC des ESP32</td><td>2 × MCP3208, 12 Bit, 16 Kanäle</td></tr>
+                  <tr><th scope="row">Raumklima</th><td>–</td><td>Lufttemperatur, Luftfeuchte, Sonnenlicht</td></tr>
+                  <tr><th scope="row">5V-Versorgung</th><td>Linearregler mit Kühlkörper</td><td>Schaltregler</td></tr>
+                  <tr><th scope="row">Erweiterung</th><td>–</td><td>I²C, SPI (3,3V und 5V), Schieberegister-Kette</td></tr>
+                  <tr><th scope="row">Einstellungen pro Kanal</th><td>Name, Betriebsart, Schwelle <em>oder</em> Intervall und Menge</td><td>Name, Betriebsart, Schwelle, Intervall und Menge <strong>pro Pumpe</strong></td></tr>
+                  <tr><th scope="row">Platine</th><td>100 × 80mm, 2 Lagen</td><td>100 × 100mm, 4 Lagen</td></tr>
+                  <tr><th scope="row">Stand</th><td>gebaut und getestet</td><td>Platine entworfen, Firmware im Bring-up</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- 11. Stand und Ausblick ---------------------------- -->
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand und Ausblick</h2>
+            <div class="prose">
+              <p>Die <strong>V1</strong> ist entworfen, bestellt, bestückt und getestet. Webinterface, WLAN-Verwaltung, Dateiverwaltung auf SD-Karte und SPIFFS, Feuchte- und Zeitsteuerung, Leckageerkennung sowie Debug- und Log-Level sind umgesetzt, die Doku zu Konfiguration, WLAN, Betriebsarten und Bedienung ist geschrieben. Offen sind noch die Kalibrierung der Sensoren über die Webseite, ein interner Zähler für die verbrauchte Wassermenge, der Alarm bei leerem Tank und die Doku zur Oberfläche.</p>
+              <p>Bei der <strong>V2</strong> ist das Platinenlayout fertig, bestellt ist sie aber noch nicht. Die Firmware ist aktuell ein reiner Hardwaretest, der der Reihe nach durch alle 12 Kanäle schaltet. Die Webseiten für 12 Kanäle und zwei Pumpen sind schon entworfen, Bestellung, Bestückung, Test und Doku stehen noch aus.</p>
+              <p>Meine Pflanzen haben also schon mal einen Gießdienst. Und wer weiß, vielleicht bekommen sie mit der V2 irgendwann sogar Dünger.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <!-- @include footer -->
+
+</body>
+</html>

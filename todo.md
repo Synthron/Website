@@ -35,7 +35,9 @@ Agents never write or translate site content. The build warns about every leftov
 | Röhrenverstärker 6L6       | [x]          | [ ]          | [ ]             |
 | Gitarrenverstärker         | [x]          | [ ]          | [ ]             |
 | Modular 6502               | [ ]          | [ ]          | [ ]             |
-| Plantomation               | [ ]          | [ ]          | [ ]             |
+| Plantomation               | [x]          | [ ]          | [ ]             |
+| ↳ V1                       | [x]          | [ ]          | [ ]             |
+| ↳ V2                       | [x]          | [ ]          | [ ]             |
 | 3D-Drucker?                | [ ]          | [ ]          | [ ]             |
 | Kalkulationsprogramm       | [ ]          | [ ]          | [ ]             |
 

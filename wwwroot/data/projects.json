@@ -190,5 +190,33 @@
     },
     "image": "assets/img/placeholder.svg",
     "featured": false
+  },
+  {
+    "id": "plantomation",
+    "title": {
+      "de": "DRAFT Plantomation",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Automatische Pflanzenbewässerung mit ESP32, kapazitiven Bodenfeuchtesensoren und Webinterface",
+      "en": "TODO"
+    },
+    "tags": {
+      "de": [
+        "elektronik",
+        "software",
+        "esp32",
+        "3d-druck"
+      ],
+      "en": []
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
+    "links": {
+      "repo": "https://github.com/Synthron/Plantomation",
+      "demo": null
+    },
+    "image": "assets/img/placeholder.svg",
+    "featured": false
   }
 ]

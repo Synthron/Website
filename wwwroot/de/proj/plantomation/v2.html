@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/Plantomation/pages/v2.md, pages/author-notes.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Revision label "Version 1.0", schematic date 2023-12-04
+          - Note that the V2 README says "ESP32-S3-WROVER" (schematic/BOM: WROOM-1, used here)
+          - Schematic sheet list (root, Actors, Sensors, Interfaces)
+          - Details of the power stage (IHLP-4040, 22 uF output caps, VDDA ferrite filter): only short mention
+          - USB 22 Ohm series resistors, BOM line count (49)
+          - Custom board file boards/esp32-s3-devkit-1-n8r8.json, upload port /dev/ttyACM*, 921600 baud
+          - Mode numbering change (V2: 1 = Time, 2 = Moisture; V1 the other way round)
+          - README calling the climate inputs "Ambient Temperature and Humidity Sensor"
+          - FreeCAD backup dates (16 and 19 March 2024); "Maerz 2024" is on the overview page
+          - Article ideas section
+
+          Derived / own wording (please verify):
+          - All reasons in the "Was sich aendert" list are inferred in the source
+          - "Shifter" header for more output boards: "presumably" in the source
+          - UART1 + DIR "reserviert": inferred in the source (net labels, not routed to a connector)
+          - RC filters on the four auxiliary inputs: "presumably" in the source
+          - Purpose of the 3D parts is inferred from file names
+          - Closing sentence of the status section is invented framing
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Vier Pflanzen sind ja schön und gut, aber da geht noch mehr. Die V2 bringt Plantomation von 4 auf <strong>12 Pflanzen</strong> und bekommt eine <strong>zweite Pumpe</strong>. Damit kann jede Pflanze <strong>Wasser und Flüssigdünger</strong> nach getrennten Zeitplänen bekommen. Außerdem gibt es Eingänge für <strong>Lufttemperatur, Luftfeuchte und Sonnenlicht</strong> und Erweiterungsanschlüsse für I²C- und SPI-Geräte.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des V2-Controllers</caption>
+                <tbody>
+                  <tr><th scope="row">Stand</th><td>Platine fertig entworfen, noch nicht bestellt. Firmware: Hardwaretest, Webseiten entworfen</td></tr>
+                  <tr><th scope="row">Controller</th><td>ESP32-S3-WROOM-1 (8MB Flash, 8MB PSRAM)</td></tr>
+                  <tr><th scope="row">Versorgung</th><td>12V DC (JST-XH)</td></tr>
+                  <tr><th scope="row">Ausgänge</th><td>12 × Ventil, 2 × Pumpe (12V, Low-Side), 2 Status-LEDs, alles über Schieberegister</td></tr>
+                  <tr><th scope="row">Eingänge</th><td>12 × Feuchtesensor und 4 Zusatzeingänge (Lufttemperatur, Luftfeuchte, Sonnenlicht, Leckage) über 2 × MCP3208</td></tr>
+                  <tr><th scope="row">Speicher</th><td>microSD mit Kartenerkennung</td></tr>
+                  <tr><th scope="row">Erweiterung</th><td>I²C (3,3V und 5V), SPI (3,3V und 5V), Anschluss für weitere Schieberegister</td></tr>
+                  <tr><th scope="row">Platine</th><td>100 × 100mm, <strong>4 Lagen</strong></td></tr>
+                  <tr><th scope="row">Firmware</th><td>PlatformIO mit Arduino-Framework</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="changes">
+            <h2 id="changes">Was sich gegenüber V1 ändert</h2>
+            <div class="prose">
+              <p>Bei der <a href="v1.html">V1</a> war die Kanalzahl ja eher durch die freien Pins des ESP32 bestimmt. Für 12 Ventile und 12 Analogsensoren reichen die schlicht nicht mehr. Also musste einiges umgebaut werden:</p>
+              <ul>
+                <li><strong>Ausgänge über Schieberegister:</strong> Zwei <strong>74HC595</strong> liefern 16 Ausgänge über nur drei Pins. Das spart GPIOs und lässt sich einfach erweitern.</li>
+                <li><strong>Externe ADCs:</strong> Zwei <strong>MCP3208</strong> mit 12 Bit und zusammen 16 Kanälen hängen am SPI. Das sind mehr Kanäle und eine bessere Linearität als beim internen ADC des ESP32.</li>
+                <li><strong>Zwei Pumpen:</strong> eine für Wasser, eine für Dünger.</li>
+                <li><strong>Kräftigere Treiber:</strong> <strong>BSS306</strong> statt BSS138 für die Ventile, damit bei den 12V-Magnetventilen mehr Luft nach oben ist.</li>
+                <li><strong>Schaltregler statt Linearregler:</strong> Ein <strong>TPS56339</strong> ersetzt den L7805 mit Kühlkörper. Weniger Wärme, mehr Strom.</li>
+                <li><strong>Natives USB:</strong> Der ESP32-S3 kann USB selbst, inklusive JTAG zum Debuggen. Der CP2102N fliegt raus.</li>
+                <li><strong>Stiftleisten für die Sensoren:</strong> 2,54mm-Stiftleisten statt JST-XH, damit 12 Sensoren kompakt in eine Reihe passen.</li>
+                <li><strong>Raumklima:</strong> Neue Eingänge für Lufttemperatur, Luftfeuchte und Sonnenlicht.</li>
+                <li><strong>Erweiterung:</strong> I²C und SPI jeweils mit 3,3V und 5V für Displays, digitale Sensoren oder weitere Platinen.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <h3>Spannungsversorgung</h3>
+              <p>Die 12V vom Netzteil gehen direkt an Ventile und Pumpen. Ein synchroner Buck-Wandler <strong>TPS56339</strong> mit 5,6µH-Spule macht daraus die 5V für die Feuchtesensoren, die 5V-Erweiterungsanschlüsse und den <strong>AMS1117-3.3</strong>. Der wiederum versorgt den ESP32-S3, die Logik und die ADCs. Die Analogversorgung der MCP3208 ist über eine Ferritperle und Filterkondensatoren noch einmal extra beruhigt.</p>
+              <h3>Ausgänge</h3>
+              <p>Die beiden 74HC595 sind hintereinandergeschaltet und liefern zusammen 16 Bit:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Belegung der Schieberegister-Ausgänge</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Bits</th>
+                    <th scope="col">Funktion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>2</td><td>Status-LEDs („State1“, „State2“)</td></tr>
+                  <tr><td>12</td><td>Ventile 1–12</td></tr>
+                  <tr><td>2</td><td>Pumpe 1, Pumpe 2</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Jedes Ventil und jede Pumpe wird von einem <strong>BSS306</strong> geschaltet (1kΩ Gate-Widerstand, 100kΩ Pull-Down, LL4148 als Freilaufdiode) und hat eine eigene Anzeige-LED. Zusammen mit den Status-LEDs sind das <strong>16 LEDs</strong>, da blinkt also einiges. Die Ventile kommen an eine 2 × 12-polige Stiftleiste, die Pumpen an zwei JST-XH-Stecker.</p>
+              <p>Über eine 5-polige Buchse „Shifter“ (3V3, CLK, Latch, Dout, GND) ist die Schieberegister-Kette nach außen geführt. Damit lassen sich später vermutlich weitere Ausgangsplatinen anhängen.</p>
+              <h3>Eingänge</h3>
+              <p>Zwei <strong>MCP3208</strong> mit je 8 Kanälen und 12 Bit liefern 16 Analogeingänge:</p>
+              <ul>
+                <li><strong>12 Feuchtesensoren</strong> an drei 12-poligen Reihen für Signal, Versorgung (5V) und GND.</li>
+                <li><strong>4 Zusatzsensoren</strong> an je einer 3-poligen Stiftleiste mit der Beschriftung <strong>Spillage</strong>, <strong>Sunlight</strong>, <strong>Humidity</strong> und <strong>Air Temp</strong>. Per Lötjumper lässt sich pro Sensor zwischen 3,3V und 5V Versorgung wählen. Dazu gibt es noch optionale Widerstände, die normalerweise unbestückt bleiben.</li>
+              </ul>
+              <h3>Schnittstellen</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Schnittstellen der V2</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Schnittstelle</th>
+                    <th scope="col">Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>microSD</td><td>Hirose DM3AT mit Kartenerkennung, SPI-Chip-Select CS2</td></tr>
+                  <tr><td>I²C</td><td>Zwei 4-polige Stiftleisten: eine mit 3,3V, eine mit <strong>5V</strong> über BSS138-Pegelwandler</td></tr>
+                  <tr><td>SPI</td><td>Zwei 6-polige Stiftleisten (V+, SCK, MISO, MOSI, CS, GND): CS3 mit 3,3V, CS4 mit <strong>5V</strong> über BSS138-Pegelwandler</td></tr>
+                  <tr><td>USB</td><td>USB-B direkt an das native USB des ESP32-S3, USBLC6-2SC6 als ESD-Schutz</td></tr>
+                  <tr><td>Taster</td><td><strong>RESET</strong>, <strong>Boot0</strong></td></tr>
+                  <tr><td>UART1 + DIR</td><td>Netze <code>TxD_1</code>, <code>RxD_1</code> und <code>DIR</code> an GPIO17/18/38, aber nicht auf einen Stecker geführt, also reserviert</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <h3>Pinbelegung</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Pinbelegung des ESP32-S3 auf der V2</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Funktion</th>
+                    <th scope="col">GPIO</th>
+                    <th scope="col">Funktion</th>
+                    <th scope="col">GPIO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Schieberegister Daten (DOUT)</td><td>1</td><td>SPI SCK</td><td>12</td></tr>
+                  <tr><td>Schieberegister Takt (DCLK)</td><td>2</td><td>SPI MISO</td><td>13</td></tr>
+                  <tr><td>Schieberegister Latch (DLATCH)</td><td>3</td><td>SPI MOSI</td><td>14</td></tr>
+                  <tr><td>CS0 – ADC 1</td><td>10</td><td>I²C SDA</td><td>6</td></tr>
+                  <tr><td>CS1 – ADC 2</td><td>8</td><td>I²C SCL</td><td>7</td></tr>
+                  <tr><td>CS2 – SD-Karte</td><td>4</td><td>UART1 TX / RX</td><td>17 / 18</td></tr>
+                  <tr><td>CS3 – SPI 3,3V</td><td>5</td><td>DIR</td><td>38</td></tr>
+                  <tr><td>CS4 – SPI 5V</td><td>48</td><td>SD Card Detect</td><td>47</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <h3>Die wichtigsten Bauteile</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Wichtige Bauteile der V2</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Bauteil</th>
+                    <th scope="col">Anzahl</th>
+                    <th scope="col">Funktion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>ESP32-S3-WROOM-1</td><td>1</td><td>Controller</td></tr>
+                  <tr><td>TPS56339DDC</td><td>1</td><td>Buck-Wandler 12V → 5V</td></tr>
+                  <tr><td>AMS1117-3.3</td><td>1</td><td>3,3V-LDO</td></tr>
+                  <tr><td>74HC595</td><td>2</td><td>Schieberegister für die Ausgänge</td></tr>
+                  <tr><td>MCP3208</td><td>2</td><td>12-Bit-ADCs</td></tr>
+                  <tr><td>BSS306</td><td>14</td><td>Ventil- und Pumpentreiber</td></tr>
+                  <tr><td>BSS138</td><td>6</td><td>Pegelwandler für I²C und SPI</td></tr>
+                  <tr><td>USBLC6-2SC6</td><td>1</td><td>ESD-Schutz am USB</td></tr>
+                  <tr><td>LL4148</td><td>14</td><td>Freilaufdioden</td></tr>
+                  <tr><td>LED 0805</td><td>16</td><td>Kanal-, Pumpen- und Status-LEDs</td></tr>
+                  <tr><td>Hirose DM3AT</td><td>1</td><td>microSD-Sockel</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Der Rest sind fast ausschließlich 0805-Passive und Halbleiter in SOT-23 und SOIC-16, also alles gut für die Bestückung bei JLCPCB geeignet.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware</h2>
+            <div class="prose">
+              <p>Die Firmware der V2 ist aktuell noch ein reiner <strong>Hardwaretest</strong>. Eine kleine Klasse <code>channels</code> hält die 12 Ventil-Bits, zwei Pumpen-Bits und zwei Status-Bits und schiebt sie als 16 Bit raus. Die Hauptschleife läuft der Reihe nach durch die Kanäle 1 bis 12: Jeder Kanal geht für eine Sekunde zusammen mit Pumpe 1 oder Pumpe 2 (abwechselnd) an, danach ist für eine Sekunde alles aus. Nicht spektakulär, aber genau das, was man beim ersten Einschalten sehen will.</p>
+              <p>Hochgeladen wird bevorzugt über das native USB, alternativ per OTA. Eine dritte Umgebung zum Debuggen über das eingebaute USB-JTAG des ESP32-S3 ist noch experimentell.</p>
+              <h3>Webseiten</h3>
+              <p>Die Webseiten für die V2 sind schon für 12 Kanäle vorbereitet. Auf <strong>Control</strong> bekommt jeder Kanal eine Karte mit Pflanzenname, <strong>Intervall und Menge für Pumpe 1 und Pumpe 2</strong>, Feuchteschwelle und aktueller Feuchte. <strong>Configuration</strong> hat eine Tabelle mit den Betriebsarten aller 12 Kanäle, <strong>zwei Förderraten</strong>, Log- und Debug-Level, WLAN-Einstellungen und einen neuen Bereich zur <strong>Sensorkalibrierung</strong>. Dafür sollte man den Sensor von Kanal 1 sowie ein trockenes und ein nasses Medium zur Hand haben. Ein Hinweis erinnert außerdem daran, dass das Passwort für den Access Point mindestens 8 Zeichen haben muss.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="mechanics">
+            <h2 id="mechanics">Mechanik</h2>
+            <div class="prose">
+              <p>Auch die Mechanik ist mitgewachsen. In FreeCAD sind eine Grundplatte mit einer ganzen Reihe an Ventilhalterungen und Aufnahmen für Pumpe 1 und Pumpe 2, eine Leiste für die Ventilreihe, eine Klemmleiste für die Grundplatte und ein Unterbau mit dem 3D-Modell der V2-Platine entstanden. Alles zum Drucken als 3MF-Dateien.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>Das Platinenlayout ist fertig, die Webseiten sind entworfen. Als nächstes stehen Bestellung, Bestückung und Test an, danach die richtige Firmware und die Doku. Die Pflanzen müssen sich also noch ein bisschen gedulden.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

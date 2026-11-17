@@ -238,5 +238,35 @@
     "status": "in Arbeit",
     "date": "2026-11",
     "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "plantomation",
+    "id": "v1",
+    "title": {
+      "de": "DRAFT V1 – 4-Kanal-Controller",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Erster Controller mit ESP32 für vier Pflanzen und eine Pumpe",
+      "en": "TODO"
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "plantomation",
+    "id": "v2",
+    "title": {
+      "de": "DRAFT V2 – 12-Kanal-Controller",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Controller mit ESP32-S3 für zwölf Pflanzen, zwei Pumpen und Klimasensoren",
+      "en": "TODO"
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
   }
 ]
