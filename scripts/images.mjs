@@ -25,9 +25,17 @@ const log = (message) => console.log(`${dryRun ? '[dry-run] ' : ''}${message}`);
 async function listFiles(dir) {
   const abs = path.join(SRC, dir);
   if (!await exists(abs)) return [];
-  return (await readdir(abs, { withFileTypes: true }))
-    .filter((entry) => entry.isFile())
-    .map((entry) => `${dir}/${entry.name}`);
+  const entries = await readdir(abs, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) {
+      files.push(...await listFiles(rel));
+    } else if (entry.isFile()) {
+      files.push(rel);
+    }
+  }
+  return files;
 }
 
 async function convertRaster() {
