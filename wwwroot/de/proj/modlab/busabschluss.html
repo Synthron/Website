@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/modlab/modules/bus-termination.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Block diagram
+          - Reference designators (J1, J2, R1..R6, D1..D8)
+          - Files section (KiCad project, schematic PDF doc/schematics/Bustermination.pdf)
+
+          Derived / own wording (please verify):
+          - "Eines der wenigen Module, bei denen alles abgehakt ist": own framing
+          - "Vorwiderstaende auf die jeweilige Spannung angepasst": reason inferred from the values
+        -->
+        <!-- @module-header -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Der Busabschluss ist sozusagen die Buchstütze der <a href="backplane.html">Backplane</a> und war eines der allerersten Module des ModLab. Er hat keinen Mikrocontroller, keine CAN-Adresse und keine Firmware. Trotzdem geht ohne ihn nichts, denn er erledigt drei Aufgaben:</p>
+              <ol>
+                <li><strong>Terminierung.</strong> CAN und RS-485 sind differentielle Busse und brauchen an <em>beiden</em> physikalischen Enden einen 120Ω-Abschluss. Deshalb gibt es die Karte zweimal, und sie steckt jeweils im äußersten Steckplatz des Baugruppenträgers.</li>
+                <li><strong>Bus-Verlängerung.</strong> Einen ganzen Steckplatz nur für zwei Widerstände zu verschwenden wäre schade. Also hat die Karte an der Vorderkante einen zweiten DIN-41612-Stecker, der 1:1 mit der Backplane verbunden ist. Dort lassen sich externe Platinen, Testadapter oder Prototypen anstecken.</li>
+                <li><strong>Schienenanzeige.</strong> Jede Versorgungsspannung hat ihre eigene LED. So sieht man auf einen Blick, ob alle Schienen da sind, oder ob mal wieder eine Sicherung das Zeitliche gesegnet hat.</li>
+              </ol>
+              <p>Ganz nebenbei bekommen die Versorgungsschienen an den Enden der Backplane noch TVS-Dioden und Pufferkondensatoren spendiert.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <p>Der Schaltplan passt auf ein einziges Blatt: Backplane, TVS-Schutz, Power-LEDs und Pufferkondensatoren. Alle 64 Signale gehen einfach vom hinteren zum vorderen Stecker durch, und an den richtigen Stellen hängen die paar Bauteile dran. Die Platine ist eine zweilagige Europakarte.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Bauteile des Busabschlusses</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Bauteil</th>
+                    <th scope="col">Funktion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>2 × DIN 41612, 2×32 (a + c)</td><td>Backplane-Stecker und Durchgang zur Front</td></tr>
+                  <tr><td>120Ω</td><td>CAN-Abschluss</td></tr>
+                  <tr><td>120Ω</td><td>RS-485-Abschluss</td></tr>
+                  <tr><td>SMAJ5.0A, P6SMB26, 2 × P6SMB16</td><td>TVS-Schutz für 5V, 24V und ±15V</td></tr>
+                  <tr><td>4 LEDs mit Vorwiderständen</td><td>Anzeige für +5V, +24V, +15V und −15V</td></tr>
+                  <tr><td>4 × 100µF</td><td>Pufferkondensator pro Schiene</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Die Vorwiderstände der LEDs sind auf die jeweilige Spannung angepasst: 2,2kΩ an 5V, 10kΩ an 24V und 6,8kΩ an ±15V.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>Entworfen, gebaut und im Einsatz. Eines der wenigen Module, bei denen auf der To-do-Liste wirklich alles abgehakt ist.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/modlab/modules/waveform-generator.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Block diagram and list of schematic sheets
+          - Revision date V1 2022-11-24
+          - Part details: VCA822 "linear-in-V/V", output connector J201 "Wave_Out", +24 V available on the connector
+          - Pin map and SPI settings (8 bit, MSB first, CPOL high, FSYNC on PA6)
+          - Driver function names and the extra waveform "square / 2"
+          - Gain formulas with constants (779.83 + 0x1BFF for square, 2645.18 + 0x1EFF for sine/triangle)
+          - Offset formula 0x8210 - n * 0x160 (only described in the text)
+          - Mode values (0 square, 1 sine, 2 or 3 triangle) in the CAN table
+          - TFT integration (page 0x02, 10-byte payload, generators t51..t54)
+          - Files section and separate credits block (credit is in the text as link)
+
+          Derived / own wording (please verify):
+          - "Fuer den AD9833 habe ich einen kleinen Treiber geschrieben": authorship assumed (lib/AD98336)
+          - "was in der Praxis voellig reicht": own opinion
+          - "Bis auf die kleine Unstimmigkeit ... einsatzbereit": own conclusion
+          - L7905 supplies the VCA: source lists -5 V and +5 V for the VCA and the L7905 on the power sheet
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Im FMAS gab es Funktionsgeneratoren nur als diskrete Oszillatoren mit fester Frequenz oder mit dem XR2206. Für das ModLab sollte es etwas Moderneres sein: <strong>Direkte Digitale Synthese</strong>, kurz DDS. Herzstück ist ein <strong>AD9833</strong> von Analog Devices, der aus einem quarzstabilen 25MHz-Takt sehr präzise Frequenzen erzeugt und komplett per SPI programmiert wird.</p>
+              <p>Ein Großteil der Analogschaltung rund um den AD9833 basiert auf der hervorragenden Anleitung von <a href="https://daumemo.com">Daumemo</a>.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des Funktionsgenerators</caption>
+                <tbody>
+                  <tr><th scope="row">Signalquelle</th><td>AD9833 DDS, 25MHz Referenzoszillator</td></tr>
+                  <tr><th scope="row">Kurvenformen</th><td>Sinus, Dreieck, Rechteck</td></tr>
+                  <tr><th scope="row">Frequenzbereich</th><td>1Hz … 12,5MHz in 1Hz-Schritten</td></tr>
+                  <tr><th scope="row">Amplitude</th><td>in 0,1V<sub>pp</sub>-Schritten (VCA822)</td></tr>
+                  <tr><th scope="row">Offset</th><td>in 0,1V-Schritten, positiv und negativ</td></tr>
+                  <tr><th scope="row">Ausgang</th><td>LM7171 als Ausgangsverstärker, Ausgangsrelais</td></tr>
+                  <tr><th scope="row">CAN-Adresse</th><td><code>0x40</code> bis <code>0x43</code></td></tr>
+                  <tr><th scope="row">Platine</th><td>160 × 100mm, 104 Bauteile</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <h3>Die Signalkette</h3>
+              <p>Das Signal durchläuft auf der Karte vier Stationen:</p>
+              <ol>
+                <li>Der <strong>AD9833</strong> erzeugt die rohe Kurvenform mit der gewünschten Frequenz.</li>
+                <li>Ein <strong>VCA822</strong>, ein breitbandiger spannungsgesteuerter Verstärker, stellt die <strong>Amplitude</strong> ein. Seine Steuerspannung ist ein gefiltertes PWM-Signal vom STM32.</li>
+                <li>Ein schneller <strong>LM7171</strong> dient als Ausgangsverstärker und addiert den <strong>Offset</strong>, wiederum aus einem gefilterten PWM-Signal.</li>
+                <li>Ein <strong>Omron G6K-2</strong>-Relais schaltet den Ausgang zu oder ab.</li>
+              </ol>
+              <p>Die PWM-Filter sind mit einem OPA2196 aufgebaut, einem präzisen Rail-to-Rail-OPV. Den Takt für den AD9833 liefert ein 25MHz-Oszillator von Abracon.</p>
+              <h3>Versorgung</h3>
+              <p>Ausgangsstufe und Analogteil laufen an ±15V. Der VCA bekommt +5V und eine lokale −5V-Schiene aus einem L7905, und Mikrocontroller und DDS laufen an 3,3V aus einem AP1117-33.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware</h2>
+            <div class="prose">
+              <h3>AD9833-Treiber</h3>
+              <p>Für den AD9833 habe ich einen kleinen Treiber geschrieben. Er kann den Baustein zurücksetzen und initialisieren, Frequenz, Kurvenform und Phase setzen sowie den Ausgang ein- oder in den Schlafmodus schalten. Jedes 16-Bit-Register wird als zwei SPI-Bytes übertragen, während FSYNC auf Low liegt.</p>
+              <p>Das Frequenzwort berechnet sich aus dem 25MHz-Takt und dem 28-Bit-Frequenzregister:</p>
+            </div>
+            <pre class="code-block"><code>FREQREG = f_out * 2^28 / 25 MHz
+Δf      = 25 MHz / 2^28 ≈ 0,093 Hz</code></pre>
+            <div class="prose">
+              <p>Theoretisch wären also Schritte von unter 0,1Hz möglich. Über CAN wird die Frequenz aber in ganzen Hertz übertragen, was in der Praxis völlig reicht. Nach oben ist bei der halben Taktfrequenz, also 12,5MHz, Schluss.</p>
+              <h3>Amplitude und Offset</h3>
+              <p>Hier wird es etwas fummelig. Der Rechteckausgang des AD9833 liefert Logikpegel, Sinus und Dreieck dagegen nur etwa 0,6V<sub>pp</sub>. Deshalb hat die Firmware zwei getrennte Kalibrierungen für die Verstärkung, je nachdem welche Kurvenform gerade aktiv ist. Für den Offset gibt es einen kalibrierten Nullpunkt etwa in der Mitte des PWM-Bereichs, und jeder 100mV-Schritt verschiebt die PWM um 352 Counts.</p>
+              <p>Die Hauptschleife schaltet das Ausgangsrelais, initialisiert den AD9833 neu, wenn eine neue Frequenz oder Kurvenform angekommen ist, und aktualisiert die PWM für Verstärkung und Offset.</p>
+              <h3>CAN-Schnittstelle</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">CAN-Befehle des Funktionsgenerators</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Befehl</th>
+                    <th scope="col">Index</th>
+                    <th scope="col">Bedeutung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Set 32 Bit (<code>0x18</code>)</td><td><code>0x10</code></td><td>Frequenz [1Hz]</td></tr>
+                  <tr><td>Set 16 Bit (<code>0x14</code>)</td><td><code>0x20</code></td><td>Amplitude V<sub>pp</sub> [0,1V]</td></tr>
+                  <tr><td>Set 16 Bit (<code>0x14</code>)</td><td><code>0x30</code></td><td>Offset [0,1V], vorzeichenbehaftet</td></tr>
+                  <tr><td>Set Mode (<code>0x60</code>)</td><td>–</td><td>Kurvenform</td></tr>
+                  <tr><td>Ausgang ein / aus (<code>0x40</code> / <code>0x41</code>)</td><td>–</td><td>Ausgangsrelais schließen / öffnen</td></tr>
+                  <tr><td>Ping (<code>0x05</code>)</td><td>–</td><td>Modulsuche</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <div class="callout" role="note">
+                <p><strong>Baustelle:</strong> Die Protokolldokumentation und der HBC verwenden für Dreieck den Wert 2, die Firmware des Moduls dagegen 3. Eins von beiden muss noch angeglichen werden.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>Hardware gebaut, Firmware mit PWM, AD9833-Ansteuerung und CAN fertig. Bis auf die kleine Unstimmigkeit bei der Kurvenform also einsatzbereit.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

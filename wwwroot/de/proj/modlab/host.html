@@ -13,15 +13,209 @@
       <!-- @module-nav -->
 
       <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/modlab/modules/host-bus-controller.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Board overview drawing doc/pictures/overview_cpu.png (no image on the page yet)
+          - Block diagram and list of schematic sheets (master, CPU/LCD/RAM, ESP32/SD/shifters, power)
+          - Revision label "V3 R1.0", date 2022-11-19
+          - Clock tree details (APB1 54 MHz, APB2 108 MHz, 48 MHz USB/SDMMC), RTC with 32.768 kHz crystal
+          - GPIO list (CS_0..5, GPIO_0..5, ESP_CS, ESP_RDY, LCD_CS, USB_Disconnect), pin numbers of the peripherals
+          - V2 details: SDIO instead of SDMMC, SPI2 = 5 V bus / SPI3 = 3.3 V bus, UART4 for RS-485, 4 layers
+          - Nextion GUI assets (fonts, logo), object names (t51..t54 etc.), aph=25 / vis commands
+          - Table of page handlers (what the HBC sends per module on Set / Output / Read)
+          - Ping address ranges of all module types (only the diode tester is given as example)
+          - Helper function names (send_cmd, send_get, send_set8/16/32, send_set_opmode), big-endian note
+          - ESP32 build details (esp32dev, 240 MHz)
+          - Files section (KiCad V1/V2, schematic PDF, front panels Mainboard-NEXTION / Mainboard-Fusion, firmware paths)
+
+          Derived / own wording (please verify):
+          - "viel zu viel fuer die aktuellen Aufgaben": source only says "plenty of headroom"
+          - "Wie das so ist, fallen einem nach dem Bestuecken ein paar Dinge auf": invented framing for V2
+          - Motivation for the debug features ("verteiltes System ohne Einblick kaum debuggen"): own reasoning
+          - Link between open I2C work and the Power Monitor: taken from power-monitor.md, not from this file
+          - German page names in the display table are my translations
+        -->
         <!-- @module-header -->
+        <!-- @toc -->
 
         <div class="project-content">
-          <section class="project-section" aria-labelledby="module-text">
-            <h2 id="module-text">TODO: heading</h2>
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
             <div class="prose">
-              <p>Placeholder paragraph. Describe the module here; use the layouts of the project template for images, galleries, code and tables.</p>
+              <p>Der Host Bus Controller, kurz HBC, ist das Gehirn des ModLab. Er ist Master über alle Schnittstellen der Backplane, stellt mit seinem 5-Zoll-Touchdisplay die Benutzeroberfläche bereit und ist das Tor nach draußen per USB und WLAN. Kurz gesagt: die Karte mit dem meisten Stress im ganzen Rack.</p>
+              <p>Seine Aufgaben im Einzelnen:</p>
+              <ul>
+                <li>Beim Start <strong>findet er alle Module</strong> am CAN-Bus.</li>
+                <li>Er betreibt die <strong>Touch-Oberfläche</strong> und übersetzt Eingaben in CAN-Befehle.</li>
+                <li>Er holt die <strong>Messwerte</strong> von den Modulen und zeigt sie auf dem Display an.</li>
+                <li>Er ist <strong>Master aller Backplane-Busse</strong> (CAN, I²C, SPI, RS-485) und treibt die beiden DAC-Leitungen.</li>
+                <li>Er bietet einen <strong>USB-Port</strong> für Debug und Monitoring sowie eine <strong>SD-Karte</strong> für Logs und Konfiguration.</li>
+                <li>Er trägt einen <strong>ESP32</strong> für ein geplantes Webinterface. Das ist aus Sicherheitsgründen rein lesend gedacht, steuern lässt sich darüber nichts.</li>
+              </ul>
+              <p>Als Controller habe ich mir einen STM32F767 gegönnt. 216MHz, 2MB Flash und 512KB RAM sind für die aktuellen Aufgaben eigentlich viel zu viel, aber Reserven haben noch nie geschadet. Aus demselben Grund sitzt auch noch externes SRAM auf der Platine, für datenhungrige Module der Zukunft, zum Beispiel einen Logic Analyzer.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des Host Bus Controllers</caption>
+                <tbody>
+                  <tr>
+                    <th scope="row">Controller</th>
+                    <td>STM32F767ZIT6, Cortex-M7, 216MHz, 2MB Flash, 512KB RAM</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Co-Prozessor</th>
+                    <td>ESP32-WROOM-32 (WLAN, OTA-Updates)</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Display</th>
+                    <td>Nextion 5-Zoll-TFT mit Touch, UART mit 250kBaud</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Speicher</th>
+                    <td>microSD-Karte, 512K × 16 externes SRAM</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">PC-Schnittstelle</th>
+                    <td>USB Full Speed (virtueller COM-Port)</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Backplane</th>
+                    <td>CAN, 2 × I²C, RS-485, 2 × SPI, 6 × CS, 6 × IO, 2 × DAC</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">CAN-Adresse</th>
+                    <td><code>0x10</code></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Platine</th>
+                    <td>160 × 100mm Europakarte, 4 Lagen, 195 Bauteile</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <p>Die Platine ist grob in drei Zonen aufgeteilt. Links, also an der Frontplatte, sitzen USB, SD-Karte und der ESP32. In der Mitte thronen der STM32 und das SRAM. Rechts, direkt am Backplane-Stecker, sind Pegelwandler sowie die Transceiver für CAN und RS-485 untergebracht. Der Displayanschluss und die Status-LEDs laufen an der Unterkante entlang.</p>
+              <h3>Die wichtigsten Bauteile</h3>
+              <ul>
+                <li><strong>STM32F767ZIT6</strong> im LQFP-144-Gehäuse</li>
+                <li><strong>IS61WV5126</strong>: 8Mbit asynchrones SRAM, angebunden über den FMC</li>
+                <li><strong>ESP32-WROOM-32</strong> per SPI, dazu ein UART-Header</li>
+                <li><strong>SN65HVD232</strong> für CAN und <strong>MAX485E</strong> für RS-485</li>
+                <li><strong>27 × BSS138</strong> als Pegelwandler, damit alle Bus-IOs 5V-tauglich sind</li>
+                <li><strong>LM2904</strong> als Puffer für die beiden DAC-Ausgänge</li>
+                <li>Zwei <strong>AP1117-33</strong>, je einer für STM32 und ESP32</li>
+                <li>USB-B mit TVS-Schutz und einem BC856 als High-Side-Schalter, damit sich USB per Software trennen lässt</li>
+                <li>Acht LEDs für die Busaktivität (CAN, RS-485, beide I²C, ESP, SD, beide SPI)</li>
+              </ul>
+              <p>Versorgt wird der HBC nur aus den 5V der Backplane. Die beiden 3,3V-Schienen erzeugt er sich selbst. 24V und ±15V werden zwar durchgereicht, aber auf der Karte nicht genutzt.</p>
+              <h3>Peripherie-Belegung</h3>
+              <p>Bei so vielen Schnittstellen lohnt sich ein Blick darauf, welche STM32-Peripherie wofür zuständig ist:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Peripherie-Belegung des STM32F767</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Peripherie</th>
+                    <th scope="col">Verwendung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>CAN1</td><td>Backplane-CAN, 1Mbit/s</td></tr>
+                  <tr><td>USART1</td><td>Nextion-Display, 250000 Baud, Senden per DMA</td></tr>
+                  <tr><td>UART7</td><td>RS-485 auf der Backplane, 115200 Baud, Hardware-Driver-Enable</td></tr>
+                  <tr><td>I²C1 / I²C2</td><td>Backplane-I²C im Fast-Mode (400kHz) und Standard-Mode (100kHz)</td></tr>
+                  <tr><td>SPI1</td><td>ESP32</td></tr>
+                  <tr><td>SPI2</td><td>Touch-Controller des Displays</td></tr>
+                  <tr><td>SPI3 / SPI4</td><td>Die beiden Backplane-SPI-Busse (5V und 3,3V)</td></tr>
+                  <tr><td>DAC1 / DAC2</td><td>DAC0 / DAC1 auf der Backplane, für das geplante Lautsprechermodul</td></tr>
+                  <tr><td>FMC</td><td>Externes SRAM, 16 Bit</td></tr>
+                  <tr><td>SDMMC1</td><td>SD-Karte mit Karten- und Schreibschutzerkennung</td></tr>
+                  <tr><td>USB OTG FS</td><td>CDC-Device (virtueller COM-Port)</td></tr>
+                  <tr><td>TIM1</td><td>Mikrosekunden-Zeitbasis</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <h3>Version 2</h3>
+              <p>Wie das so ist, fallen einem nach dem Bestücken ein paar Dinge auf. V2 ist bereits entworfen, aber noch nicht gebaut, und vereinfacht die Karte deutlich. Statt des F767 kommt ein <strong>STM32F407</strong> im kleineren LQFP-100-Gehäuse zum Einsatz, das externe SRAM fliegt raus, und das Display wird statt über einen 2×20-Pfostenstecker über einen schlichten 4-poligen JST-XH-Stecker angeschlossen (5V, TX, RX, GND). Dazu kommen ein USBLC6 als USB-Schutz und ein Reset-Header. Die aktuelle Firmware läuft aber noch auf V1.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="display">
+            <h2 id="display">Die Benutzeroberfläche</h2>
+            <div class="prose">
+              <p>Die Oberfläche ist im Nextion Editor gebaut. Das Display hat seinen eigenen Controller und kümmert sich selbst um Grafik und Touch. Der HBC muss ihm nur sagen, welcher Wert wo stehen soll, und bekommt im Gegenzug kurze Befehle, wenn jemand auf einen Knopf drückt.</p>
+              <p>Für jede Modulklasse gibt es eine eigene Seite:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Seiten der Display-Oberfläche</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Seite</th>
+                    <th scope="col">Inhalt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>0x00</code></td><td>Home / Einstellungen</td><td>Debug-Schalter, Bus neu scannen</td></tr>
+                  <tr><td><code>0x01</code></td><td><a href="diodentester.html">Diodentester</a></td><td>Start- und Endstrom, Modus, Ergebnistabelle mit 15 Werten</td></tr>
+                  <tr><td><code>0x02</code></td><td><a href="funktionsgenerator.html">Funktionsgenerator</a></td><td>Kurvenform, Frequenz, Amplitude, Offset, Ausgang</td></tr>
+                  <tr><td><code>0x03</code></td><td><a href="sym-netzteil.html">Symmetrisches Netzteil</a></td><td>Soll- und Istwerte für V+, I+, V−, I−, Ausgang</td></tr>
+                  <tr><td><code>0x04</code></td><td><a href="schaltnetzteil.html">Schaltnetzteil</a></td><td>Soll- und Istwerte für Spannung und Strom, Ausgang</td></tr>
+                  <tr><td><code>0x05</code></td><td><a href="last.html">Elektronische Last</a></td><td>Zwei Stromsollwerte, zwei Strommesswerte, Kühlkörpertemperatur</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Jede Seite kann bis zu vier Geräte desselben Typs anzeigen. Abgefragt werden immer nur die Module der gerade aktiven Seite. Was beim Busscan nicht gefunden wurde, wird ausgegraut oder ganz ausgeblendet.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware</h2>
+            <div class="prose">
+              <p>Die Firmware ist wie bei allen Modulen mit STM32CubeMX generiert und wird mit PlatformIO gebaut. Der 12MHz-Quarz wird per PLL auf 216MHz hochgejagt. Neben der HAL kommen USB-CDC und FatFs für die SD-Karte als Middleware zum Einsatz, dazu drei eigene Bibliotheken: <code>modlab</code> für das CAN-Protokoll, <code>tft</code> für Displaytreiber und Seitenlogik und <code>usb_mon</code> als Grundgerüst für den USB-Monitor.</p>
+              <h3>Ablauf</h3>
+              <p>Nach der Initialisierung aller Peripherie startet der HBC den CAN-Bus, lässt alle IDs durch und schaltet den Empfangs-Interrupt ein. Danach wird der Displaytreiber gestartet, der Bus gescannt und das Display einmal zurückgesetzt. Dann geht es in die Hauptschleife:</p>
+              <ol>
+                <li>Hat sich die Displayseite geändert, wird anhand der gefundenen Module festgelegt, welche Kanäle sichtbar sind.</li>
+                <li>Dann wird der Handler der aktiven Seite aufgerufen, also Home, Diodentester, Funktionsgenerator, Netzteile oder Last.</li>
+                <li>Zwischendurch gibt es noch einen USB-Herzschlag, damit man sieht, dass der HBC noch lebt.</li>
+              </ol>
+              <p>Alles, was von außen reinkommt, landet in Interrupts. Befehle vom Display werden zerlegt und als Flags und Sollwerte abgelegt, CAN-Antworten werden nach Typ sortiert. Ein ACK speichert den Wert und bestätigt den Befehl, eine automatische Nachricht wie „Messung fertig“ vom Diodentester stößt das Auslesen der Ergebnisse an, und ein NACK landet in der Fehlerbehandlung.</p>
+              <h3>Modulsuche</h3>
+              <p>Beim Busscan schickt der HBC einen Ping an alle vier möglichen Adressen jedes bekannten Modultyps, also zum Beispiel <code>0x520</code> bis <code>0x523</code> für den Diodentester. Jede Antwort setzt ein Bit in einer Anwesenheitsmaske pro Modultyp. Diese Masken entscheiden später, welche Kanäle auf dem Display aktiv sind. Über den Home-Bildschirm lässt sich der Scan jederzeit neu starten.</p>
+              <p>Gesendet wird mit einem einfachen Timeout: Der HBC schickt einen Frame und wartet bis zu 2ms auf die Antwort. Für die gängigen Befehle gibt es kleine Hilfsfunktionen zum Setzen und Abfragen von 8-, 16- und 32-Bit-Werten und des Betriebsmodus.</p>
+              <h3>Debug-Funktionen</h3>
+              <p>Weil man so ein verteiltes System ohne Einblick in den Busverkehr kaum debuggen kann, gibt es einige Helferlein:</p>
+              <ul>
+                <li><strong>CAN-Log über USB:</strong> Jeder gesendete und empfangene CAN-Frame wird auf dem virtuellen COM-Port ausgegeben.</li>
+                <li><strong>TFT-Log über USB:</strong> Dasselbe für den Displayverkehr (vorbereitet).</li>
+                <li><strong>Fehlende Module simulieren:</strong> Zeigt alle Kanäle auf allen Seiten an, damit ich an der Oberfläche basteln kann, ohne dass die Hardware steckt.</li>
+                <li><strong>USB-Herzschlag:</strong> Eine regelmäßige Lebenszeichen-Meldung.</li>
+              </ul>
+              <h3>ESP32</h3>
+              <p>Der ESP32 läuft mit dem Arduino-Framework und kann aktuell genau zwei Dinge: sich mit dem WLAN verbinden und Firmware-Updates per OTA annehmen. Klappt die Verbindung nicht, startet er einfach neu. Die SPI-Verbindung zum STM32 ist bereits verdrahtet, die Software dafür und das Webinterface für Überwachung und Diagnose stehen aber noch auf der Liste.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>V1 ist gebaut und läuft. USB-Debug, Display und CAN funktionieren. SPI, DAC und RS-485 sind in Hardware und Firmware initialisiert, aber es gibt schlicht noch keinen Anwendungsfall dafür. Offen sind noch I²C (dafür wartet der <a href="power-monitor.html">Power Monitor</a>), das Logging auf SD-Karte, der vollwertige USB-Monitor zur Steuerung vom PC aus und die Verbindung zum ESP32 samt Webinterface. Und natürlich will V2 irgendwann noch bestellt und bestückt werden.</p>
+            </div>
+          </section>
+
         </div>
       </article>
 

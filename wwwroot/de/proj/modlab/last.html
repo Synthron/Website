@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/modlab/modules/electronic-load.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Block diagram, list of schematic sheets, thermal flowchart
+          - Part details: shunts CAD MP930-0.10 (1 %), connectors IN_1 / IN_2 and FAN_1 / FAN_2, LM35 in TO-92
+          - Power rails (+24 V, +-15 V, 3.3 V, local -5 V from L79L05)
+          - Pin map (note: CAN on PA11 / PA12, unlike the other modules on PB8 / PB9)
+          - Conversion formulas (2037.31, 251.366, ADC * 3.3 / 40)
+          - TFT integration (page 0x05, 5-byte payload, up to 4 loads)
+          - Build details (CubeMX 6.5) and files section
+
+          Derived / own wording (please verify):
+          - Purpose of the fan hysteresis ("nicht im Sekundentakt"): own explanation
+          - "die einfachere Variante mit dem LM35": "einfacher" is my judgement
+          - "zieht im Notfall den Stecker, bevor etwas abraucht": own framing of the 60 C cut-off
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Wer einen Haufen Netzteile auf dem Tisch hat, braucht auch etwas, womit er sie belasten kann. Dafür gibt es die elektronische Last. Sie hat <strong>zwei unabhängige Kanäle</strong> und eignet sich bestens, um Netzteile, Akkus und Wandler zu testen.</p>
+              <p>Jeder Kanal ist eine klassische <strong>Konstantstromsenke aus OPV, MOSFET und Shunt</strong>. Wie bei den Netzteilen regelt auch hier nicht die Software. Der STM32 gibt pro Kanal nur eine Referenzspannung als gefilterte PWM vor, und ein analoger Regelkreis steuert das Gate des MOSFETs so, dass die Spannung am Shunt genau dieser Referenz entspricht.</p>
+              <p>Ein Temperatursensor am Kühlkörper wird ständig ausgelesen. Die Firmware schaltet damit die Lüfter und zieht im Notfall den Stecker, bevor etwas abraucht.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten der elektronischen Last</caption>
+                <tbody>
+                  <tr><th scope="row">Kanäle</th><td>2, unabhängig</td></tr>
+                  <tr><th scope="row">Strom</th><td>bis 15A (Designziel), 10mA Auflösung</td></tr>
+                  <tr><th scope="row">Leistungshalbleiter</th><td>2 × IRFP044N auf SK 03-Kühlkörpern</td></tr>
+                  <tr><th scope="row">Strommessung</th><td>2 × 0,1Ω / 30W Präzisions-Leistungswiderstände</td></tr>
+                  <tr><th scope="row">Temperatur</th><td>LM35 am Kühlkörper, Lüftersteuerung, Übertemperaturabschaltung</td></tr>
+                  <tr><th scope="row">CAN-Adresse</th><td><code>0x50</code> bis <code>0x53</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <h3>Lastkanäle</h3>
+              <p>Pro Kanal fließt der Strom vom Eingang durch einen <strong>IRFP044N</strong> im TO-247-Gehäuse und einen <strong>0,1Ω-Shunt</strong> nach Masse. Ein LM358 vergleicht die Shuntspannung mit dem Sollwert und regelt das Gate entsprechend nach.</p>
+              <p>Warum gleich 30W-Widerstände? Bei 15A fallen an einem 0,1Ω-Shunt 1,5V ab, und er verheizt dabei 22,5W. Da ist ein bisschen Reserve durchaus angebracht.</p>
+              <h3>Drumherum</h3>
+              <p>Auf dem Support-Blatt des Schaltplans sitzt alles, was die Lastkanäle unterstützt: Tiefpassfilter für die beiden PWM-Sollwerte, Messverstärker für die beiden Shuntsignale, der Temperatursensor und die Lüftersteuerung mit zwei Lüfteranschlüssen. Bis auf den Regel-OPV sind das alles LM2904. Als Temperatursensor dient ein <strong>LM35</strong>, der praktischerweise direkt 10mV pro Grad Celsius ausgibt.</p>
+              <p>Ursprünglich war am Kühlkörper übrigens ein Thermoelement geplant. Gebaut habe ich dann aber doch die einfachere Variante mit dem LM35.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware</h2>
+            <div class="prose">
+              <h3>Thermomanagement</h3>
+              <p>Die Hauptschleife dreht sich vor allem um die Temperatur:</p>
+              <ol>
+                <li>Kühlkörpertemperatur messen.</li>
+                <li>Lüfter ab 35°C einschalten, unter 30°C wieder aus. Dazwischen bleibt alles, wie es ist.</li>
+                <li>Beide Stromsollwerte schreiben, 10ms warten, beide Ströme messen.</li>
+                <li>Ab 60°C greift die Notbremse: Beide Kanäle werden auf 0A gesetzt.</li>
+              </ol>
+              <p>Die Hysterese beim Lüfter sorgt dafür, dass er nicht im Sekundentakt an- und ausgeht, wenn die Temperatur gerade um die Schwelle herum pendelt. Jeder Messwert ist übrigens der Mittelwert aus zehn Abtastungen.</p>
+              <h3>CAN-Schnittstelle</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">CAN-Befehle der elektronischen Last</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Befehl</th>
+                    <th scope="col">Index</th>
+                    <th scope="col">Bedeutung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Set 16 Bit (<code>0x14</code>)</td><td><code>0x10</code> / <code>0x11</code></td><td>Stromsollwert Kanal 1 / 2 [10mA]</td></tr>
+                  <tr><td>Get 16 Bit (<code>0x15</code>)</td><td><code>0x20</code> / <code>0x21</code></td><td>Gemessener Strom Kanal 1 / 2 [10mA]</td></tr>
+                  <tr><td>Get 8 Bit (<code>0x11</code>)</td><td><code>0x22</code></td><td>Kühlkörpertemperatur [°C]</td></tr>
+                  <tr><td>Ping (<code>0x05</code>)</td><td>–</td><td>Modulsuche</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Ein Ausgangsrelais hat die Last nicht. Wer einen Kanal abschalten will, setzt seinen Sollwert einfach auf 0.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>Hardware gebaut, Firmware mit CAN-Schnittstelle, Stromregelung, Lüftersteuerung und Übertemperaturabschaltung fertig.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

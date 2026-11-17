@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/modlab/modules/power-monitor.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Early GUI concept image doc/pictures/gui.jpg
+          - Block diagram and reference designator table
+          - Ratings of the rack PSUs (5 V / 10 A, 24 V / 10 A, 2 x 15 V / 5 A)
+          - Part details: Vishay TJ5 toroids, ACS723 bidirectional with 5 V supply, 8 MHz crystal x 9
+          - Analog front end values (100 R / 1 nF, 3.9 k, 12 k, ...); source says: check divider ratios in KiCad before publishing
+          - I2C settings (400 kHz, 7-bit), TIM1 time base
+          - Files section (KiCad, BOM, firmware)
+
+          Derived / own wording (please verify):
+          - Current sensors go straight to the ADC, voltages via LM2904: read from the block diagram
+          - BSS138 level shifter "damit der Bus mit 5V-Teilnehmern klarkommt": purpose inferred
+          - GUI concept dated to the Arduino Workstation: taken from index.md, not from this file
+        -->
+        <!-- @module-header -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Der Power Monitor ist der Wächter über die Versorgungsschienen des Racks. Er filtert alle vier Spannungen der Backplane und misst dabei Spannung und Strom, so dass das ModLab anzeigen kann, wie viel Leistung jede Schiene gerade liefert.</p>
+              <p>Anders als die übrigen Module steckt er nicht in der Backplane, sondern ist eine eigenständige Platine für den Versorgungsteil des Racks. Er sitzt <strong>zwischen den Netzteilen und der Backplane</strong>, voraussichtlich im Bereich „Filter und Sicherungen“ auf der Rückseite. Dort hat er drei Aufgaben:</p>
+              <ul>
+                <li>Ein <strong>LC-Tiefpass</strong> pro Schiene hält das Schaltrauschen der Netzteile von den empfindlichen Analogmodulen wie Funktionsgenerator und Linearnetzteil fern.</li>
+                <li>Ein <strong>Hall-Stromsensor</strong> pro Schiene misst den Laststrom ohne verlustbehafteten Shunt und galvanisch getrennt.</li>
+                <li>Ein <strong>Spannungsteiler</strong> pro Schiene erlaubt dem STM32, die tatsächliche Spannung zu messen.</li>
+              </ul>
+              <p>Die Messwerte stellt er über <strong>I²C</strong> bereit. Genau für solche kleinen, regelmäßigen Daten ist der I²C-Bus der Backplane ursprünglich gedacht.</p>
+              <p>Die Idee ist übrigens fast so alt wie das Projekt selbst. Schon das allererste GUI-Konzept aus Zeiten der Arduino Workstation hatte ein Feld „Spannungsüberwachung“ mit vier Spannungen samt Volt und Ampere.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des Power Monitors</caption>
+                <tbody>
+                  <tr><th scope="row">Schienen</th><td>+5V, +24V, +15V, −15V</td></tr>
+                  <tr><th scope="row">Filter</th><td>150µH Ringkerndrossel und 2200µF pro Schiene</td></tr>
+                  <tr><th scope="row">Strommessung</th><td>4 × ACS723 Hall-Sensor, ±5A, 400mV/A, galvanisch getrennt</td></tr>
+                  <tr><th scope="row">Spannungsmessung</th><td>Spannungsteiler pro Schiene</td></tr>
+                  <tr><th scope="row">Controller</th><td>STM32F103C8T6, 72MHz</td></tr>
+                  <tr><th scope="row">Schnittstellen</th><td>I²C und SWD über JST-XH, 8 Schraubklemmen</td></tr>
+                  <tr><th scope="row">Platine</th><td>4 Lagen, 91 Bauteile</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <p>Jede der vier Schienen hat denselben Aufbau: Schraubklemme rein, durch den <strong>ACS723</strong>-Stromsensor, durch die 150µH-Drossel mit 2200µF dahinter, und zur Schraubklemme wieder raus. Am Ausgang greift zusätzlich ein Spannungsteiler die Spannung ab.</p>
+              <p>Die Stromsensoren gehen direkt auf den ADC des STM32, die Spannungssignale werden vorher von einem LM2904 aufbereitet. Insgesamt sind so alle acht ADC-Kanäle von PA0 bis PA7 belegt. Die I²C-Leitungen laufen über zwei BSS138 als Pegelwandler zum Stecker, damit der Bus auch mit 5V-Teilnehmern klarkommt.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>Die Hardware ist entworfen, bei der Firmware steht bisher nur das Grundgerüst. Das CubeMX-Projekt und die Initialisierung von ADC, I²C und Timer sind da, die eigentliche Anwendung fehlt aber noch. Offen sind die Spannungs- und Strommessung und die I²C-Kommunikation mit dem <a href="host.html">Host Bus Controller</a>.</p>
+              <p>Wenn das alles mal läuft, kann der HBC auf seinem Home-Bildschirm Spannung, Strom und Leistung jeder Schiene live anzeigen und die Werte auf der SD-Karte mitloggen.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

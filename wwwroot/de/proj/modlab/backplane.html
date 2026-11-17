@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (sources: project_summaries/modlab/index.md sections 4 + 6,
+          modules/bus-termination.md, modules/host-bus-controller.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - No photo / render of the backplane PCB (none in the summaries)
+          - Number of slots, PCB layer count, KiCad project of the backplane itself: not in the summaries
+          - Current rating per DIN 41612 pin: not in the summaries, could explain the "4 pins per rail" choice
+          - Undefined protocols for SPI and I2C on the backplane (only mentioned as reserved)
+
+          Derived / own wording (please verify):
+          - Status "fertig" in modules.json: backplane PCB assumed built because the modules run on it
+          - Fuse / PSU values per rail mix index.md backplane table (5 V: PSU 15 A, fused 10 A; 24 V: fused 10 A)
+            and the rack wiring labels (24 V 10 A, 15 V 5 A); check which is correct
+          - "Jeder Steckplatz ist gleichwertig / Module koennen in jeden Slot": derived from
+            "every slot gets the same 64 pins" and the dropped slot addressing
+          - Statement that the GND pins sit between the rails to separate them: source only says
+            "plenty of GND pins in between"
+          - Pin c12 shown as IO3 following the numbering scheme; the technical note says IO2
+          - "jeweils mit eigener Backplane": one backplane per subrack assumed (termination "in each subrack")
+          - "alle teilen sich eine gemeinsame Masse": not stated explicitly
+          - Physics of CAN (differential signal, common-mode immunity, reflections without termination):
+            general background, not from the summaries
+          - Purpose of slot addressing ("damit jedes Modul weiss, wo es steckt") and of the two SPI buses
+            ("damit nicht jedes Modul Pegelwandler braucht"): paraphrased / inferred
+          - Which SPI bus (MOSI1/MOSI2) is 5 V and which is 3.3 V is not in the summaries, so not stated
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Die Backplane ist das Herzstück der Modularität im ModLab. Ohne sie wären die Module nur ein Haufen einzelner Platinen. Sie verteilt die Versorgungsspannungen an alle Karten und verbindet sie über eine ganze Reihe an Bussen mit dem <a href="host.html">Host Bus Controller</a>.</p>
+              <p>Bei der Arduino Workstation war die Backplane noch von Hand verdrahtet, mit 32 Pins und entsprechend vielen Gelegenheiten für Wackelkontakte. Daraus habe ich gelernt: Im ModLab V3 ist die Backplane eine richtige Platine mit festen Versorgungsschienen und echten, getrennten Spannungen statt virtueller Massen.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="mechanics">
+            <h2 id="mechanics">Mechanischer Aufbau</h2>
+            <div class="prose">
+              <p>Die Module sind 160 × 100mm große Europakarten und stecken in 3HE-Baugruppenträgern im 19-Zoll-Rack. Das ModLab belegt zwei dieser Baugruppenträger, jeweils mit eigener Backplane.</p>
+              <p>Als Steckverbinder kommt der bewährte <strong>DIN 41612</strong> mit 64 Pins in den Reihen a und c zum Einsatz. Jeder Steckplatz bekommt exakt dieselben 64 Signale. Es gibt also keine besonderen Plätze für bestimmte Module, und welche Karte wo steckt, spielt für die Elektrik keine Rolle.</p>
+              <p>Eine Ausnahme gibt es aber doch: Die beiden äußersten Steckplätze jedes Baugruppenträgers gehören dem <a href="busabschluss.html">Busabschluss</a>. Der terminiert die differentiellen Busse, zeigt mit LEDs an, ob alle Schienen da sind, und führt die komplette Backplane 1:1 auf einen zweiten DIN-41612-Stecker an der Front. Dort lassen sich externe Platinen, Testadapter oder Prototypen anschließen.</p>
+              <h3>Einspeisung</h3>
+              <p>Ihren Strom bekommen die ModLab-Backplanes über steckbare <strong>DIN-41612-H15</strong>-Hochstromverbinder mit Kabelschuhen. Dadurch lässt sich das Rack für Transport oder Umbauten teilweise zerlegen, ohne dass man zum Lötkolben greifen muss. Beim alten FMAS im unteren Teil des Racks sind die Versorgungsleitungen dagegen noch direkt an die Backplanes gelötet.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="rails">
+            <h2 id="rails">Versorgungsschienen</h2>
+            <div class="prose">
+              <p>Die Backplane führt vier Versorgungsspannungen. Jede davon liegt auf <strong>vier Pins</strong>, damit auch ordentlich Strom fließen kann, und dazwischen gibt es reichlich GND-Pins.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Versorgungsschienen der Backplane</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Schiene</th>
+                    <th scope="col">Zweck</th>
+                    <th scope="col">Anmerkungen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>+5V</td>
+                    <td>Logik, Peripherie, 5V-Controller</td>
+                    <td>Netzteil bis 15A, abgesichert mit 10A. Die 3,3V erzeugt jedes Modul selbst per LDO (AP1117-33).</td>
+                  </tr>
+                  <tr>
+                    <td>+24V</td>
+                    <td>Leistungsstufen: Schaltregler, Stromquellen, Lasten</td>
+                    <td>Abgesichert mit 10A. Sehr stromhungrige Module sollen ihre eigene Versorgung mitbringen.</td>
+                  </tr>
+                  <tr>
+                    <td>+15V / −15V</td>
+                    <td>Analogschaltungen: OPVs, Verstärker, Signalerzeugung, negative Spannungen</td>
+                    <td>Die „symmetrischen 30V“. Zwei eigene Netzteile.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Die separate 24V-Schiene ist übrigens eine direkte Lehre aus der Arduino Workstation. Dort wurden die 24V „virtuell“ aus +12V und −12V gebildet, was für endlosen Ärger gesorgt hat. Im ModLab hat jede Spannung ihr eigenes Netzteil und alle teilen sich eine gemeinsame Masse.</p>
+              <p>Zusätzlich hat jedes Modul TVS-Dioden und Pufferkondensatoren an den Schienen, und der Busabschluss legt an beiden Enden der Backplane noch einmal nach. Zwischen Netzteilen und Backplane soll später außerdem der <a href="power-monitor.html">Power Monitor</a> sitzen, der jede Schiene filtert und Spannung und Strom misst.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="interfaces">
+            <h2 id="interfaces">Schnittstellen</h2>
+            <div class="prose">
+              <p>Neben der Versorgung bietet die Backplane eine ganze Sammlung an Schnittstellen. Längst nicht alle werden aktuell genutzt, aber sie sind da, wenn ein zukünftiges Modul sie braucht. So bleibt das System auch offen für Module mit AVRs, PICs oder anderen Controllern, solange sie zur Funktion passen.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Schnittstellen der Backplane</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Schnittstelle</th>
+                    <th scope="col">Details</th>
+                    <th scope="col">Verwendung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>CAN</td><td>differentiell, 1Mbit/s, SN65HVD232</td><td>Das Arbeitstier für die gesamte Modulkommunikation</td></tr>
+                  <tr><td>I²C Standard-Mode</td><td>100kHz</td><td>Reserve, kleine periodische Daten</td></tr>
+                  <tr><td>I²C Fast-Mode</td><td>400kHz</td><td>Reserve, kleine periodische Daten</td></tr>
+                  <tr><td>RS-485</td><td>MAX485E auf dem HBC</td><td>Reserviert für Experimente mit Modbus</td></tr>
+                  <tr><td>SPI (5V)</td><td>MOSI, MISO, SCK</td><td>5V-Controller und -Peripherie ohne Pegelwandler</td></tr>
+                  <tr><td>SPI (3,3V)</td><td>MOSI, MISO, SCK</td><td>3,3V-Bausteine</td></tr>
+                  <tr><td>CS0 – CS5</td><td>6 Chip-Selects</td><td>Auswahl der SPI-Teilnehmer</td></tr>
+                  <tr><td>IO0 – IO5</td><td>6 Allzweck-IOs, 5V-tauglich</td><td>Status-, Interrupt- und Fehlersignale</td></tr>
+                  <tr><td>DAC0 / DAC1</td><td>gepufferte Analogausgänge vom HBC</td><td>Geplantes Lautsprechermodul für Startmelodie und Warntöne</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <h3>CAN auf der Backplane</h3>
+              <p>CAN ist ein differentieller Bus: Die Information steckt in der Spannungsdifferenz zwischen CAN+ und CAN−, nicht im Pegel gegenüber Masse. Das macht den Bus ziemlich unempfindlich gegen Störungen, die auf beide Leitungen gleichzeitig wirken. Damit die Signale an den Enden nicht reflektiert werden, braucht der Bus an <em>beiden</em> physikalischen Enden einen 120Ω-Abschluss. Genau den liefern die beiden Busabschluss-Karten, und dasselbe gilt für RS-485.</p>
+              <p>Jedes Modul hat seinen eigenen SN65HVD232-Transceiver und hängt direkt an diesem einen Buspaar. Wie die Module darüber miteinander reden, steht auf der <a href="../modlab.html#communication">Übersichtsseite</a>.</p>
+              <h3>Pegel</h3>
+              <p>Die Allzweck-IOs auf der Backplane sind 5V-tauglich. Der HBC selbst arbeitet mit 3,3V und setzt deshalb 27 BSS138-MOSFETs als Pegelwandler ein, damit alle seine Bus-IOs zu 5V-Teilnehmern passen. Für SPI gibt es gleich zwei getrennte Busse, einen für 5V und einen für 3,3V, damit nicht jedes Modul eigene Pegelwandler braucht.</p>
+              <h3>Adressierung</h3>
+              <p>Eigentlich wollte ich die Steckplatzposition über die Backplane kodieren, damit jedes Modul automatisch weiß, wo es steckt. Das hätte aber zu viele Pins gekostet. Stattdessen hat jedes Modul einen <strong>2-Bit-Adressjumper</strong>. Die zwei Bit landen in den unteren Bits der CAN-Adresse, und so können bis zu vier Module desselben Typs gleichzeitig betrieben werden.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="pinout">
+            <h2 id="pinout">Pinbelegung</h2>
+            <div class="prose">
+              <p>Und hier die komplette Belegung des 64-poligen Steckers. Die Pins sind von 1 bis 32 durchnummeriert, jeweils in Reihe a und Reihe c. Man sieht schön die Aufteilung: oben 5V und 24V, in der Mitte die Busse und Signale, unten ±15V, und dazwischen immer wieder GND.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Pinbelegung DIN 41612, Reihen a und c</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Signal (a)</th>
+                    <th scope="col">Pin</th>
+                    <th scope="col">Signal (c)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>+5V</td><td>1</td><td>+5V</td></tr>
+                  <tr><td>+5V</td><td>2</td><td>+5V</td></tr>
+                  <tr><td>GND</td><td>3</td><td>GND</td></tr>
+                  <tr><td>GND</td><td>4</td><td>GND</td></tr>
+                  <tr><td>+24V</td><td>5</td><td>+24V</td></tr>
+                  <tr><td>+24V</td><td>6</td><td>+24V</td></tr>
+                  <tr><td>GND</td><td>7</td><td>GND</td></tr>
+                  <tr><td>GND</td><td>8</td><td>GND</td></tr>
+                  <tr><td>CAN+</td><td>9</td><td>CAN−</td></tr>
+                  <tr><td>IO0</td><td>10</td><td>IO1</td></tr>
+                  <tr><td>SDA_FM</td><td>11</td><td>SCL_FM</td></tr>
+                  <tr><td>IO2</td><td>12</td><td>IO3</td></tr>
+                  <tr><td>SDA</td><td>13</td><td>SCL</td></tr>
+                  <tr><td>IO4</td><td>14</td><td>IO5</td></tr>
+                  <tr><td>RS485+</td><td>15</td><td>RS485−</td></tr>
+                  <tr><td>GND</td><td>16</td><td>GND</td></tr>
+                  <tr><td>GND</td><td>17</td><td>GND</td></tr>
+                  <tr><td>DAC0</td><td>18</td><td>DAC1</td></tr>
+                  <tr><td>CS0</td><td>19</td><td>CS1</td></tr>
+                  <tr><td>MOSI1</td><td>20</td><td>MISO1</td></tr>
+                  <tr><td>CS2</td><td>21</td><td>CS3</td></tr>
+                  <tr><td>SCK1</td><td>22</td><td>SCK2</td></tr>
+                  <tr><td>CS4</td><td>23</td><td>CS5</td></tr>
+                  <tr><td>MOSI2</td><td>24</td><td>MISO2</td></tr>
+                  <tr><td>+15V</td><td>25</td><td>+15V</td></tr>
+                  <tr><td>+15V</td><td>26</td><td>+15V</td></tr>
+                  <tr><td>GND</td><td>27</td><td>GND</td></tr>
+                  <tr><td>GND</td><td>28</td><td>GND</td></tr>
+                  <tr><td>−15V</td><td>29</td><td>−15V</td></tr>
+                  <tr><td>−15V</td><td>30</td><td>−15V</td></tr>
+                  <tr><td>GND</td><td>31</td><td>GND</td></tr>
+                  <tr><td>GND</td><td>32</td><td>GND</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p><code>_FM</code> steht für den I²C-Bus im Fast-Mode, SDA und SCL ohne Zusatz sind der Standard-Mode. MOSI1, MISO1 und SCK1 gehören zum einen SPI-Bus, MOSI2, MISO2 und SCK2 zum anderen.</p>
+              <div class="callout" role="note">
+                <p><strong>Hinweis:</strong> In der technischen Dokumentation ist Pin c12 als „IO2“ eingetragen. Nach dem Nummerierungsschema muss das aber IO3 sein, und so steht es auch in der Tabelle oben.</p>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

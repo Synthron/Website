@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/modlab/modules/symmetric-power-supply.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Block diagram and list of schematic sheets
+          - Revision date V1 2022-11-27
+          - Filter values (470 nF / 5.6 nF, 1 k .. 22 k)
+          - Part details: TIP107 PNP / TIP102 NPN, shunts in 2512, G6K-2 is DPDT
+          - Pin map (TIM2 CH1..CH4, ADC CH0..CH3, PA7, address, CAN, I2C reserved)
+          - Calibration table per channel (ZERO, gain k, max values 1173 / 1270 / 1174 / 1270)
+          - ADC scale factors (0.52 / 0.52 / 0.6 / 0.0308), 5 samples averaged is mentioned
+          - Status codes of NACK as numbers (0x40, 0x01)
+          - TFT integration (page 0x03, 9-byte payload, 8 boxes per unit)
+          - Files section and separate credits block (credit is in the text as link)
+
+          Derived / own wording (please verify against the schematic):
+          - How the regulation works: op-amp compares output with setpoint and steers the adjust pin;
+            second op-amp watches the shunt and limits via the Darlington; CC LED lights in current limit.
+            Inferred from sheet names ("current limiter", "voltage adjustment", "current-limit LED").
+          - Which parts sit on the two SK 574 heatsinks: not stated in the source
+          - "Korrekturfaktoren buegeln aus, was V1 nicht perfekt macht": interpretation of the quote
+          - "kurz warten, bis sich alles eingeschwungen hat": source only says "short settling delay"
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Jeder Elektronik-Arbeitsplatz braucht früher oder später ein symmetrisches Netzteil, spätestens wenn OPV-Schaltungen, Audio oder andere Analog-Experimente auf dem Plan stehen. Das symmetrische Linearnetzteil des ModLab liefert 0 bis +12V und 0 bis −12V mit jeweils bis zu 1,2A, mit Konstantspannungs- und Konstantstrombetrieb pro Kanal und komplett digital eingestellt.</p>
+              <p>Die Schaltung basiert auf der bekannten <a href="https://hackaday.io/project/4154-bench-power-supply">„Bench Power Supply“ von The Big One auf Hackaday.io</a>. Für das ModLab habe ich sie an einiges angepasst:</p>
+              <ul>
+                <li>Neu ausgelegt für einen <strong>STM32</strong> mit 3,3V.</li>
+                <li>Der ursprüngliche DAC ist durch die <strong>PWM-Kanäle des STM32</strong> mit analogem Filter ersetzt.</li>
+                <li>Gemessen wird mit dem <strong>internen ADC</strong>.</li>
+                <li>Gesteuert wird alles per <strong>CAN</strong> vom Host Bus Controller.</li>
+              </ul>
+              <p>Wichtig dabei: Geregelt wird <strong>komplett analog</strong>. Der Mikrocontroller gibt nur die Referenzspannungen vor und liest die Messwerte zurück. Das Netzteil reagiert so schnell und bleibt stabil, auch wenn die Firmware gerade mit etwas anderem beschäftigt ist.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des symmetrischen Netzteils</caption>
+                <tbody>
+                  <tr><th scope="row">Positiver Kanal</th><td>0 … +12V, 0 … 1,2A</td></tr>
+                  <tr><th scope="row">Negativer Kanal</th><td>0 … −12V, 0 … 1,2A</td></tr>
+                  <tr><th scope="row">Betriebsarten</th><td>CV und CC pro Kanal, CC-LEDs</td></tr>
+                  <tr><th scope="row">Auflösung</th><td>10mV (Spannung), 1mA (Strom)</td></tr>
+                  <tr><th scope="row">Sollwerte</th><td>4 × 16-Bit-PWM mit Filter</td></tr>
+                  <tr><th scope="row">Ausgang</th><td>Relais (Omron G6K-2), per Software geschaltet</td></tr>
+                  <tr><th scope="row">CAN-Adresse</th><td><code>0x30</code> bis <code>0x33</code></td></tr>
+                  <tr><th scope="row">Platine</th><td>160 × 100mm, 4 Lagen, 197 Bauteile</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <h3>Leistungspfad</h3>
+              <p>Beide Kanäle sind spiegelbildlich aufgebaut. Im positiven Kanal fließt der Strom von +15V über einen 0,5Ω-Shunt, einen TIP107-Darlington als Strombegrenzer und schließlich durch einen <strong>LM317</strong> als Spannungsregler zum Ausgang. Der negative Kanal macht dasselbe mit einem TIP102 und einem <strong>LM337</strong> an −15V.</p>
+              <p>Der Clou: Der Adjust-Pin der Regler wird nicht über ein Poti, sondern von einem OPV gesteuert, der die Ausgangsspannung mit dem Sollwert vom Mikrocontroller vergleicht. Ein zweiter OPV überwacht den Spannungsabfall am Shunt und regelt über den Darlington den Strom herunter, sobald die eingestellte Grenze erreicht ist. Dann leuchtet auch die CC-LED des Kanals.</p>
+              <p>Bei voller Ausgangsspannung von 12V bleiben so etwa 3V Spielraum für Shunt, Darlington und Regler. Die Wärme landet auf zwei Fischer-Kühlkörpern SK 574.</p>
+              <h3>Sollwerte und Messung</h3>
+              <p>Die vier Sollwerte (V+, I+, V−, I−) kommen als 16-Bit-PWM aus dem STM32 und werden auf einem eigenen Schaltplanblatt durch mehrstufige RC-Filter zu sauberen Gleichspannungen geglättet. Zurück gehen vier Messsignale an den ADC: Spannung und Strom pro Kanal, letzterer über einen Strommessverstärker am Shunt.</p>
+              <p>Insgesamt kümmern sich fünf <strong>LM2902</strong> (je vier OPVs) um Regelung, Strommessung und Pufferung der Messwerte. Die OPVs laufen an ±15V, die Logik an einem eigenen 3,3V-LDO aus den 5V der Backplane.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware</h2>
+            <div class="prose">
+              <h3>PWM-Sollwerte</h3>
+              <p>Timer 2 läuft ohne Prescaler mit einer Periode von 65535, also mit 16 Bit Auflösung bei etwa 1,1kHz. Die Filter machen daraus eine Gleichspannung. Jeder Kanal hat dabei einen eigenen <strong>Nullpunkt</strong> und eine eigene <strong>Verstärkung</strong>, die ich an der echten Hardware ausgemessen habe:</p>
+            </div>
+            <pre class="code-block"><code>CCR = Wert * k + ZERO</code></pre>
+            <div class="prose">
+              <p>In der Projektdokumentation steht dazu ganz ehrlich, dass „einige Probleme aktuell in Software statt in Hardware behoben werden“. Genau hier passiert das: Die Korrekturfaktoren pro Kanal bügeln aus, was die Hardware von V1 nicht ganz perfekt macht.</p>
+              <h3>Messung und Hauptschleife</h3>
+              <p>Jeder ADC-Kanal wird fünfmal abgetastet, gemittelt und mit einem linearen Faktor skaliert. Die Hauptschleife ist herrlich unspektakulär:</p>
+              <ol>
+                <li>Ausgangsrelais entsprechend dem Ausgangszustand schalten.</li>
+                <li>Alle vier PWM-Sollwerte schreiben.</li>
+                <li>Kurz warten, bis sich alles eingeschwungen hat.</li>
+                <li>Alle vier ADC-Kanäle lesen und skalieren.</li>
+              </ol>
+              <p>Die CAN-Befehle werden nebenher im Empfangs-Interrupt abgearbeitet.</p>
+              <h3>CAN-Schnittstelle</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">CAN-Befehle des symmetrischen Netzteils</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Befehl</th>
+                    <th scope="col">Index</th>
+                    <th scope="col">Bedeutung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Set 16 Bit (<code>0x14</code>)</td><td><code>0x10</code> / <code>0x11</code></td><td>Positive Spannung [10mV] / Strombegrenzung [mA]</td></tr>
+                  <tr><td>Set 16 Bit (<code>0x14</code>)</td><td><code>0x12</code> / <code>0x13</code></td><td>Negative Spannung [10mV, Betrag] / Strombegrenzung [mA]</td></tr>
+                  <tr><td>Get 16 Bit (<code>0x15</code>)</td><td><code>0x20</code> / <code>0x21</code></td><td>Gemessene positive Spannung / Strom</td></tr>
+                  <tr><td>Get 16 Bit (<code>0x15</code>)</td><td><code>0x22</code> / <code>0x23</code></td><td>Gemessene negative Spannung / Strom</td></tr>
+                  <tr><td>Ausgang ein / aus (<code>0x40</code> / <code>0x41</code>)</td><td>–</td><td>Ausgangsrelais schließen / öffnen</td></tr>
+                  <tr><td>Ping (<code>0x05</code>)</td><td>–</td><td>Modulsuche</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Unbekannte Befehle quittiert das Modul mit einem NACK und dem Status „unbekannter Befehl“, ungültige Indizes mit „Index passt nicht“.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>V1 ist gebaut und läuft. In V2 sind der negative Kanal und die CC-LEDs korrigiert. Die Bauteilwerte sind dabei identisch geblieben, die Fehler steckten in Verdrahtung und Layout. V2 ist entworfen, Review, Bestellung und Bestückung stehen noch aus.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

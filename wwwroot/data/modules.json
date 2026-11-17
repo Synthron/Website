@@ -28,5 +28,125 @@
     "status": "in Arbeit",
     "date": "2026-11",
     "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "modlab",
+    "id": "backplane",
+    "title": {
+      "de": "DRAFT Backplane",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Aufbau, Versorgungsschienen, Schnittstellen und Pinbelegung der ModLab-Backplane",
+      "en": "TODO"
+    },
+    "status": "fertig",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "modlab",
+    "id": "busabschluss",
+    "title": {
+      "de": "DRAFT Busabschluss",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Busterminierung, Schienenanzeige und Bus-Verlängerung an beiden Enden der Backplane",
+      "en": "TODO"
+    },
+    "status": "fertig",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "modlab",
+    "id": "diodentester",
+    "title": {
+      "de": "DRAFT Diodentester",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Flussspannung und Kennlinie von Dioden und LEDs bei bis zu 15 Prüfströmen",
+      "en": "TODO"
+    },
+    "status": "fertig",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "modlab",
+    "id": "sym-netzteil",
+    "title": {
+      "de": "DRAFT Symmetrisches Linearnetzteil",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Symmetrisches Labornetzteil mit 0 bis ±12V und bis zu 1,2A pro Kanal",
+      "en": "TODO"
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "modlab",
+    "id": "schaltnetzteil",
+    "title": {
+      "de": "DRAFT Schaltnetzteil",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Schaltnetzteil mit 2 bis 22V und bis zu 5A auf Basis des TL494",
+      "en": "TODO"
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "modlab",
+    "id": "funktionsgenerator",
+    "title": {
+      "de": "DRAFT DDS-Funktionsgenerator",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "DDS-Funktionsgenerator mit AD9833 für Sinus, Dreieck und Rechteck bis 12,5MHz",
+      "en": "TODO"
+    },
+    "status": "fertig",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "modlab",
+    "id": "last",
+    "title": {
+      "de": "DRAFT Elektronische Last",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Zweikanalige Konstantstromlast mit Temperaturüberwachung und Lüftersteuerung",
+      "en": "TODO"
+    },
+    "status": "fertig",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "modlab",
+    "id": "power-monitor",
+    "title": {
+      "de": "DRAFT Power Monitor",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Filterung und Überwachung der vier Versorgungsschienen des Racks",
+      "en": "TODO"
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
   }
 ]

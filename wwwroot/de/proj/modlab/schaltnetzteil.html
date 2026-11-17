@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/modlab/modules/smps.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Block diagram and list of schematic sheets
+          - Part details: LL4148 flyback diode at the relay, CAN common-mode choke and TVS, TVS parts per rail, heatsink, 39 k divider
+          - Pin map (TIM2 CH1/CH2, ADC CH0/CH1, PA7, address, CAN, I2C reserved)
+          - Code note: comments call CH1 "Volt" / CH2 "Amp", but setters write voltage to CCR2 and current to CCR1
+          - Measurement scaling formulas (/ 168.294 and / 821.177)
+          - CAN setpoints arrive in 10 mV / 10 mA and are multiplied by 10 internally
+          - TFT integration (page 0x04, 5-byte payload, 4 boxes per unit)
+          - Files section (KiCad, schematic PDF, front panel, firmware)
+
+          Derived / own wording (please verify):
+          - L79L05 makes -5 V from -15 V: source only says "via -5 V regulator"
+          - BD140 "ansteuern" and relay driven by BSS138: from the sheet list, check the schematic
+          - Shunt "mindestens 3W": source says "3 W+"
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Das <a href="sym-netzteil.html">symmetrische Linearnetzteil</a> ist bei etwa 1,2A am Ende. Für alles, was ordentlich Strom zieht, hat das ModLab deshalb ein <strong>Schaltnetzteil</strong>. Es macht aus der 24V-Schiene der Backplane 2 bis 22V bei bis zu 5A und ist damit das Arbeitstier unter den Netzteilen.</p>
+              <p>Die wichtigste Designentscheidung: <strong>keine Regelschleife in Software</strong>. Die komplette Regelung übernimmt ein klassischer <strong>TL494</strong>-PWM-Controller. Der STM32 liefert nur die Referenzspannungen für Ausgangsspannung und Strombegrenzung und misst die tatsächlichen Werte. So spare ich mir einen komplizierten und womöglich langsamen und ungenauen PID-Regler in Software, und die Schaltung bleibt übersichtlich.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des Schaltnetzteils</caption>
+                <tbody>
+                  <tr><th scope="row">Topologie</th><td>Abwärtswandler (Buck) mit TL494, 24V Eingang</td></tr>
+                  <tr><th scope="row">Ausgangsspannung</th><td>2 … 22V, 10mV Auflösung</td></tr>
+                  <tr><th scope="row">Ausgangsstrom</th><td>0 … 5A, 10mA Auflösung</td></tr>
+                  <tr><th scope="row">Betriebsarten</th><td>CV und CC, in Hardware geregelt</td></tr>
+                  <tr><th scope="row">Sollwerte</th><td>2 × 16-Bit-PWM mit Filter</td></tr>
+                  <tr><th scope="row">Ausgang</th><td>Leistungsrelais (Panasonic ADW11)</td></tr>
+                  <tr><th scope="row">CAN-Adresse</th><td><code>0x3C</code> bis <code>0x3F</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <h3>Der Leistungsteil</h3>
+              <p>Der Leistungsteil ist ein ganz klassischer Abwärtswandler. Ein <strong>TIP3055</strong> schaltet die 24V, angesteuert über einen BD140. Dahinter folgen eine 150µH-Spule, eine <strong>MBR745</strong>-Schottky-Diode als Freilaufdiode und 220µF Ausgangskapazität. Bevor der Strom am Ausgang ankommt, läuft er noch durch einen 0,1Ω-Shunt und das Ausgangsrelais.</p>
+              <p>Der Shunt muss dabei einiges aushalten: Bei 5A fallen an ihm 0,5V ab, und er setzt 2,5W in Wärme um. Deshalb ist er mit mindestens 3W ausgelegt.</p>
+              <h3>Regelung</h3>
+              <p>Der TL494 hat zwei interne Fehlerverstärker, und genau die nutze ich für CV und CC:</p>
+              <ul>
+                <li>Die <strong>Spannung</strong> kommt über einen Spannungsteiler vom Ausgang zurück.</li>
+                <li>Der <strong>Strom</strong> wird über den Shunt mit einem LM2902 als Differenzverstärker gemessen.</li>
+              </ul>
+              <p>Beide Signale werden im TL494 mit den Sollwerten vom STM32 verglichen. Die Schleife, die das kleinere Tastverhältnis fordert, gewinnt. Dadurch geht das Netzteil ganz von selbst und sanft von Konstantspannung in Konstantstrom über.</p>
+              <p>Die Sollwerte kommen wie bei den anderen Modulen als PWM aus dem STM32 und werden von einem LM2904 gefiltert und gepuffert. Für die OPVs erzeugt ein L79L05 aus −15V eine lokale −5V-Versorgung. Am Ausgang sitzt ein Panasonic ADW11 als Leistungsrelais, angesteuert über einen BSS138.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware</h2>
+            <div class="prose">
+              <p>Die Sollwerte kommen per CAN in 10mV- bzw. 10mA-Schritten an und werden in Timer-Werte umgerechnet. Dabei wird die Spannung in Software auf 2 bis 22V und der Strom auf maximal 5A begrenzt:</p>
+            </div>
+            <pre class="code-block"><code>CCR_U = 4096 + (U_mV - 2000) / 1000 * 2631.58     (2000 &lt;= U_mV &lt;= 22000)
+CCR_I = I_mA / 1000 * 12800                        (I_mA &lt;= 5000)</code></pre>
+            <div class="prose">
+              <p>Gemessen wird nach 1ms Einschwingzeit mit zehn Abtastungen im Abstand von 100µs, die anschließend gemittelt werden. Die Hauptschleife sieht entsprechend schlicht aus: Relais schalten, Sollwerte umrechnen und schreiben, 1ms warten, Spannung und Strom messen. Und dann wieder von vorn.</p>
+              <h3>CAN-Schnittstelle</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">CAN-Befehle des Schaltnetzteils</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Befehl</th>
+                    <th scope="col">Index</th>
+                    <th scope="col">Bedeutung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Set 16 Bit (<code>0x14</code>)</td><td><code>0x10</code></td><td>Spannung [10mV]</td></tr>
+                  <tr><td>Set 16 Bit (<code>0x14</code>)</td><td><code>0x11</code></td><td>Strombegrenzung [10mA]</td></tr>
+                  <tr><td>Get 16 Bit (<code>0x15</code>)</td><td><code>0x20</code></td><td>Gemessene Spannung [10mV]</td></tr>
+                  <tr><td>Get 16 Bit (<code>0x15</code>)</td><td><code>0x21</code></td><td>Gemessener Strom [10mA]</td></tr>
+                  <tr><td>Ausgang ein / aus (<code>0x40</code> / <code>0x41</code>)</td><td>–</td><td>Ausgangsrelais schließen / öffnen</td></tr>
+                  <tr><td>Ping (<code>0x05</code>)</td><td>–</td><td>Modulsuche</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>Rev 1 erreicht die angepeilten Daten, braucht aber trotzdem ein Redesign, um ein paar Fehler auszubügeln. Der Footprint des Relais ist bereits korrigiert, und die Spannungsteiler im Feedback liefern jetzt die richtigen Signalpegel. Review, Bestellung und Bestückung der nächsten Revision stehen noch aus.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

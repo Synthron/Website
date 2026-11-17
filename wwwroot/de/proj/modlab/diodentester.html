@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/modlab/modules/diode-tester.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Current source schematic doc/pictures/cc_source.png and concept flowchart doc/pictures/Pruefvorgang.png
+          - Block diagram, list of board sections, measurement sequence diagram
+          - Kirchhoff formula as formula (only described in the text)
+          - Part details: BSS138 per source, 4 x 5.6 V Zener, BSP170P (V1), reed relay Standex-Meder CO 3570.1331.051 (V2), 2-pin DUT header
+          - Pin map (PA0, PA3..PA6, PB3/PB4, CAN, I2C)
+          - Table mask / current / index (0x10..0x1E per current)
+          - Mode is sent as 1..4 over CAN, firmware subtracts 1
+          - I2C wired but reserved
+          - Build details (CPUTAPID workaround for clone chips, 12 MHz x 6)
+          - TFT integration (page 0x01, testers r0..r3, 4-byte payload)
+          - Files section (KiCad V1/V2, schematic PDF, front panel, firmware)
+
+          Derived / own wording (please verify):
+          - "Fuer Dioden und LEDs reicht das voellig": source says "enough for any LED colour"
+          - "deutlich ambitionierter geplant": own framing of the early concept
+          - Unit [10mV] in the formula block taken from "result is in 10 mV steps"
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Der Diodentester ist simpel im Konzept und im Alltag unglaublich praktisch. Diode oder LED vorne einstecken, auf dem Touchscreen einen Strom wählen, und das ModLab zeigt die Flussspannung an. Fertig.</p>
+              <p>Weil sich die vier Stromquellen auf der Karte <strong>kombinieren</strong> lassen, kann das Modul aber noch mehr: Es fährt in einem Durchlauf bis zu 15 verschiedene Ströme ab und liefert so eine grobe Kennlinie des Prüflings.</p>
+              <p>Im Grunde ist das eine moderne Version des LED-Testers aus dem FMAS, der damals aus einer Stromquelle und einem Voltmeter bestand. Jetzt eben digital gesteuert und am Bus.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des Diodentesters</caption>
+                <tbody>
+                  <tr><th scope="row">Stromquellen</th><td>4 × Konstantstrom: ca. 2,2mA, 4,9mA, 9,8mA, 19,6mA</td></tr>
+                  <tr><th scope="row">Prüfströme</th><td>15 Kombinationen von 2mA bis 37mA</td></tr>
+                  <tr><th scope="row">Messbereich</th><td>ca. 0 … 9,7V in 10mV-Schritten</td></tr>
+                  <tr><th scope="row">Modi</th><td>Einzelwert, grobe, mittlere und feine Kennlinie</td></tr>
+                  <tr><th scope="row">Controller</th><td>STM32F103C8T6, 72MHz</td></tr>
+                  <tr><th scope="row">CAN-Adresse</th><td><code>0x20</code> bis <code>0x23</code></td></tr>
+                  <tr><th scope="row">Platine</th><td>160 × 100mm, 2 Lagen</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <h3>Die Stromquellen</h3>
+              <p>Jede der vier Quellen ist eine klassische Transistor-Konstantstromquelle mit einer 5,6V-Z-Diode als Referenz an +15V. Am Emitterwiderstand liegt dann die Z-Spannung abzüglich der Basis-Emitter-Spannung an, also 5,6V − 0,7V = 4,9V. Der Strom ergibt sich damit ganz einfach aus 4,9V geteilt durch den Widerstand:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Widerstände und Ströme der Stromquellen</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Quelle</th>
+                    <th scope="col">Widerstand</th>
+                    <th scope="col">Strom</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>2mA</td><td>2,2kΩ</td><td>2,22mA</td></tr>
+                  <tr><td>5mA</td><td>1kΩ</td><td>4,9mA</td></tr>
+                  <tr><td>10mA</td><td>499Ω</td><td>9,81mA</td></tr>
+                  <tr><td>20mA</td><td>2 × 499Ω parallel</td><td>19,63mA</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Alle vier Ausgänge hängen am selben Knoten, die Ströme <strong>addieren</strong> sich also, wenn mehrere Quellen gleichzeitig eingeschaltet sind. Der Prüfling sitzt zwischen diesem Knoten und Masse. Mit den +15V bleiben noch etwa 9V Spannungsreserve übrig, und das reicht für jede LED-Farbe, auch für Blau und Weiß.</p>
+              <p>Die Spannung am Prüfling wird über einen LM2904 als Messverstärker abgegriffen und vom 12-Bit-ADC des STM32 gemessen. Für die Stromquellen selbst kommen BCX53-Transistoren zum Einsatz.</p>
+              <h3>Von V1 zu V2</h3>
+              <p>In V1 wurden die Quellen mit P-Kanal-MOSFETs geschaltet. Die haben aus irgendeinem seltsamen Grund einfach nicht funktioniert. In V2 habe ich sie kurzerhand durch kleine <strong>Reed-Relais</strong> aus der Bastelkiste ersetzt. Außerdem hat V2 endlich einen ordentlichen 2×2-Adressjumper bekommen.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware</h2>
+            <div class="prose">
+              <h3>Stromauswahl</h3>
+              <p>Der Prüfstrom ist intern eine 4-Bit-Maske: Bit 0 steht für 2mA, Bit 1 für 5mA, Bit 2 für 10mA und Bit 3 für 20mA. Die Masken 1 bis 15 ergeben dann die 15 möglichen Ströme 2, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35 und 37mA.</p>
+              <h3>Messablauf</h3>
+              <p>Der HBC stellt Start- und Endstrom sowie den Modus ein und gibt dann mit „Ausgang einschalten“ den Startschuss. Je nach Modus misst das Modul dann:</p>
+              <ul>
+                <li><strong>Einzelwert:</strong> nur beim Startstrom.</li>
+                <li><strong>Grobe Kennlinie:</strong> nur mit den einzelnen Hardware-Quellen, also 2, 5, 10 und 20mA.</li>
+                <li><strong>Mittlere Kennlinie:</strong> jeden zweiten möglichen Strom zwischen Start und Ende.</li>
+                <li><strong>Feine Kennlinie:</strong> jeden möglichen Strom zwischen Start und Ende.</li>
+              </ul>
+              <p>Für jeden Schritt werden die Quellen umgeschaltet, 100ms gewartet und dann zehn ADC-Werte gemittelt. Am Ende werden alle Quellen abgeschaltet und das Modul schickt von sich aus die Nachricht „Messung fertig“ an den HBC. Der liest daraufhin alle 15 Ergebnisse aus und füllt damit die Tabelle auf dem Display.</p>
+              <p>Die Umrechnung des gemittelten ADC-Werts in die Spannung ist eine einfache lineare Formel mit etwa 420 Counts pro Volt und einer kleinen Offset-Korrektur:</p>
+            </div>
+            <pre class="code-block"><code>U_DUT [10mV] = (ADC + 20) * 100 / 420</code></pre>
+            <div class="prose">
+              <h3>CAN-Schnittstelle</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">CAN-Befehle des Diodentesters</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Befehl</th>
+                    <th scope="col">Index</th>
+                    <th scope="col">Bedeutung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Set 8 Bit (<code>0x10</code>)</td><td><code>0x20</code></td><td>Startstrom (Index 0–14)</td></tr>
+                  <tr><td>Set 8 Bit (<code>0x10</code>)</td><td><code>0x21</code></td><td>Endstrom (Index 0–14)</td></tr>
+                  <tr><td>Set Mode (<code>0x60</code>)</td><td>–</td><td>Betriebsmodus</td></tr>
+                  <tr><td>Ausgang ein (<code>0x40</code>)</td><td>–</td><td>Messung starten</td></tr>
+                  <tr><td>Get 16 Bit (<code>0x15</code>)</td><td><code>0x10</code>…<code>0x1E</code></td><td>Spannung bei 2 … 37mA</td></tr>
+                  <tr><td>Ping (<code>0x05</code>)</td><td>–</td><td>Modulsuche</td></tr>
+                  <tr><td>Auto (<code>0x710</code>)</td><td>–</td><td><code>0x10</code> = Messung fertig</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="concept">
+            <h2 id="concept">Das ursprüngliche Konzept</h2>
+            <div class="prose">
+              <p>Ganz ursprünglich war der Diodentester deutlich ambitionierter geplant, nämlich mit einer Prüfspannung, die automatisch den Bereich wechselt. Zuerst 5V anlegen. Misst der ADC mehr als 4V, auf 15V umschalten, bei mehr als 14V auf 24V, und bei mehr als 23V „Überlast“ melden. Liest der ADC dagegen 0V, gibt es die Meldung „Kurzschluss“.</p>
+              <p>In der V3-Hardware ist daraus die feste 15V-Versorgung geworden. Für Dioden und LEDs reicht das völlig, und die Schaltung bleibt schön einfach.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>V1 und V2 sind gebaut, die Firmware mit CAN, Messablauf und ADC ist fertig.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

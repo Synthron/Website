@@ -134,6 +134,7 @@
               </ul>
               <p>Dazu kommt eine ganze Reihe an Schnittstellen. Das Arbeitstier ist <strong>CAN</strong> mit 1Mbit/s. Außerdem gibt es I²C im Standard- und im Fast-Mode, RS-485 für spätere Modbus-Experimente, je einen SPI-Bus für 5V und 3,3V mit sechs Chip-Selects, sechs 5V-taugliche Allzweck-IOs für Status- und Interruptsignale und zwei gepufferte DAC-Ausgänge vom HBC, die später mal ein Lautsprechermodul füttern sollen. Damit bleibt das System auch offen für Module mit AVRs, PICs oder anderen Controllern, solange sie zur Funktion passen.</p>
               <p>Eine Slot-Adressierung über die Backplane hatte ich auch überlegt, aber das hätte zu viele Pins gekostet. Stattdessen hat jedes Modul einen 2-Bit-Adressjumper. An beiden Enden der Backplane sitzt je eine Busabschluss-Karte mit 120Ω-Terminierung für CAN und RS-485.</p>
+              <p>Mehr zum Aufbau und die komplette Pinbelegung gibt es auf der eigenen Seite zur <a href="modlab/backplane.html">Backplane</a>.</p>
               <h3>Gemeinsame Bausteine</h3>
               <p>Alle V3-Platinen sind in KiCad als 160 × 100mm Europakarten entworfen. Damit nicht jedes Modul das Rad neu erfindet, teilen sie sich einen Satz an Grundbausteinen:</p>
               <ul>
@@ -170,49 +171,49 @@
                     <td>V1 gebaut, V2 entworfen</td>
                   </tr>
                   <tr>
-                    <td>Busabschluss</td>
+                    <td><a href="modlab/busabschluss.html">Busabschluss</a></td>
                     <td>Busterminierung, LEDs für die Schienen, Bus-Stecker an der Front</td>
                     <td>120Ω für CAN und RS-485, TVS</td>
                     <td>–</td>
                     <td>gebaut</td>
                   </tr>
                   <tr>
-                    <td>Diodentester</td>
+                    <td><a href="modlab/diodentester.html">Diodentester</a></td>
                     <td>Flussspannung und grobe Kennlinie von Dioden und LEDs</td>
                     <td>4 Stromquellen, 15 Ströme von 2–37mA</td>
                     <td><code>0x20</code></td>
                     <td>V2 gebaut</td>
                   </tr>
                   <tr>
-                    <td>Symmetrisches Linearnetzteil</td>
+                    <td><a href="modlab/sym-netzteil.html">Symmetrisches Linearnetzteil</a></td>
                     <td>Labornetzteil mit zwei Kanälen</td>
                     <td>0…±12V, 0…1,2A, CV/CC, 10mV-Schritte</td>
                     <td><code>0x30</code></td>
                     <td>V1 gebaut, V2 entworfen</td>
                   </tr>
                   <tr>
-                    <td>Schaltnetzteil</td>
+                    <td><a href="modlab/schaltnetzteil.html">Schaltnetzteil</a></td>
                     <td>Labornetzteil für höhere Ströme</td>
                     <td>2–22V, 0–5A, CV/CC, TL494</td>
                     <td><code>0x3C</code></td>
                     <td>Rev 1 gebaut, Redesign geplant</td>
                   </tr>
                   <tr>
-                    <td>DDS-Funktionsgenerator</td>
+                    <td><a href="modlab/funktionsgenerator.html">DDS-Funktionsgenerator</a></td>
                     <td>Funktionsgenerator</td>
                     <td>AD9833, bis 12,5MHz, Sinus/Dreieck/Rechteck</td>
                     <td><code>0x40</code></td>
                     <td>gebaut</td>
                   </tr>
                   <tr>
-                    <td>Elektronische Last</td>
+                    <td><a href="modlab/last.html">Elektronische Last</a></td>
                     <td>Zweikanalige Konstantstromlast</td>
                     <td>2 × IRFP044N, 30W-Shunts, temperaturgeregelter Lüfter</td>
                     <td><code>0x50</code></td>
                     <td>gebaut</td>
                   </tr>
                   <tr>
-                    <td>Power Monitor</td>
+                    <td><a href="modlab/power-monitor.html">Power Monitor</a></td>
                     <td>Filterung und Überwachung der Rack-Versorgung</td>
                     <td>4 Schienen, LC-Filter, ACS723-Stromsensoren</td>
                     <td>(I²C)</td>
