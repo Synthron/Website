@@ -15,6 +15,96 @@
     "image": "assets/img/placeholder.svg"
   },
   {
+    "parent": "synplc",
+    "id": "cpu-piggyback",
+    "title": {
+      "de": "DRAFT CPU PiggyBack",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Vier galvanisch getrennte digitale Ein- und Ausgänge direkt an der CPU",
+      "en": "TODO"
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "synplc",
+    "id": "do8",
+    "title": {
+      "de": "DRAFT DO8 – Digitale Ausgänge",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Acht galvanisch getrennte 24V-Ausgänge mit je 0,5A und Rückmeldung",
+      "en": "TODO"
+    },
+    "status": "fertig",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "synplc",
+    "id": "di8",
+    "title": {
+      "de": "DRAFT DI8 – Digitale Eingänge",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Acht 24V-Eingänge in zwei galvanisch getrennten Vierergruppen",
+      "en": "TODO"
+    },
+    "status": "fertig",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "synplc",
+    "id": "ao4",
+    "title": {
+      "de": "DRAFT AO4 – Analoge Ausgänge",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Vier galvanisch getrennte Analogausgänge für 0–10V oder 0–20mA",
+      "en": "TODO"
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "synplc",
+    "id": "ai4",
+    "title": {
+      "de": "DRAFT AI4 – Analoge Eingänge",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Vier galvanisch getrennte Analogeingänge für 0–10V oder 0–20mA mit 16-Bit-ADC",
+      "en": "TODO"
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "synplc",
+    "id": "xt4",
+    "title": {
+      "de": "DRAFT XT4 – Triac-Interface",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Vier Triac-Ausgänge für 230V-Lasten mit Nulldurchgangserkennung",
+      "en": "TODO"
+    },
+    "status": "in Arbeit",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
     "parent": "modlab",
     "id": "host",
     "title": {

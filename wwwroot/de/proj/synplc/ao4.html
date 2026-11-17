@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/synplc/modules/ao4.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Block diagram (Mermaid)
+          - Reference designators and the channel network values (62k / 43k, 100 R / 47 R, 10k, 100k, 100 nF, 270 pF)
+          - Full pin map, schematic / silkscreen dates, build details (AO.ioc, convert.sh)
+          - LTspice details (.dc V2 0 5 0.1, 270 pF / 100 R / 47 R)
+          - Files section
+
+          Derived / own wording (please verify):
+          - CV / CC path split is inferred in the source from labels, relays and the LTspice model
+          - Units 1 mV / 1 uA per LSB are inferred in the source; step sizes 2.5 mV / 5 uA are computed there
+          - Tech note claims "16-bit output resolution"; the page says the 12-bit DAC limits the real resolution
+          - Supply: schematic label +24 V vs. documentation "at least 15 V" - both mentioned
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Das AO4 liefert vier analoge Sollwerte für alles, was einen genormten <strong>0–10V</strong>- oder <strong>0–20mA</strong>-Eingang hat: Frequenzumrichter, Ventile, Dimmer, Heizungsregler und so weiter. Jeder Kanal lässt sich einzeln zwischen Spannung (CV) und Strom (CC) umschalten, und zwar ganz klassisch mit einem kleinen <strong>Signalrelais</strong>.</p>
+              <p>Der <strong>komplette Analogteil ist galvanisch getrennt</strong>. Der STM32 sitzt auf der Busseite und spricht über einen <strong>ADuM1250</strong>-I²C-Isolator mit dem DAC. DAC, OPVs und Relais laufen an der externen Analogversorgung mit eigener Masse. Die 5V für den DAC erzeugt ein L78L05 direkt aus dieser Versorgung.</p>
+              <p>Bei den Analogmodulen hat V2 gegenüber V1 übrigens am meisten zugelegt. Bevor es an die Platine ging, habe ich die Ausgangsstufe in LTspice simuliert.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des AO4</caption>
+                <tbody>
+                  <tr><th scope="row">Funktion</th><td>4 × Analogausgang</td></tr>
+                  <tr><th scope="row">Modi</th><td>pro Kanal 0–10V (CV) oder 0–20mA (CC), per Relais umgeschaltet</td></tr>
+                  <tr><th scope="row">DAC</th><td>Microchip MCP4728, 4 Kanäle, 12 Bit, I²C</td></tr>
+                  <tr><th scope="row">Trennung</th><td>ADuM1250, laut Schaltplan 750V AC Luft- und Kriechstrecke, mindestens 1,5mm</td></tr>
+                  <tr><th scope="row">Ausgangsstufen</th><td>4 × LM358</td></tr>
+                  <tr><th scope="row">Relais</th><td>4 × Omron G6K-2</td></tr>
+                  <tr><th scope="row">Feldversorgung</th><td>extern und getrennt, im Schaltplan als +24V bezeichnet, laut Doku mindestens 15V</td></tr>
+                  <tr><th scope="row">Anzeige</th><td>4 LEDs „Kanal aktiv“</td></tr>
+                  <tr><th scope="row">Controller</th><td>STM32F103C8T6, 72MHz</td></tr>
+                  <tr><th scope="row">Adresse</th><td><code>0x60</code> bis <code>0x7F</code></td></tr>
+                  <tr><th scope="row">Platine</th><td>100 × 77mm, 4 Lagen, V2.0</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <p>Jeder Kanal hat zwei Wege vom DAC zur Klemme: einen Spannungsverstärker für den CV-Betrieb und einen Spannungs-Strom-Wandler für den CC-Betrieb, beide mit einem LM358 aufgebaut. Ein <strong>G6K-2</strong>-Relais entscheidet, welcher der beiden Wege an der Ausgangsklemme hängt. Getrieben werden die Relais von je einem BC846 mit Freilaufdiode. Vor der Klemme sitzt noch eine <strong>BAV199</strong> als Schutz.</p>
+              <p>Die Analogversorgung kommt über eine eigene Klemme und ist mit einer 1N4001 gegen Verpolung und einer SM6T36A gegen Überspannung geschützt. Alles andere auf der Busseite ist wieder der übliche Baukasten aus MAX485E, SN65HVD232, AP1117-33 und DIP-Schalter.</p>
+              <h3>Simulation</h3>
+              <p>Im LTspice-Modell steckt ein Kanal mit zwei LT1013-OPVs, 24V-Versorgung und denselben Bauteilwerten wie auf der Platine. Die DAC-Spannung wird von 0 bis 5V durchgefahren. Im Modell steht auch direkt die Notiz, zwischen CC und CV umzuschalten.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware</h2>
+            <div class="prose">
+              <p>Beim Start bildet das Modul seine Adresse <code>0x60 | DIP</code>, schaltet alle Relais und LEDs aus und setzt den RS-485-Transceiver auf Empfang. Danach rechnet die Hauptschleife <strong>alle 100ms</strong> die vier Kanalregister um und schreibt sie mit einem einzigen I²C-Transfer („Fast Write“) in den MCP4728.</p>
+              <p>Busanfragen landen im UART-Interrupt. Als kleine Debug-Hilfe blinkt LED 1 bei jedem empfangenen Byte.</p>
+              <h3>Skalierung</h3>
+              <p>Die CPU schreibt pro Kanal einen 16-Bit-Wert, die Firmware rechnet ihn in einen 12-Bit-DAC-Wert um:</p>
+            </div>
+            <pre class="code-block"><code>CV-Modus:  DAC = Wert / 2,5
+CC-Modus:  DAC = Wert / 5</code></pre>
+            <div class="prose">
+              <p>Mit dem Bereich 0–10000 aus der CPU-Bibliothek ergibt Vollausschlag im CV-Modus einen DAC-Wert von 4000. Im CC-Modus kommt man mit 20000 auf denselben Wert. Ein Digit entspricht also 1mV bzw. 1µA. Die tatsächliche Schrittweite gibt aber der 12-Bit-DAC vor, die liegt bei etwa 2,5mV bzw. 5µA. Der 16-Bit-Wert ist nur die Registerbreite auf dem Bus.</p>
+              <h3>Register</h3>
+              <p>Die vier Kanäle liegen in den 16-Bit-Registern <code>0x4</code> bis <code>0x7</code> (geschrieben mit <code>0x64</code> bis <code>0x67</code>, LSB zuerst), dazu kommt wie überall das Fehlerregister <code>0xF</code>. Kanal 1 von AO4 #0 auf 5000 setzen:</p>
+            </div>
+            <pre class="code-block"><code>CPU → 5A 60 64 88 13 00
+AO  → C0 05</code></pre>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>V2.0 ist gebaut und steckt im Test. Die CPU fährt im aktuellen Testprogramm schon fleißig Rampen auf allen vier Kanälen. Zwei Dinge fehlen aber noch: Die CV/CC-Umschaltung ist in der Firmware zwar vorgesehen, lässt sich über den Bus aber <strong>noch nicht setzen</strong>. Alle Kanäle laufen also im Spannungsmodus, und die Relais bleiben in Ruhe. Und die Kanal-LEDs zeigen noch nicht den Zustand der Kanäle an, der Code dafür ist noch auskommentiert.</p>
+              <p>Für das Gehäuse gibt es eine Frontplatte mit vier LEDs.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

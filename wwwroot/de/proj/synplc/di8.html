@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/synplc/modules/di8.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Block diagram (Mermaid)
+          - Reference designators and resistor values per position (2.2k / 10k / 47k, 220 R LED resistors), termination values
+          - Full pin map, silkscreen date 18.06.20, build details (Di.ioc)
+          - Files section
+
+          Derived / own wording (please verify):
+          - Function of the individual parts in the current limiter is inferred in the source; the page only lists them
+          - "Taster, Endschalter, Sensoren oder Relaiskontakte" is translated from the source list
+          - Re-soldered dead channels: from the overview roadmap (index.md)
+          - Order of the parts in the input stage follows the source diagram (inferred there)
+          - "Versorgung schwaechelt" and the purpose of the 1 nF / 470 nF filter caps are my reasoning
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Das DI8 ist das Gegenstück zum <a href="do8.html">DO8</a> und liest acht 24V-Signale ein, zum Beispiel von Tastern, Endschaltern, Sensoren oder Relaiskontakten. Die Eingänge sind in <strong>zwei Gruppen zu je vier</strong> aufgeteilt, und jede Gruppe hat ihre eigene Masse: <code>GND1</code> für die Eingänge 1–4 und <code>GND2</code> für die Eingänge 5–8. Beide Gruppen sind voneinander und von der SPS-Logik galvanisch getrennt.</p>
+              <p>Damit das funktioniert, muss die Masse jeder Gruppe mit der Masse der jeweiligen Signalquelle verbunden werden. Dafür gibt es eine eigene Klemme mit <code>GND1</code> und <code>GND2</code>.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des DI8</caption>
+                <tbody>
+                  <tr><th scope="row">Funktion</th><td>8 × Digitaleingang, 24V DC</td></tr>
+                  <tr><th scope="row">Gruppen</th><td>2 × 4 Eingänge, untereinander und vom System getrennt</td></tr>
+                  <tr><th scope="row">Eingangsstrom</th><td>begrenzt auf max. 2mA</td></tr>
+                  <tr><th scope="row">Pegel</th><td>LOW = 0…5V, HIGH = 10…33V, verträgt bis 33V DC</td></tr>
+                  <tr><th scope="row">Schutz</th><td>ESD und Überspannung (36V-TVS), Verpolung, Überstrom</td></tr>
+                  <tr><th scope="row">Trennung</th><td>2 × TLP291-4, mindestens 1,5mm Trennabstand</td></tr>
+                  <tr><th scope="row">Anzeige</th><td>8 Eingangs-LEDs</td></tr>
+                  <tr><th scope="row">Controller</th><td>STM32F103C8T6, 72MHz</td></tr>
+                  <tr><th scope="row">Adresse</th><td><code>0x00</code> bis <code>0x1F</code></td></tr>
+                  <tr><th scope="row">Platine</th><td>100 × 77mm, 4 Lagen, V1.1</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <p>Jeder Kanal hat seine eigene, geschützte Eingangsstufe. Vorne an der Klemme fängt eine <strong>SM6T36A</strong>-TVS-Diode Spannungsspitzen ab, danach folgen eine Ferritperle und ein 1kΩ-Vorwiderstand. Dann kommt die <strong>Strombegrenzung</strong> aus einem BCX53, Z-Dioden mit 6,8V und 5,6V, einer LL4148 und ein paar Widerständen. Sie treibt die LED des Optokopplers und die Eingangs-LED an der Front.</p>
+              <p>Weil der Strom auf etwa 2mA begrenzt ist, verhält sich der Eingang über den ganzen Bereich von 10 bis 33V gleich. Egal, ob die Versorgung gerade etwas schwächelt oder etwas zu hoch ist. Filterkondensatoren mit 1nF und 470nF sorgen außerdem dafür, dass kurze Störungen nicht gleich als Signal durchgehen.</p>
+              <p>Auf der anderen Seite der zwei TLP291-4 landen die acht Kanäle direkt an acht nebeneinanderliegenden Pins des STM32. Im Schaltplan steht der Hinweis „Galvanic Isolation / min. 1.5 mm“ für den Trennabstand. Der Rest ist der übliche Baukasten: MAX485E, SN65HVD232, AP1117-33, DIP-Schalter, Bus-Auswahl-Jumper und zwei Busstecker.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware</h2>
+            <div class="prose">
+              <p>Die Firmware des DI8 ist herrlich unspektakulär. Beim Start bildet das Modul seine Adresse <code>0x00 | DIP</code>, danach liest die Hauptschleife <strong>alle 100µs</strong> alle acht Eingänge mit einem einzigen Portzugriff ein:</p>
+            </div>
+            <pre class="code-block"><code>reg_in = (GPIOA->IDR &amp; 0x1FE0) &gt;&gt; 5;</code></pre>
+            <div class="prose">
+              <p>Busanfragen werden im UART-Interrupt beantwortet. Das Modul kennt nur zwei Register: <code>0x0</code> mit den Eingängen (Bit n = Eingang n+1, gelesen mit <code>0x10</code>) und <code>0xF</code> mit den Fehlerflags (gelesen mit <code>0x1F</code>).</p>
+              <p>Liest die CPU zum Beispiel DI8 #0 und an den Eingängen liegt das Muster <code>0x81</code> an, sieht das so aus:</p>
+            </div>
+            <pre class="code-block"><code>CPU → 5A 00 10 8F
+DI  → C0 81 84</code></pre>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>V1.1 ist gebaut und getestet, nachdem auch hier ein paar tote Kanäle nachgelötet wurden. Wie beim DO8 gibt es eine Frontplatte mit acht LEDs.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

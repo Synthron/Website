@@ -15,18 +15,22 @@ Agents never write or translate site content. The build warns about every leftov
 | DCF77 Uhr                  | [x]          | [ ]          | [ ]             |
 | SynPLC (mit Unterseiten)   | [x]          | [ ]          | [ ]             |
 | ↳ CPU                      | [x]          | [ ]          | [ ]             |
-| ↳ DI                       | [ ]          | [ ]          | [ ]             |
-| ↳ DO                       | [ ]          | [ ]          | [ ]             |
-| ↳ AI                       | [ ]          | [ ]          | [ ]             |
-| ↳ AO                       | [ ]          | [ ]          | [ ]             |
-| ↳ XT                       | [ ]          | [ ]          | [ ]             |
+| ↳ CPU Piggyback            | [x]          | [ ]          | [ ]             |
+| ↳ DI                       | [x]          | [ ]          | [ ]             |
+| ↳ DO                       | [x]          | [ ]          | [ ]             |
+| ↳ AI                       | [x]          | [ ]          | [ ]             |
+| ↳ AO                       | [x]          | [ ]          | [ ]             |
+| ↳ XT                       | [x]          | [ ]          | [ ]             |
 | ModLab (mit Unterseiten)   | [x]          | [ ]          | [ ]             |
 | ↳ Main                     | [x]          | [ ]          | [ ]             |
-| ↳ LNT                      | [ ]          | [ ]          | [ ]             |
-| ↳ SMPS                     | [ ]          | [ ]          | [ ]             |
-| ↳ Function Generator       | [ ]          | [ ]          | [ ]             |
-| ↳ Load                     | [ ]          | [ ]          | [ ]             |
-| ↳ Diode Tester             | [ ]          | [ ]          | [ ]             |
+| ↳ Backplane                | [x]          | [ ]          | [ ]             |
+| ↳ Bus Termination          | [x]          | [ ]          | [ ]             |
+| ↳ LNT                      | [x]          | [ ]          | [ ]             |
+| ↳ SMPS                     | [x]          | [ ]          | [ ]             |
+| ↳ Function Generator       | [x]          | [ ]          | [ ]             |
+| ↳ Load                     | [x]          | [ ]          | [ ]             |
+| ↳ Diode Tester             | [x]          | [ ]          | [ ]             |
+| ↳ Power Monitor            | [x]          | [ ]          | [ ]             |
 | S65 (mit Unterseiten)      | [ ]          | [ ]          | [ ]             |
 | Röhrenverstärker 6L6       | [x]          | [ ]          | [ ]             |
 | Gitarrenverstärker         | [x]          | [ ]          | [ ]             |

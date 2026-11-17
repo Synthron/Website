@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/synplc/modules/do8.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Block diagram (Mermaid)
+          - Reference designators, feedback divider values (47k / 10k), BC846 resistor values, termination values, connector list
+          - Full pin map (PA0..PA4, PA5..PA12, PB0..PB7, PB8..PB12)
+          - Silkscreen date 21.06.21, build details (DO.ioc, genericSTM32F103C8)
+          - Files section
+
+          Derived / own wording (please verify):
+          - Reverse-polarity protection with FQP27P06 + 8.2 V Zener is inferred in the source
+          - Split of the optocouplers into control / feedback is inferred in the source
+          - The quoted intent ("short circuits ... shut off the faulty channel") is translated
+          - Re-soldered dead channels: from the overview roadmap (index.md); "seitdem tut das Modul, was es soll" is my wording
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Das DO8 gibt der SynPLC acht 24V-Ausgänge für Relais, Schütze, Ventile, Lampen und was sonst so geschaltet werden will. Die 24V für die Ausgänge werden <strong>direkt am Modul</strong> eingespeist und sind galvanisch vom 5V-Logikbus getrennt.</p>
+              <p>Der STM32 steuert die acht Ausgänge über Optokoppler an einem <strong>ITS4880R</strong> an, einem achtkanaligen High-Side-Schalter von Infineon mit eingebauten Schutzfunktionen. Ein zweiter Satz Optokoppler meldet den tatsächlichen Zustand jedes Ausgangs an den Controller zurück. Die Idee dahinter: Um größere Schäden durch Kurzschlüsse zu verhindern, vergleicht das Modul jeden Ausgang mit seinem Sollwert. Weicht ein Kanal ab, setzt es ein Fehlerbit und schaltet den betroffenen Kanal ab.</p>
+              <p>In der technischen Doku musste ich übrigens zugeben, dass bei V2 nicht jedes Modul verbessert wurde. Wörtlich: <em>„talking about you, DO8…“</em>.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des DO8</caption>
+                <tbody>
+                  <tr><th scope="row">Funktion</th><td>8 × Digitalausgang, 24V DC, High-Side</td></tr>
+                  <tr><th scope="row">Ausgangsstrom</th><td>0,5A pro Kanal</td></tr>
+                  <tr><th scope="row">Treiber</th><td>Infineon ITS4880R, 8-Kanal Smart High-Side Switch</td></tr>
+                  <tr><th scope="row">Trennung</th><td>4 × TLP291-4 zwischen Logik- und Feldseite</td></tr>
+                  <tr><th scope="row">Diagnose</th><td>Rückmeldung jedes Ausgangs (Feedback-Register)</td></tr>
+                  <tr><th scope="row">Anzeige</th><td>8 Status-LEDs an der Front</td></tr>
+                  <tr><th scope="row">Feldversorgung</th><td>Externe 24V an eigener Klemme, mit Verpol- und TVS-Schutz</td></tr>
+                  <tr><th scope="row">Controller</th><td>STM32F103C8T6, 72MHz</td></tr>
+                  <tr><th scope="row">Adresse</th><td><code>0x20</code> bis <code>0x3F</code></td></tr>
+                  <tr><th scope="row">Platine</th><td>100 × 77mm, 4 Lagen, V1.2</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <p>Die Signalkette ist schnell erzählt: Jeder Ausgangspin des STM32 schaltet über einen BC846 die LED eines Optokopplers. Auf der Feldseite steuert der Optokoppler dann den passenden Eingang des ITS4880R. Hinter dem Schalter sitzt an jedem Ausgang noch eine <strong>SM6T36A</strong>-TVS-Diode, bevor es an die Klemmen geht. Über Spannungsteiler und die zweite Optokoppler-Gruppe landet der Zustand jedes Ausgangs dann wieder am Controller.</p>
+              <p>Die 24V-Feldversorgung kommt über eine eigene Klemme rein. Ein P-Kanal-MOSFET (FQP27P06) mit 8,2V-Z-Diode dient als Verpolschutz, dazu kommt wieder eine SM6T36A gegen Überspannung.</p>
+              <p>Auf der Logikseite ist alles wie bei den anderen Modulen: MAX485E und SN65HVD232 mit Bus-Auswahl-Jumpern, AP1117-33, DIP-Schalter für die Adresse und zwei Busstecker zum Durchschleifen. Die acht Ausgänge liegen auf vier 2-poligen Steckklemmen.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware</h2>
+            <div class="prose">
+              <p>Beim Start liest das Modul seinen DIP-Schalter und bildet daraus die Adresse <code>0x20 | DIP</code>. Alle Ausgänge werden ausgeschaltet. Danach läuft die Hauptschleife etwa jede Millisekunde einmal durch:</p>
+              <ul>
+                <li><code>set_Output()</code> schreibt das Ausgangsregister mit einem einzigen Portzugriff auf die acht Ausgangspins.</li>
+                <li><code>check_Output()</code> liest die acht Rückmeldeleitungen in das Feedback-Register.</li>
+              </ul>
+              <p>Busanfragen werden wie überall im UART-Interrupt beantwortet. Die Vergleichs- und Abschaltfunktion ist im Code zwar schon drin, aber aktuell noch <strong>auskommentiert</strong>.</p>
+              <h3>Register</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Register des DO8</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Register</th>
+                    <th scope="col">Zugriff</th>
+                    <th scope="col">Bedeutung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>0x1</code> Ausgang</td><td>8 Bit schreiben (<code>0x21</code>)</td><td>Bit n = Ausgang n+1 an/aus</td></tr>
+                  <tr><td><code>0x2</code> Rückmeldung</td><td>8 Bit lesen (<code>0x12</code>)</td><td>Gemessener Zustand der 8 Ausgänge</td></tr>
+                  <tr><td><code>0xF</code> Fehler</td><td>8 Bit lesen (<code>0x1F</code>)</td><td>Fehlerflags des Protokolls</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Ausgänge 1 und 8 von DO8 #0 einschalten sieht dann so aus:</p>
+            </div>
+            <pre class="code-block"><code>CPU → 5A 20 21 81 1F
+DO  → C0 05</code></pre>
+            <div class="prose">
+              <h3>Bekannte Macken</h3>
+              <p>Ganz rund läuft die Firmware noch nicht. Lesezugriffe beantwortet das DO8 im Moment immer mit NACK „Register ungültig“, weil eine Bedingung in der Registerprüfung immer wahr ist. Und in dieser Kopie der Bibliothek fehlt beim 16-Bit-Schreiben ein <code>break</code>, das in der AO4-Version schon korrigiert ist. Beides fällt unter die offenen Punkte, die RS-485-Bibliothek zu überarbeiten und auf die neue Hardware zu portieren.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand</h2>
+            <div class="prose">
+              <p>V1.2 ist gebaut und getestet. Ein paar tote Kanäle mussten nachgelötet werden, seitdem tut das Modul, was es soll. Für das Gehäuse gibt es eine passende Frontplatte mit acht LEDs.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

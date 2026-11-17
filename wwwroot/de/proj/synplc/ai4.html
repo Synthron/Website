@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/synplc/modules/ai4.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Block diagram (Mermaid)
+          - Reference designators, KiCad symbol note on U13 (L78L05 symbol, value L78L10)
+          - Scaling calculation (10 V * 11k / 27k = 4.07 V, 20 mA * 200 R = 4.0 V, fits the 4.096 V ADC range):
+            computed in the source, topology not verified - add if correct
+          - Pin map (partly inferred), build details, USART3 at 115200 baud in the skeleton
+          - LTspice details (.dc V2 0 11, 10 nF / 10 pF, 0 A current source)
+          - Files section
+
+          Derived / own wording (please verify):
+          - Mode switching via TLP291-4 + PJA3440 MOSFETs is inferred in the source
+          - Burden (200 R / 300 R) and divider (16k / 11k) roles and their order are inferred in the source
+          - Documentation states "12 bit -> 2.4 mV / 4.8 uA" although the ADC is 16 bit; the page quotes the documentation
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Das AI4 ist das Gegenstück zum <a href="ao4.html">AO4</a> und misst vier analoge Prozesswerte. Also alles, was ein <strong>0–10V</strong>- oder <strong>0–20mA</strong>-Signal ausgibt: Temperaturtransmitter, Drucksensoren, Füllstandssensoren, Potis und Co. Die komplette Messseite, von den Klemmen bis zum ADC, ist <strong>galvanisch getrennt</strong> von der SPS-Logik.</p>
+              <p>Auf der getrennten Seite digitalisiert ein <strong>ADS1115</strong> mit 16 Bit die vier aufbereiteten Signale. Der STM32 liest ihn über I²C durch einen <strong>ADuM1250</strong>-Isolator aus. Für die Umschaltung zwischen Spannung und Strom wandern vier Steuerleitungen über einen Vierfach-Optokoppler auf die andere Seite und schalten dort je einen kleinen MOSFET, der den Kanal in den Strommodus versetzt.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des AI4</caption>
+                <tbody>
+                  <tr><th scope="row">Funktion</th><td>4 × Analogeingang</td></tr>
+                  <tr><th scope="row">Modi</th><td>pro Kanal 0–10V oder 0–20mA, umschaltbar</td></tr>
+                  <tr><th scope="row">ADC</th><td>TI ADS1115, 4 Kanäle, 16 Bit, I²C</td></tr>
+                  <tr><th scope="row">Auflösung laut Doku</th><td>2,4mV (0–10V) bzw. 4,8µA (0–20mA)</td></tr>
+                  <tr><th scope="row">Signalaufbereitung</th><td>4 × LM358, Präzisionswiderstände mit 0,1%</td></tr>
+                  <tr><th scope="row">Trennung</th><td>ADuM1250 (I²C) und TLP291-4 (Modusumschaltung), mindestens 1,5mm Trennabstand</td></tr>
+                  <tr><th scope="row">Feldversorgung</th><td>externe 24V, daraus +10V und +5V auf der Platine</td></tr>
+                  <tr><th scope="row">Controller</th><td>STM32F103C8T6, 72MHz</td></tr>
+                  <tr><th scope="row">Adresse</th><td><code>0x40</code> bis <code>0x5F</code></td></tr>
+                  <tr><th scope="row">Platine</th><td>100 × 77mm, 4 Lagen, V1.0</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <p>Jeder Eingang ist mit einer Ferritperle und einer <strong>BAV199</strong> gegen Ausreißer geschützt. Danach kommt die eigentliche Messschaltung aus <strong>Präzisionswiderständen mit 0,1%</strong> Toleranz: ein Bürdenwiderstand aus 200Ω und 300Ω für den Strommodus, der per MOSFET (PJA3440) zugeschaltet wird, und ein Spannungsteiler aus 16kΩ und 11kΩ. Ein LM358 puffert und filtert das Signal, bevor es am ADS1115 landet.</p>
+              <p>Die Analogversorgung kommt über eine eigene Klemme mit 24V und ist mit einer selbstrückstellenden Sicherung, einer 1N4001 gegen Verpolung und einer SM6T36A gegen Überspannung geschützt. Ein L78L10 macht daraus +10V für die Analogstufen, ein L78L05 die +5V. Auf der Busseite steckt wieder der übliche Baukasten aus MAX485E, SN65HVD232, AP1117-33 und DIP-Schalter.</p>
+              <h3>Simulation</h3>
+              <p>Auch die Eingangsstufe ist vorher durch LTspice gegangen. Das Modell enthält zwei LT1013-OPVs, den Teiler aus 11kΩ und 16kΩ, die 300Ω- und 200Ω-Widerstände und eine 24V-Versorgung. Die Eingangsspannung wird von 0 bis 11V durchgefahren, und für Tests im Strommodus ist schon eine Stromquelle vorbereitet.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Firmware und Stand</h2>
+            <div class="prose">
+              <p>Die Hardware ist gebaut, aber hier ist noch am meisten zu tun. Die Firmware ist bisher nur ein mit STM32CubeMX generiertes Grundgerüst ohne Anwendungscode. GPIO, CAN, I²C, Timer und UART sind konfiguriert, mehr aber auch nicht. Auch der Hardware-Test steht noch aus.</p>
+              <p>Die CPU-Seite ist dagegen schon fertig: <code>synplc_read_analog_input()</code> liest das 16-Bit-Register <code>0x4</code> plus Kanalnummer (Befehl <code>0x54</code> bis <code>0x57</code>) von der Adresse <code>0x40 | Modul</code>. Jetzt muss nur noch jemand auf der anderen Seite antworten.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

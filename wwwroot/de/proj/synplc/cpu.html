@@ -13,8 +13,198 @@
       <!-- @module-nav -->
 
       <article class="project-detail">
-        <!-- @module-header -->
+        <!--
+          REVIEW NOTES (source: project_summaries/synplc/modules/cpu.md).
+          Remove before publishing: HTML comments are copied to dist/.
 
+          Omitted:
+          - Block diagram and sequence diagram (Mermaid)
+          - Reference designators (U1..U6, J1..J8, D2..D10, R40/R46, Y1/Y2, C3, F1), part numbers of sockets (GSD09002SEU, Lumberg 2411 02), Seiko Epson MC306
+          - Full MCU pin map (only the peripheral plan is shown)
+          - Solder jumper JP1 V_USB (purpose only inferred in the source)
+          - Schematic revision label "Rev 2, 2023-04-26"
+          - Build details (genericSTM32F412RE, reset_after_upload.py, clock tree 12 MHz / 6 x 100 / 2), list of active timers
+          - Numeric values of the return codes
+          - CPU V1 LED pin assignment, USART2 115200 baud, CS1 on PB12
+          - Files section
+
+          Derived / own wording (please verify):
+          - "Batterie, die irgendwann leer ist" as motivation for the supercap: own reasoning
+          - Bus-select jumper positions are inferred in the source
+          - "redundancy measures in later revisions" phrased as "spaeter vielleicht"
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Die CPU ist das Herz der SynPLC und für den normalen Betrieb unverzichtbar. Sie ist mit allen I/O-Modulen verbunden, verarbeitet sämtliche Daten und führt das Steuerprogramm aus. Weil es pro System nur eine CPU gibt, braucht sie auch keine Busadresse.</p>
+              <p>Ganz nebenbei ist sie auch noch die <strong>Stromversorgung</strong> des Systems. Ein isolierter <strong>10W-DC/DC-Wandler</strong> mit Weitbereichseingang macht aus den 24V DC die 5V, die über den Busstecker an alle Module gehen. Maßnahmen für eine redundante Versorgung könnten in späteren Revisionen dazukommen, aktuell gibt es die aber noch nicht.</p>
+              <p>Die CPU V2 löst die erste STM32-CPU auf Basis des STM32F103 ab. Der deutlich größere <strong>STM32F412</strong> bringt SDIO für die SD-Karte, USB OTG, mehr Timer und vor allem deutlich mehr Speicher mit. 512KB Flash und 256KB RAM sollen später einmal für die geplante Structured-Text-Laufzeitumgebung reichen.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten der CPU V2</caption>
+                <tbody>
+                  <tr><th scope="row">Controller</th><td>STM32F412RET6, Cortex-M4F, 12MHz-Quarz, 100MHz</td></tr>
+                  <tr><th scope="row">Eingang</th><td>24V DC an einer 2-poligen Steckklemme</td></tr>
+                  <tr><th scope="row">Systemversorgung</th><td>TRACO THN 10-2411WIR, isoliert, 24V → 5V, 10W für CPU und alle Module</td></tr>
+                  <tr><th scope="row">Bus</th><td>RS-485 (MAX485E, 1MBaud) oder CAN (SN65HVD232, 1Mbit/s), per Jumper wählbar</td></tr>
+                  <tr><th scope="row">WLAN</th><td>ESP-01 an USART2 mit 250kBaud, Webinterface (vorerst nur lesend)</td></tr>
+                  <tr><th scope="row">Speicher</th><td>SD-Karte über 4-Bit-SDIO, mit Karten- und Schreibschutzerkennung</td></tr>
+                  <tr><th scope="row">USB</th><td>USB-B, virtueller COM-Port als serieller Monitor</td></tr>
+                  <tr><th scope="row">RTC</th><td>32,768kHz-Quarz, 0,22F-Goldcap als Pufferung (keine Batterie)</td></tr>
+                  <tr><th scope="row">Erweiterung</th><td>I²C (Grove-kompatibel) für das <a href="cpu-piggyback.html">PiggyBack</a>, SPI-Header</td></tr>
+                  <tr><th scope="row">Platine</th><td>100 × 77mm, 4 Lagen</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <h3>Versorgung</h3>
+              <p>Die 24V kommen über eine steckbare Klemme rein und laufen zuerst durch eine selbstrückstellende Sicherung (60R065XU), eine 36V-TVS-Diode (P6SMB36) und eine SM4001 als Schutz. Danach macht der TRACO-Wandler daraus die 5V für den Bus, und ein AP1117-33 erzeugt die 3,3V für den Controller. Die Busleitungen selbst sind zusätzlich mit einer TVS-Doppeldiode gegen ESD geschützt, und Abschlusswiderstände mit 120Ω sitzen ebenfalls auf der Platine.</p>
+              <p>Für die Echtzeituhr gibt es einen 32,768kHz-Quarz. Gepuffert wird sie nicht mit einer Batterie, die irgendwann leer ist, sondern mit einem <strong>0,22F-Goldcap</strong> an VBAT.</p>
+              <h3>Anschlüsse</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Anschlüsse der CPU V2</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Anschluss</th>
+                    <th scope="col">Belegung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>24V-Eingang, 2-polige Steckklemme</td><td>+24V, GND</td></tr>
+                  <tr><td>Modulbus, 2 × 5 Stiftleiste</td><td>1–4 +5V, 5–8 GND, 9 BUS+, 10 BUS−</td></tr>
+                  <tr><td>Bus-Auswahl, 2 × 3 Stiftleiste</td><td>1 RS485−, 2 RS485+, 3 BUS−, 4 BUS+, 5 CAN−, 6 CAN+</td></tr>
+                  <tr><td>I²C, Grove-kompatibel, 1 × 4</td><td>GND, 5V, SDA, SCL</td></tr>
+                  <tr><td>SPI, 1 × 6</td><td>3V3, MOSI, MISO, SCK, /CS, GND</td></tr>
+                  <tr><td>SWD, JST-XH 1 × 4</td><td>GND, SWCLK, SWDIO, 3V3</td></tr>
+                  <tr><td>USB-B</td><td>virtueller COM-Port</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Mit Jumpern auf 1–3 und 2–4 der Bus-Auswahl hängt der RS-485-Transceiver am Bus, mit Jumpern auf 3–5 und 4–6 der CAN-Transceiver.</p>
+              <h3>Peripherie-Belegung</h3>
+              <p>Im Schaltplan habe ich mir notiert, welche Peripherie des STM32 wofür zuständig ist:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Peripherie-Belegung des STM32F412</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Peripherie</th>
+                    <th scope="col">Verwendung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>CAN1</td><td>CAN mit 1Mbit/s</td></tr>
+                  <tr><td>USART1</td><td>RS-485 mit 1MBaud</td></tr>
+                  <tr><td>USART2</td><td>ESP-01 mit 250kBaud</td></tr>
+                  <tr><td>SPI2</td><td>reserviert</td></tr>
+                  <tr><td>I²C1</td><td>reserviert für das PiggyBack</td></tr>
+                  <tr><td>SDIO</td><td>SD-Karte</td></tr>
+                  <tr><td>USB OTG FS</td><td>virtueller COM-Port</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <h3>Status-LEDs</h3>
+              <p>Fünf LEDs verraten, was die CPU gerade macht:</p>
+              <ul>
+                <li><strong>BOOT</strong> leuchtet während der Initialisierung und geht aus, sobald die Hauptschleife startet.</li>
+                <li><strong>RUN</strong> leuchtet, solange die SPS-Hauptschleife läuft.</li>
+                <li><strong>HEARTBEAT</strong> blinkt mit 1Hz.</li>
+                <li><strong>ERROR</strong> blinkt nach einem nicht fatalen Fehler, etwa einem Bus-Timeout, für 5 Sekunden mit 2Hz.</li>
+                <li><strong>FLASH</strong> leuchtet, während auf dem RS-485-Bus gesendet wird. Später soll sie auch bei Programm-Updates von außen leuchten.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="firmware">
+            <h2 id="firmware">Firmware</h2>
+            <div class="prose">
+              <p>Wie bei allen Modulen ist die Firmware mit STM32CubeMX generiert, per stm32pio umgewandelt und wird mit PlatformIO gebaut. Aktiv sind CAN1, USART1, USART2, I²C1, SPI2, USB als CDC-Device und eine ganze Reihe Timer. RTC, SDIO und FatFs sind schon vorbereitet, aber noch abgeschaltet.</p>
+              <h3>Die CPU-Bibliothek</h3>
+              <p>Das Herzstück ist die Bibliothek <code>synplc_cpu</code>, quasi die Master-Seite des <a href="../synplc.html#communication">SynPLC-Protokolls</a>. Jeder Aufruf baut den Frame, rechnet die Prüfsumme, schaltet den Richtungspin und die FLASH-LED, sendet, wartet mit Timeout (standardmäßig 100ms) auf die Antwort und prüft ACK, NACK und Prüfsumme.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Funktionen der CPU-Bibliothek</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Funktion</th>
+                    <th scope="col">Zweck</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>synplc_cpu_ping()</code></td><td>Modul anpingen</td></tr>
+                  <tr><td><code>synplc_cpu_read_reg8()</code> / <code>write_reg8()</code></td><td>Allgemeiner 8-Bit-Registerzugriff</td></tr>
+                  <tr><td><code>synplc_cpu_read_reg16()</code> / <code>write_reg16()</code></td><td>Allgemeiner 16-Bit-Registerzugriff</td></tr>
+                  <tr><td><code>synplc_read_digital_input()</code></td><td>Eingänge eines DI8 lesen</td></tr>
+                  <tr><td><code>synplc_write_digital_output()</code></td><td>Ausgänge eines DO8 schreiben</td></tr>
+                  <tr><td><code>synplc_read_analog_input()</code></td><td>Einen Kanal eines AI4 lesen</td></tr>
+                  <tr><td><code>synplc_write_analog_output()</code></td><td>Einen Kanal eines AO4 schreiben (0–10000)</td></tr>
+                  <tr><td><code>synplc_read_error_status()</code></td><td>Fehlerregister lesen</td></tr>
+                  <tr><td><code>synplc_get_last_error()</code></td><td>Letzter Fehler: Timeout, NACK, Prüfsumme oder ungültige Antwort</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>So sieht das zum Beispiel aus, wenn die Anwendung die Ausgänge von DO8 #1 setzt:</p>
+            </div>
+            <pre class="code-block"><code>synplc_write_digital_output(1, 0xA5);
+
+CPU → 5A 21 21 A5 3A     Frame mit Prüfsumme, DIR und FLASH an
+DO  → C0 05              ACK, Antwort innerhalb des Timeouts
+                         → SYNPLC_ERR_NONE</code></pre>
+            <div class="prose">
+              <h3>Aktueller Stand: ein Testprogramm</h3>
+              <p>Die aktuelle Firmware ist noch ein reines Inbetriebnahme- und Testprogramm:</p>
+              <ol>
+                <li>Peripherie initialisieren, BOOT-LED an, 500ms warten, BOOT-LED aus, RUN-LED an.</li>
+                <li>Eine Rampe von 0 bis 10000 in Hunderterschritten im Abstand von 10ms auf <strong>alle vier Kanäle von AO4 #0</strong> schreiben.</li>
+                <li>Schlägt ein Schreibzugriff fehl, die ERROR-LED blinken lassen.</li>
+                <li>Alle 500ms die HEARTBEAT-LED umschalten.</li>
+              </ol>
+              <p>Auskommentiert stecken noch die früheren Tests im Code, bei denen DI8-Module gelesen und Zufallsmuster auf DO8-Module geschrieben wurden.</p>
+              <h3>Was noch kommt</h3>
+              <ul>
+                <li>Allgemeiner CPU-Code mit Busscan, zyklischem Prozessabbild und Anwenderprogramm</li>
+                <li>Das CAN-Protokoll</li>
+                <li>Logging auf SD-Karte mit Zeitstempeln von der RTC</li>
+                <li>Das Webinterface auf dem ESP-01, zunächst nur zum Überwachen</li>
+                <li><strong>Structured Text</strong> von der SD-Karte (vorerst verschoben)</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="predecessor">
+            <h2 id="predecessor">Der Vorgänger: CPU V1</h2>
+            <div class="prose">
+              <p>Die erste STM32-CPU basierte auf einem <strong>STM32F103C8T6</strong> mit 72MHz, also demselben Controller wie die I/O-Module. RS-485 lief dort noch mit 500kBaud, dazu kamen CAN, SPI, USB und die RTC. Die Hardware-Dateien dieser Platine sind nicht im Repository gelandet, nur die Firmware.</p>
+              <p>Auch die war ein Testprogramm: Sie schrieb Zufallsmuster auf DO8 #1 (<code>0x21</code>) und das invertierte Muster auf DO8 #3 (<code>0x23</code>) und ließ alle 100 Schleifendurchläufe die Heartbeat-LED blinken. Das LED-Konzept mit BOOT, RUN, FLASH, HEARTBEAT und ERROR hat sich bewährt und ist direkt in die CPU V2 übernommen worden.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="enclosure">
+            <h2 id="enclosure">Gehäuse und Stand</h2>
+            <div class="prose">
+              <p>CPU und <a href="cpu-piggyback.html">PiggyBack</a> bekommen zusammen ein eigenes 3D-gedrucktes Gehäuse, in FreeCAD konstruiert, mit Unterteil, Frontabdeckung und zwei Deckelvarianten: einmal mit Logo und einmal mit Logo und NFC.</p>
+              <p>Layout und Review der CPU V2 sind fertig, bestellt ist sie aber noch nicht. Die Firmware ist in Arbeit.</p>
+            </div>
+          </section>
+
+        </div>
       </article>
 
       <!-- @module-nav -->

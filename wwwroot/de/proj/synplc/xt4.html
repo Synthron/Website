@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/synplc/modules/xt4.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Block diagram (Mermaid), reference designators, resistor values (360 R / 68 R), KEMET part number, "VIT ZC207 56K"
+          - Design note of the source: MOC3043M is a zero-crossing driver and fires only near the zero crossing;
+            arbitrary phase-angle control would need a random-phase driver. Worth checking before the PFC firmware is written.
+          - Silkscreen date 17.06.21
+          - Files section
+
+          Derived / own wording (please verify):
+          - Channel pins, timers and the domain grouping (1-2 / 3-4) are inferred in the source from labels and symbol positions
+          - "one timer per domain for firing pulses" is inferred in the source
+          - Usage of the 16-bit channel registers for firing angle / power level is a suggestion of the source
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Mit dem XT4, kurz für „Interface Triac, 4 Kanäle“, kann die SynPLC <strong>Netzlasten</strong> direkt schalten: Lampen, Heizungen, kleine Motoren oder Pumpen. Die vier Kanäle sollen Lasten entweder einfach ein- und ausschalten oder, als langfristiges Ziel, als <strong>Phasenanschnittsteuerung</strong> zum Dimmen oder zur Leistungsregelung arbeiten.</p>
+              <p>Für den Phasenanschnitt muss das Modul wissen, wann die Netzspannung durch null geht. Die vier Kanäle sind deshalb auf <strong>zwei getrennte Spannungsdomänen</strong> aufgeteilt, und jede hat ihren eigenen <strong>Nulldurchgangsdetektor</strong>. Der soll laut Plan auch gleich die Netzfrequenz messen und eine Frequenzdrift ausgleichen.</p>
+              <p>Und ein Hinweis aus der Doku, den man ernst nehmen sollte: Die Triacs können ganz schön heiß werden.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des XT4</caption>
+                <tbody>
+                  <tr><th scope="row">Funktion</th><td>4 × Wechselstromausgang (Triac)</td></tr>
+                  <tr><th scope="row">Belastbarkeit</th><td>bis 230V AC, 1A pro Kanal</td></tr>
+                  <tr><th scope="row">Triacs</th><td>4 × BT136-500 (500V, TO-220)</td></tr>
+                  <tr><th scope="row">Treiber</th><td>4 × MOC3043M Opto-Triac</td></tr>
+                  <tr><th scope="row">Spannungsdomänen</th><td>2, voneinander und vom System getrennt</td></tr>
+                  <tr><th scope="row">Nulldurchgang</th><td>1 Detektor pro Domäne mit TLP291</td></tr>
+                  <tr><th scope="row">Betriebsarten</th><td>Ein/Aus, Phasenanschnitt geplant</td></tr>
+                  <tr><th scope="row">Snubber</th><td>330Ω + 10nF pro Kanal</td></tr>
+                  <tr><th scope="row">Klemmen</th><td>4 × 2-polige Steckklemme, 5mm, 10A pro Kontakt</td></tr>
+                  <tr><th scope="row">Controller</th><td>STM32F103C8T6, 72MHz</td></tr>
+                  <tr><th scope="row">Adresse</th><td><code>0xA0</code> bis <code>0xBF</code></td></tr>
+                  <tr><th scope="row">Platine</th><td>100 × 77mm, 4 Lagen, V1</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <p>Jeder Kanal folgt demselben Schema: Ein Pin des STM32 schaltet über einen BC846 die LED eines <strong>MOC3043M</strong>, und der zündet auf der Netzseite einen <strong>BT136-500</strong>. Parallel zu jedem Triac sitzt ein RC-Snubber aus 330Ω und 10nF.</p>
+              <p>Die Nulldurchgangsdetektoren sind schlicht aufgebaut: zwei 56kΩ-Widerstände, eine SM4007 und ein TLP291-Optokoppler pro Domäne. Ihr Signal landet an einem eigenen Pin des Controllers.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Kanäle und Nulldurchgangsdetektoren des XT4</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Signal</th>
+                    <th scope="col">Pin</th>
+                    <th scope="col">Timer</th>
+                    <th scope="col">Domäne</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Kanal 1</td><td>PA8</td><td>TIM1_CH1</td><td>1</td></tr>
+                  <tr><td>Kanal 2</td><td>PA9</td><td>TIM1_CH2</td><td>1</td></tr>
+                  <tr><td>Kanal 3</td><td>PA0</td><td>TIM2_CH1</td><td>2</td></tr>
+                  <tr><td>Kanal 4</td><td>PA1</td><td>TIM2_CH2</td><td>2</td></tr>
+                  <tr><td>Nulldurchgang 1</td><td>PA12</td><td>–</td><td>1</td></tr>
+                  <tr><td>Nulldurchgang 2</td><td>PA15</td><td>–</td><td>2</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Die Kanäle 1 und 2 teilen sich TIM1, die Kanäle 3 und 4 TIM2. So kann jede Domäne ihren eigenen Timer bekommen, der die Zündimpulse passend zum jeweiligen Nulldurchgang erzeugt.</p>
+              <p>Im Schaltplan steht der Hinweis „Galvanische Trennung / mind. 1,5mm“. Was es auf der Platine dagegen <strong>nicht</strong> gibt: Sicherungen, Varistoren, Kühlkörper oder Status-LEDs. Jeder Lastkreis muss also extern abgesichert werden.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Firmware und Stand</h2>
+            <div class="prose">
+              <p>V1 ist gebaut und im Test. Eine Firmware für das XT4 gibt es allerdings noch nicht, die steht noch auf der To-do-Liste. Das Protokoll ist aber schon vorbereitet: Der Modultyp <code>0xA0</code> ist in der gemeinsamen Bibliothek definiert, und die 16-Bit-Kanalregister <code>0x4</code> bis <code>0x7</code> sind auch für das XT4 vorgesehen, zum Beispiel für Zündwinkel oder Leistung pro Kanal.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

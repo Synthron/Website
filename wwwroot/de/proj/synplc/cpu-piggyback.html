@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/synplc/modules/cpu-piggyback.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Block diagram (Mermaid) and the note that the PCF8574 port-bit wiring is not documented
+          - Reference designators and the full part list (ferrite beads, filter caps, Zener values per position)
+          - Schematic title / revision "SynPLC CPU PiggyBack IO, Rev 1.0, 2023-04-29"
+          - 8-bit I2C addresses 0x40..0x43 (only the 7-bit addresses are shown)
+          - Files section
+
+          Derived / own wording (please verify):
+          - L-shaped outline "leaves room for parts of the CPU board" is inferred in the source
+          - Input stage "behaves like the DI8" is inferred in the source (same component set)
+          - "Kanonen auf Spatzen" framing is my wording
+          - Feedback taken after the fuse and "ob der Ausgang tatsaechlich durchschaltet": from the source diagram, wiring not documented in text
+          - Eight LEDs showing the I/O state: source only lists 8 "LED Indicators"
+          - "gebaut ist sie noch nicht": source status is only "Designed"
+        -->
+        <!-- @module-header -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Kleine Installationen brauchen oft nur eine Handvoll Ein- und Ausgänge. Dafür gleich ein komplettes <a href="di8.html">DI8</a> und <a href="do8.html">DO8</a> an den Bus zu hängen, wäre mit Kanonen auf Spatzen geschossen. Genau dafür gibt es das <strong>PiggyBack</strong>: eine kleine Zusatzplatine mit vier galvanisch getrennten 24V-Eingängen und vier ebenso getrennten 24V-Ausgängen, die direkt an der <a href="cpu.html">CPU</a> hängt und mit ihr im selben Gehäuse sitzt.</p>
+              <p>Einen eigenen Controller hat das PiggyBack nicht. Zwei <strong>PCF8574</strong>-Portexpander übernehmen die Arbeit, einer liest die Eingänge, der andere treibt die Ausgänge. Angeschlossen wird das Ganze über I²C an einem Grove-kompatiblen Stecker. Die CPU V2 hält sich ihren I²C1 genau dafür frei. Die Platine hat dasselbe Grundmaß wie alle anderen Module, allerdings mit einer 27 × 27mm großen Aussparung in einer Ecke, also in L-Form.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des CPU PiggyBack</caption>
+                <tbody>
+                  <tr><th scope="row">Funktion</th><td>4 × Digitaleingang und 4 × Digitalausgang (24V) direkt an der CPU</td></tr>
+                  <tr><th scope="row">Schnittstelle</th><td>I²C, Grove-kompatibler 4-poliger Stecker (GND, 5V, SDA, SCL)</td></tr>
+                  <tr><th scope="row">Portexpander</th><td>2 × PCF8574, I²C-Adressen <code>0x20</code> und <code>0x21</code></td></tr>
+                  <tr><th scope="row">Trennung</th><td>3 × TLP291-4 Vierfach-Optokoppler</td></tr>
+                  <tr><th scope="row">Ausgänge</th><td>4 × High-Side-Transistorstufe mit eigener selbstrückstellender Sicherung und Rückmeldung</td></tr>
+                  <tr><th scope="row">Eingänge</th><td>4 × 24V mit TVS- und Z-Dioden-Schutz</td></tr>
+                  <tr><th scope="row">Klemmen</th><td>5 × 2-polige Steckklemme, 5mm Raster</td></tr>
+                  <tr><th scope="row">Platine</th><td>100 × 77mm in L-Form, 4 Lagen, Rev 1.0</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <p>Zwölf Optokoppler-Kanäle in drei TLP291-4 bilden die Trennstelle: vier für die Eingänge, vier für die Ausgänge und vier für die Rückmeldung der Ausgänge.</p>
+              <h3>Eingänge</h3>
+              <p>Die Eingangsstufe ist mit denselben Bauteilen aufgebaut wie beim DI8: eine bidirektionale 36V-TVS-Diode (P6SMB36CA), Z-Dioden mit 6,8V und 5,6V, eine LL4148 und ein BCX53. Dazu kommen Filterkondensatoren mit 1nF und 470nF.</p>
+              <h3>Ausgänge</h3>
+              <p>Jeder Ausgang wird über einen BC856 als Treiber und einen BCX53 als High-Side-Schalter an die 24V gelegt. Hinter jedem Ausgang sitzt eine eigene selbstrückstellende Sicherung (1812L035, 0,35A Haltestrom). Der Zustand nach der Sicherung wird über einen weiteren Optokoppler zurückgemeldet, so dass die CPU sehen kann, ob der Ausgang tatsächlich durchschaltet. Acht LEDs zeigen den Zustand der Ein- und Ausgänge an.</p>
+              <h3>Versorgung</h3>
+              <p>Die Logikseite mit Portexpandern und LEDs bekommt ihre 5V von der CPU über den Grove-Stecker. Die Ausgangsstufe hängt an einer eigenen 24V-Feldversorgung über eine Klemme und ist durch die Optokoppler von der Logik getrennt.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Firmware und Stand</h2>
+            <div class="prose">
+              <p>Eine eigene Firmware braucht das PiggyBack nicht. Die CPU spricht die beiden PCF8574 ganz normal per I²C an. Den passenden Treiber in der CPU-Firmware gibt es allerdings noch nicht, bisher ist nur I²C1 mit 100kHz initialisiert.</p>
+              <p>Die Platine ist entworfen (Rev 1.0), gebaut ist sie noch nicht. Ein Gehäuse für CPU und PiggyBack zusammen gibt es aber schon.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

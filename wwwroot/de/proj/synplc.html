@@ -13,9 +13,393 @@
       <p class="back-link"><a href="{{langRoot}}{{projectsPage}}">{{t:backToProjects}}</a></p>
 
       <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/synplc/index.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Opening quote ("In theory, one could build a LOGO!-type PLC from Arduinos") as quote; used as framing in the history
+          - Author line, GitLab mirror link (https://gitlab.synthron.de/Synthron/SynPLC); GitHub comes from links.repo
+          - Mermaid diagrams (system architecture, module firmware flow); described in the text instead
+          - Transaction time estimate at 1 MBaud (~100 us, computed in the source)
+          - Earlier baud rates in detail (tech note 250 kBaud, CPU V1 test firmware 500 kBaud): only mentioned briefly
+          - Older register map of 11-protocol.tex and coded error values of the tech note (only one sentence)
+          - Early ping concept (doc/pictures/ping_protocol.png, 0xAA / 0x55)
+          - Enclosure file list (Gehaeuse-*.stl, clip.stl, logo.step, arial.ttf)
+          - Repository structure and Media & Downloads sections, suggested website additions
+          - Inferred purpose of clip.stl (DIN rail)
+
+          Derived / own wording (please verify):
+          - "Aktuell ruht das Projekt": taken from status "pausiert" in projects.json, not from the summary
+          - Bus-select jumper positions (1-3/2-4 RS-485, 3-5/4-6 CAN) are inferred in the source
+          - "Beim Herumspinnen ... nur noch ein kleiner Schritt" framing in the history is my wording
+          - Enclosure: "Schlitze fuer die Klemmen" is inferred from the file names in the source
+          - Closing sentence of the status section ("Es wird weitergehen, wenn die Zeit dafuer da ist") is invented framing
+          - German names of the design principles are my translations
+        -->
         <!-- @project-header -->
+        <!-- @toc -->
 
         <div class="project-content">
+
+          <!-- 1. Übersicht -------------------------------------- -->
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Die SynPLC ist eine selbstgebaute, modulare <strong>SPS</strong> (speicherprogrammierbare Steuerung) für die Hausautomatisierung. Statt einer geschlossenen Kiste mit fester Anzahl an Ein- und Ausgängen, wie etwa bei einer Siemens LOGO!, besteht sie aus einzelnen Modulen: einer <a href="synplc/cpu.html">CPU</a> und einer Reihe kleiner I/O-Module für digitale Eingänge, digitale Ausgänge, analoge Eingänge, analoge Ausgänge und ein Triac-Interface für Netzlasten.</p>
+              <p>Alle Module sind <strong>100 × 77mm</strong> große Platinen und hängen an einem gemeinsamen <strong>10-poligen Flachbandkabel</strong>. Darüber laufen die 5V-Versorgung und ein differenzielles Adernpaar, auf dem wahlweise <strong>RS-485</strong> oder <strong>CAN</strong> gesprochen wird.</p>
+              <p>Der Clou: Jedes Modul hat seinen <strong>eigenen STM32-Mikrocontroller</strong>. Es kümmert sich selbst um seine Ein- und Ausgänge und unterhält sich mit der CPU nur über ein kleines, eigenes Registerprotokoll. Die Feldseite, also 24V-Ein- und Ausgänge, Analogsignale und Netzspannung, ist auf jedem I/O-Modul <strong>galvanisch getrennt</strong> vom Logikbus.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten der SynPLC</caption>
+                <tbody>
+                  <tr><th scope="row">Zweck</th><td>Hausautomatisierung, 24V-taugliche digitale und analoge I/O, Schalten von Wechselstromlasten</td></tr>
+                  <tr><th scope="row">Format</th><td>100 × 77mm, 4 Lagen, Flachbandkabel-Bus (2 × 5 Pins, 2,54mm)</td></tr>
+                  <tr><th scope="row">Versorgung</th><td>24V DC → isolierter DC/DC-Wandler (10W) auf der CPU → 5V auf dem Bus</td></tr>
+                  <tr><th scope="row">Modulbus</th><td>RS-485 <em>oder</em> CAN auf einem gemeinsamen Adernpaar, per Jumper wählbar</td></tr>
+                  <tr><th scope="row">Protokoll</th><td>Eigenes RS-485-Registerprotokoll mit 1MBaud, CAN-Protokoll geplant</td></tr>
+                  <tr><th scope="row">CPU</th><td>STM32F412RET6 mit 100MHz, ESP-01 für WLAN, SD-Karte, USB, RTC</td></tr>
+                  <tr><th scope="row">I/O-Module</th><td>STM32F103C8T6 mit 72MHz</td></tr>
+                  <tr><th scope="row">Werkzeuge</th><td>KiCad, FreeCAD, LTspice, STM32CubeMX mit stm32pio und PlatformIO, LaTeX</td></tr>
+                  <tr><th scope="row">Lizenz</th><td>Creative Commons CC BY-SA 4.0 (alle Dateien und Dokumente)</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- 2. Entstehungsgeschichte -------------------------- -->
+          <section class="project-section" aria-labelledby="history">
+            <h2 id="history">Entstehungsgeschichte</h2>
+            <div class="prose">
+              <h3>Die Idee</h3>
+              <p>Angefangen hat alles mit der Idee eines <strong>24V-tauglichen Arduinos</strong>. Beim Herumspinnen wurde mir aber schnell klar, dass man mit so einem Board eigentlich auch eine LOGO! nachbauen könnte. Und von da war es nur noch ein kleiner Schritt zum Plan für ein komplettes, selbstgebautes SPS-System.</p>
+              <h3>Module V1: der Proof of Concept</h3>
+              <p>Die erste Generation basierte auf dem <strong>ATmega328P</strong> mit dem Arduino-Framework, einfach weil der so angenehm zu programmieren ist. Gebaut habe ich eine CPU, ein DO-, ein DI- und ein AO-Modul. Analogeingänge, ein Interface- bzw. PWM-Modul und ein Phasenanschnittmodul waren geplant. Gesprochen wurde ausschließlich RS-485.</p>
+              <p>Als Proof of Concept hat das funktioniert, aber so richtig ausgereift war die Hardware nicht. Viele Kompromisse haben zu <strong>hohen Kosten und schwer beschaffbaren Bauteilen</strong> geführt. Alle V1-Module sind deshalb inzwischen ausgemustert.</p>
+              <h3>Module V2: STM32</h3>
+              <p>Für V2 war das Ziel, generischere Schaltungen zu bauen, ohne dabei an Genauigkeit oder Stabilität einzubüßen:</p>
+              <ul>
+                <li>Jedes I/O-Modul bekommt einen <strong>STM32F103C8T6</strong>, die CPU V2 einen <strong>STM32F412RET6</strong>.</li>
+                <li>Jede Platine trägt <strong>sowohl einen RS-485- als auch einen CAN-Transceiver</strong>. Per Jumper wird ausgewählt, welcher davon am Bus hängt.</li>
+                <li>Alle Platinen haben dasselbe Format (100 × 77mm, 4 Lagen) und denselben Busstecker.</li>
+                <li>Die <strong>Analogmodule</strong> haben ordentlich zugelegt: isoliertes I²C zu DAC bzw. ADC, Präzisionswiderstände und Umschaltung zwischen Spannung und Strom.</li>
+                <li>Neu dazugekommen ist das <strong>Triac-Interface XT4</strong>.</li>
+              </ul>
+              <p>Bevor die Platinen bestellt wurden, haben sich Leute aus der Community die Layouts angeschaut. Auf den Bestückungsdrucken sind sie verewigt: <strong>Blind_Via</strong> hat DO8, DI8 und XT4 reviewt, <strong>theBrutzler</strong> AO4 und AI4. Danke euch!</p>
+              <h3>CPU V1 und V2</h3>
+              <p>Die erste STM32-CPU basierte ebenfalls auf einem STM32F103C8. Die <strong>CPU V2</strong> von 2023 wechselt auf den deutlich größeren <strong>STM32F412RET6</strong>. Der bringt SDIO für die SD-Karte, USB OTG, mehr Timer und einen I²C-Port für das <a href="synplc/cpu-piggyback.html">PiggyBack</a> mit lokalen Ein- und Ausgängen mit.</p>
+            </div>
+          </section>
+
+          <!-- 3. Das System ------------------------------------- -->
+          <section class="project-section" aria-labelledby="system">
+            <h2 id="system">Das System</h2>
+            <div class="prose">
+              <h3>Grundsätze</h3>
+              <ul>
+                <li><strong>Verteilte Intelligenz:</strong> Jedes Modul hat seinen eigenen Controller. Es tastet seine Eingänge ab, treibt seine Ausgänge und prüft seine Rückmeldungen selbst. Die CPU tauscht nur noch Registerwerte aus.</li>
+                <li><strong>Galvanische Trennung überall:</strong> Optokoppler (TLP291-4) auf den Digitalmodulen, isoliertes I²C (ADuM1250) auf den Analogmodulen, Opto-Triacs auf dem Triac-Modul. In den Schaltplänen sind mindestens 1,5mm Luft- und Kriechstrecke über die Trennstelle gefordert.</li>
+                <li><strong>Robuste Feldschnittstellen:</strong> Die 24V-I/Os sind mit 36V-TVS-Dioden geschützt, die Digitaleingänge sind auf 2mA strombegrenzt und vertragen bis zu 33V, und die Feldversorgungen sind gegen Verpolung geschützt.</li>
+                <li><strong>Ein Bus, zwei Physical Layer:</strong> RS-485 ist simpel, robust und auf jedem Controller schnell umgesetzt. CAN kann Multi-Master und Arbitrierung in Hardware. Das eigene Protokoll ist bewusst so einfach gehalten, dass es sich auch auf anderen Controllern leicht implementieren lässt.</li>
+                <li><strong>Standardbauteile:</strong> Statt exotischer V1-Teile kommen gängige Bauteile zum Einsatz, etwa STM32F103, MAX485E, SN65HVD232, AP1117-33, TLP291-4, LM358 und BT136.</li>
+                <li><strong>Ein Formfaktor:</strong> Alle Platinen haben dieselbe Größe und denselben Busstecker und passen damit in dieselbe Gehäusefamilie.</li>
+              </ul>
+              <h3>So spielt alles zusammen</h3>
+              <ol>
+                <li>Die <strong>CPU</strong> bekommt 24V DC. Ihr isolierter DC/DC-Wandler macht daraus 5V für sich selbst und, über das Flachbandkabel, für <strong>alle I/O-Module</strong>. Jedes Modul erzeugt sich daraus seine 3,3V mit einem AP1117-33.</li>
+                <li>Die CPU ist der <strong>Bus-Master</strong>. Sie schickt einen Anfrage-Frame an eine Moduladresse, zum Beispiel „schreibe das Ausgangsregister von DO-Modul 1“, und wartet auf die Antwort.</li>
+                <li>Alle Module hören am Bus mit. Ein Zustandsautomat im UART-Interrupt zerlegt den Frame, prüft Adresse und Prüfsumme, speichert den Registerwert bzw. liefert ihn zurück und antwortet mit <strong>ACK</strong> oder <strong>NACK</strong> samt Fehlercode.</li>
+                <li>In seiner Hauptschleife überträgt jedes Modul die Register auf die Hardware, schaltet also Ausgänge oder schreibt DAC-Werte, und tastet seine Eingänge ab.</li>
+                <li>Die Feldversorgung, also 24V für Ausgänge, Analogschleifen oder Netzspannung für die Triacs, wird <strong>direkt an den Klemmen des jeweiligen Moduls</strong> angeschlossen und bleibt vom Bus getrennt.</li>
+              </ol>
+            </div>
+          </section>
+
+          <!-- 4. Der Modulbus ----------------------------------- -->
+          <section class="project-section" aria-labelledby="bus">
+            <h2 id="bus">Der Modulbus</h2>
+            <div class="prose">
+              <p>Alle Module hängen an einer <strong>10-poligen Stiftleiste</strong> (2 × 5, 2,54mm). Jedes I/O-Modul hat davon gleich zwei, damit das Flachbandkabel von Modul zu Modul durchgeschleift werden kann. Für eine stabile Kommunikation empfehle ich <strong>verdrilltes Flachbandkabel</strong> (Twisted Pair).</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Pinbelegung des Modulbusses</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Pin</th>
+                    <th scope="col">Signal</th>
+                    <th scope="col">Pin</th>
+                    <th scope="col">Signal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>+5V</td><td>2</td><td>+5V</td></tr>
+                  <tr><td>3</td><td>+5V</td><td>4</td><td>+5V</td></tr>
+                  <tr><td>5</td><td>GND</td><td>6</td><td>GND</td></tr>
+                  <tr><td>7</td><td>GND</td><td>8</td><td>GND</td></tr>
+                  <tr><td>9</td><td><strong>BUS+</strong></td><td>10</td><td><strong>BUS−</strong></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Je vier Pins für +5V und GND sorgen dafür, dass das Flachbandkabel auch etwas Strom abkann. BUS+ und BUS− liegen nebeneinander auf Pin 9 und 10 und bilden im verdrillten Kabel ein gemeinsames Paar.</p>
+              <h3>RS-485 oder CAN</h3>
+              <p>Auf dem Bus gibt es nur <strong>ein</strong> differenzielles Paar. Jede Platine hat aber sowohl einen RS-485-Transceiver (<strong>MAX485E</strong>) als auch einen CAN-Transceiver (<strong>SN65HVD232</strong>). Eine 2 × 3-polige Jumperleiste entscheidet, welcher von beiden am Bus hängt. Beide gleichzeitig geht nicht. Auf der CPU sieht die Leiste so aus:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Belegung der Bus-Auswahl-Jumper</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Pin</th>
+                    <th scope="col">Signal</th>
+                    <th scope="col">Pin</th>
+                    <th scope="col">Signal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>RS485−</td><td>2</td><td>RS485+</td></tr>
+                  <tr><td>3</td><td>BUS−</td><td>4</td><td>BUS+</td></tr>
+                  <tr><td>5</td><td>CAN−</td><td>6</td><td>CAN+</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Jumper auf 1–3 und 2–4 schalten also RS-485 auf den Bus, Jumper auf 3–5 und 4–6 den CAN-Transceiver. Die I/O-Module haben dieselbe Jumperleiste, dazu Abschlusswiderstände mit 120Ω und 150Ω.</p>
+              <h3>Leistungsbudget</h3>
+              <p>Der TRACO THN 10-2411WIR auf der CPU liefert bis zu <strong>10W</strong> bei 5V, also rund 2A für das ganze System. Die Feldlasten hängen <strong>nicht</strong> am Bus. Jedes Modul bekommt seine Feldversorgung an den eigenen Klemmen.</p>
+            </div>
+          </section>
+
+          <!-- 5. Kommunikation ---------------------------------- -->
+          <section class="project-section" aria-labelledby="communication">
+            <h2 id="communication">Kommunikation</h2>
+            <div class="prose">
+              <p>Aktuell läuft die Kommunikation über RS-485 im Halbduplex. Der MAX485E wird über einen Richtungspin vom Controller umgeschaltet, der UART läuft mit 8N1 und <strong>1MBaud</strong>. In der technischen Doku standen ursprünglich mal 250kBaud, die erste CPU-Testfirmware lief mit 500kBaud, aber inzwischen sind CPU und Module bei 1MBaud angekommen. Die CPU ist der einzige Master.</p>
+              <h3>Adressierung</h3>
+              <p>Die 8-Bit-Adresse eines Moduls setzt sich aus zwei Teilen zusammen: Die oberen drei Bit geben den <strong>Modultyp</strong> an und sind in der Firmware fest hinterlegt, die unteren fünf Bit kommen vom <strong>DIP-Schalter</strong> auf dem Modul. So passen bis zu 32 Module pro Typ an den Bus.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Adressbereiche der Modultypen</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Bit 7–5</th>
+                    <th scope="col">Basisadresse</th>
+                    <th scope="col">Modultyp</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>000</code></td><td><code>0x00</code></td><td>Digitaleingang (<a href="synplc/di8.html">DI8</a>)</td></tr>
+                  <tr><td><code>001</code></td><td><code>0x20</code></td><td>Digitalausgang (<a href="synplc/do8.html">DO8</a>)</td></tr>
+                  <tr><td><code>010</code></td><td><code>0x40</code></td><td>Analogeingang (<a href="synplc/ai4.html">AI4</a>)</td></tr>
+                  <tr><td><code>011</code></td><td><code>0x60</code></td><td>Analogausgang (<a href="synplc/ao4.html">AO4</a>)</td></tr>
+                  <tr><td><code>100</code></td><td><code>0x80</code></td><td>PWM-Modul (geplant)</td></tr>
+                  <tr><td><code>101</code></td><td><code>0xA0</code></td><td>Thyristor- / Triac-Modul (<a href="synplc/xt4.html">XT4</a>)</td></tr>
+                  <tr><td><code>110</code></td><td><code>0xC0</code></td><td>Relaismodul (geplant)</td></tr>
+                  <tr><td><code>111</code></td><td><code>0xE0</code></td><td>reserviert</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Ein DO8 mit DIP-Schalter auf <code>00011</code> hat also die Adresse <code>0x20 | 0x03 = 0x23</code>.</p>
+              <h3>Aufbau eines Frames</h3>
+              <p>Eine Anfrage der CPU beginnt immer mit dem Startbyte <code>0x5A</code>, gefolgt von der Moduladresse. Im dritten Byte stecken der Befehl (oberes Nibble) und das Register (unteres Nibble). Danach kommen je nach Befehl kein, ein oder zwei Datenbytes, bei 16-Bit-Werten das niederwertige Byte zuerst, und zum Schluss die Prüfsumme.</p>
+              <p>Das Modul antwortet mit <code>0xC0</code> für ACK oder <code>0x3x</code> für NACK, bei Lesebefehlen gefolgt von einem oder zwei Datenbytes, und ebenfalls einer Prüfsumme. Eine Transaktion besteht also aus 4–6 Bytes von der CPU und 2–4 Bytes vom Modul.</p>
+              <p>Die <strong>Prüfsumme</strong> ist ein simples XOR über alle Bytes des Frames, gestartet mit der Konstante <code>0xC5</code>. Der Empfänger XOR-t einfach alle empfangenen Bytes inklusive Prüfsumme. Kommt dabei wieder <code>0xC5</code> heraus, ist der Frame in Ordnung.</p>
+              <h3>Befehle und Register</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Befehle des SynPLC-Protokolls</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Code</th>
+                    <th scope="col">Befehl</th>
+                    <th scope="col">Datenbytes</th>
+                    <th scope="col">Antwort</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>0x0_</code></td><td>Ping / Busscan</td><td>0</td><td>ACK</td></tr>
+                  <tr><td><code>0x1_</code></td><td>8-Bit-Register lesen</td><td>0</td><td>ACK + 1 Datenbyte</td></tr>
+                  <tr><td><code>0x2_</code></td><td>8-Bit-Register schreiben</td><td>1</td><td>ACK</td></tr>
+                  <tr><td><code>0x5_</code></td><td>16-Bit-Register lesen</td><td>0</td><td>ACK + 2 Datenbytes</td></tr>
+                  <tr><td><code>0x6_</code></td><td>16-Bit-Register schreiben</td><td>2 (LSB zuerst)</td><td>ACK</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Register der Module</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Register</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Breite</th>
+                    <th scope="col">Verwendet von</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>0x0</code></td><td>Eingangsregister</td><td>8 Bit</td><td>DI8, DO8</td></tr>
+                  <tr><td><code>0x1</code></td><td>Ausgangsregister</td><td>8 Bit</td><td>DO8</td></tr>
+                  <tr><td><code>0x2</code></td><td>Rückmeldung</td><td>8 Bit</td><td>DO8</td></tr>
+                  <tr><td><code>0x4</code>–<code>0x7</code></td><td>Kanal 1–4</td><td>16 Bit</td><td>AO4, AI4, XT4</td></tr>
+                  <tr><td><code>0xF</code></td><td>Fehlerregister</td><td>8 Bit</td><td>alle Module</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>In älteren Kapiteln der Doku gab es noch eine etwas andere Registerbelegung. Maßgeblich ist das, was die Firmware umsetzt, und das steht in der Tabelle oben.</p>
+              <h3>ACK, NACK und Fehler</h3>
+              <p>Das obere Nibble des ersten Antwortbytes ist <code>0xC</code> für ACK und <code>0x3</code> für NACK. Bei einem NACK stecken im unteren Nibble die Fehlerflags: Bit 0 für ein ungültiges Register, Bit 1 für einen ungültigen Befehl, Bit 2 für einen Verarbeitungsfehler und Bit 3 für einen Prüfsummenfehler. Im letzten Fall heißt es: einfach nochmal senden.</p>
+              <p>Ein paar Beispiele, wie das auf dem Bus aussieht:</p>
+            </div>
+            <pre class="code-block"><code>0xA5 auf die Ausgänge von DO8 #1 (Adresse 0x21) schreiben:
+CPU → 5A 21 21 A5 3A        Start, Adresse, W8|REG_OUT, Daten, Prüfsumme
+DO  → C0 05                 ACK, Prüfsumme
+
+Eingänge von DI8 #3 (Adresse 0x03) lesen:
+CPU → 5A 03 10 8C           Start, Adresse, R8|REG_IN, Prüfsumme
+DI  → C0 0F 0A              ACK, Eingänge = 0x0F, Prüfsumme
+
+Kanal 1 von AO4 #0 (Adresse 0x60) auf 5000 setzen (halber Bereich 0–10000):
+CPU → 5A 60 64 88 13 00     Start, Adresse, W16|REG_CH1, LSB, MSB, Prüfsumme
+AO  → C0 05                 ACK
+
+Frame mit Prüfsummenfehler:
+Mod → 38 FD                 NACK | Prüfsummenfehler, Prüfsumme</code></pre>
+            <div class="prose">
+              <h3>Und CAN?</h3>
+              <p>Alle Platinen haben einen CAN-Transceiver, und die CAN-Peripherie ist in jedem Firmware-Projekt schon konfiguriert, auf der CPU V2 mit 1Mbit/s. Nur das <strong>Protokoll</strong> dafür gibt es noch nicht. Das steht noch auf der To-do-Liste.</p>
+            </div>
+          </section>
+
+          <!-- 6. Hardware --------------------------------------- -->
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware</h2>
+            <div class="prose">
+              <h3>Gemeinsame Bausteine</h3>
+              <p>Alle V2-Platinen sind in KiCad als 100 × 77mm große 4-Lagen-Platinen entworfen. Damit nicht jedes Modul das Rad neu erfindet, teilen sich die I/O-Module einen Satz an Grundbausteinen:</p>
+              <ul>
+                <li><strong>STM32F103C8T6</strong> mit 8MHz-Quarz und PLL auf 72MHz</li>
+                <li><strong>MAX485E</strong> für RS-485 und <strong>SN65HVD232</strong> für CAN, dazu die Bus-Auswahl-Jumper und Abschlusswiderstände</li>
+                <li><strong>AP1117-33</strong> für die 3,3V aus dem 5V-Bus</li>
+                <li>5-poliger <strong>DIP-Schalter</strong> für die Adresse</li>
+                <li>Galvanische Trennung mit <strong>TLP291-4</strong>-Optokopplern (digital) oder <strong>ADuM1250</strong> (isoliertes I²C, analog)</li>
+                <li><strong>SM6T36A</strong> bzw. <strong>P6SMB36CA</strong> als 36V-TVS-Dioden und Verpolschutz für die Feldversorgung</li>
+                <li>Steckbare 2-polige Schraubklemmen von CUI mit 5mm Raster für die Feldseite</li>
+                <li>Zwei 2 × 5-polige Stiftleisten für den Bus und ein 4-poliger SWD-Header für den ST-Link</li>
+              </ul>
+              <p>Die Ein- und Ausgangsstufen der Analogmodule habe ich vorher in <strong>LTspice</strong> simuliert, mit LT1013-OPV-Modellen und 24V-Versorgung. Details dazu gibt es auf den Seiten zu <a href="synplc/ai4.html">AI4</a> und <a href="synplc/ao4.html">AO4</a>.</p>
+              <h3>Gehäuse</h3>
+              <p>Die Gehäuse sind in FreeCAD konstruiert und 3D-gedruckt. Weil alle Platinen dieselben Abmessungen haben, passt eine Gehäusefamilie für alle Module. Es gibt Unterteile mit vier oder fünf Schlitzen für die Klemmen, Frontplatten ohne LEDs, mit vier LEDs (z.B. für das AO4) oder mit acht LEDs (für DI8 und DO8), einen Deckel mit SynPLC-Logo und ein eigenes Gehäuse für CPU und PiggyBack. Dafür gibt es sogar eine Deckelvariante mit NFC.</p>
+            </div>
+          </section>
+
+          <!-- 7. Software --------------------------------------- -->
+          <section class="project-section" aria-labelledby="software">
+            <h2 id="software">Software</h2>
+            <div class="prose">
+              <p>Die Firmware entsteht für jedes Modul gleich: Peripherie und Takt werden in <strong>STM32CubeMX</strong> zusammengeklickt, mit <strong>stm32pio</strong> in ein PlatformIO-Projekt umgewandelt und dann mit <strong>PlatformIO</strong> und der STM32Cube-HAL gebaut. Geflasht und debuggt wird per ST-Link über SWD. Die technische Doku ist in LaTeX geschrieben.</p>
+              <h3>Firmware der Module</h3>
+              <p>Jedes Modulprojekt enthält eine Kopie der kleinen <code>synplc</code>-Bibliothek. Darin stecken die Definitionen für Adressen, Befehle, Register und Fehler, der RS-485-Parser, ein paar Hilfsfunktionen für die Antworten und ein Mikrosekunden-Delay auf Basis von TIM1. Der Ablauf ist bei allen Modulen gleich:</p>
+              <ol>
+                <li>HAL, Takt und Peripherie initialisieren.</li>
+                <li>DIP-Schalter auslesen und daraus zusammen mit dem Modultyp die Adresse bilden.</li>
+                <li>TIM1 als 1µs-Zeitbasis starten, RS-485 auf Empfang schalten und den UART-Interrupt für ein Byte scharfschalten.</li>
+                <li>In der Hauptschleife die Register auf die Hardware übertragen und die Eingänge bzw. Rückmeldungen abtasten. Ein RTOS gibt es nicht, das ist eine ganz klassische Super-Loop.</li>
+              </ol>
+              <p>Die eigentliche Buskommunikation passiert komplett im Interrupt. Der Parser ist ein kleiner <strong>Zustandsautomat</strong>: Zuerst wird auf das Startbyte <code>0x5A</code> gewartet, dann kommen Adresse und Befehl, aus denen sich ergibt, wie viele Bytes noch folgen, dann Daten und Prüfsumme. Ist alles gültig und das Modul gemeint, schaltet es den Transceiver auf Senden, antwortet mit ACK oder NACK und schaltet wieder zurück. Passt etwas nicht, wartet das Modul kurz und geht wieder auf die Suche nach dem nächsten Startbyte.</p>
+              <h3>Firmware der CPU</h3>
+              <p>Auf der CPU sitzt das Gegenstück, die Bibliothek <code>synplc_cpu</code>. Sie baut die Frames, rechnet die Prüfsumme, sendet, wartet mit Timeout auf die Antwort und prüft ACK, NACK und Prüfsumme. Dazu gibt es bequeme Funktionen für die gängigen Fälle, also Digitaleingänge lesen, Digitalausgänge schreiben, Analogwerte lesen und schreiben oder das Fehlerregister abfragen. Fünf Status-LEDs zeigen, was die CPU gerade treibt. Mehr dazu auf der Seite zur <a href="synplc/cpu.html">CPU</a>.</p>
+              <p>Aktuell wird das Steuerprogramm noch in <strong>C</strong> geschrieben und fest auf die CPU geflasht. Langfristig sollen Programme in <strong>Structured Text</strong> nach IEC 61131-3 geschrieben und von der SD-Karte geladen werden. Das habe ich aber erst einmal nach hinten geschoben.</p>
+            </div>
+          </section>
+
+          <!-- 8. Module ----------------------------------------- -->
+          <section class="project-section" aria-labelledby="modules">
+            <h2 id="modules">Die Module</h2>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Module der SynPLC</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Modul</th>
+                    <th scope="col">Funktion</th>
+                    <th scope="col">Eckdaten</th>
+                    <th scope="col">Adresse</th>
+                    <th scope="col">Stand</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><a href="synplc/cpu.html">CPU V2</a></td>
+                    <td>Steuerung, Bus-Master, Systemversorgung</td>
+                    <td>STM32F412RET6, ESP-01, SD, USB, RTC, 24V → 5V / 10W isoliert</td>
+                    <td>Master</td>
+                    <td>Entworfen und reviewt, Firmware in Arbeit</td>
+                  </tr>
+                  <tr>
+                    <td><a href="synplc/cpu-piggyback.html">CPU PiggyBack</a></td>
+                    <td>Lokale I/O für die CPU</td>
+                    <td>4 × DI und 4 × DO 24V, 2 × PCF8574 per I²C, isoliert</td>
+                    <td>I²C <code>0x20</code>/<code>0x21</code></td>
+                    <td>Entworfen</td>
+                  </tr>
+                  <tr>
+                    <td><a href="synplc/do8.html">DO8</a></td>
+                    <td>8 Digitalausgänge</td>
+                    <td>24V, 0,5A pro Kanal, ITS4880R, Rückmeldung jedes Ausgangs</td>
+                    <td><code>0x20</code>–<code>0x3F</code></td>
+                    <td>V1.2 gebaut und getestet</td>
+                  </tr>
+                  <tr>
+                    <td><a href="synplc/di8.html">DI8</a></td>
+                    <td>8 Digitaleingänge</td>
+                    <td>24V, max. 2mA, 2 getrennte Vierergruppen, bis 33V</td>
+                    <td><code>0x00</code>–<code>0x1F</code></td>
+                    <td>V1.1 gebaut und getestet</td>
+                  </tr>
+                  <tr>
+                    <td><a href="synplc/ao4.html">AO4</a></td>
+                    <td>4 Analogausgänge</td>
+                    <td>0–10V oder 0–20mA per Relais, MCP4728, isoliertes I²C</td>
+                    <td><code>0x60</code>–<code>0x7F</code></td>
+                    <td>V2.0 gebaut, im Test</td>
+                  </tr>
+                  <tr>
+                    <td><a href="synplc/ai4.html">AI4</a></td>
+                    <td>4 Analogeingänge</td>
+                    <td>0–10V oder 0–20mA, ADS1115, isoliertes I²C</td>
+                    <td><code>0x40</code>–<code>0x5F</code></td>
+                    <td>V1.0 gebaut, Firmware offen</td>
+                  </tr>
+                  <tr>
+                    <td><a href="synplc/xt4.html">XT4</a></td>
+                    <td>4 Triac-Ausgänge</td>
+                    <td>BT136-500, 230V / 1A, 2 Nulldurchgangsdetektoren, optisch getrennt</td>
+                    <td><code>0xA0</code>–<code>0xBF</code></td>
+                    <td>V1 gebaut, im Test</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Und natürlich ist auch hier die Ideenliste noch nicht zu Ende. Für ein <strong>PWM-Modul</strong> gibt es schon einen ersten Schaltplanentwurf mit einem PCA9635 als 16-Kanal-PWM-Treiber, das Layout ist aber noch leer. Außerdem geplant sind ein <strong>Relaismodul</strong> und ein <strong>Thermoelement-Modul</strong>.</p>
+            </div>
+          </section>
+
+          <!-- 9. Stand ------------------------------------------ -->
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand und Ausblick</h2>
+            <div class="prose">
+              <p>Die STM32-Platinen sind bestellt und bestückt. DO8 und DI8 sind getestet, AO4, AI4 und XT4 stecken noch im Test. Ein paar Kinderkrankheiten sind auch schon behoben: tote Kanäle auf DI und DO nachgelötet, ein besserer Stecker an der CPU und der MAX485 auf der CPU hängt jetzt an 3,3V. Die CPU V2 ist fertig gelayoutet und reviewt, wartet aber noch auf die Bestellung. Die Doku habe ich komplett auf Englisch umgeschrieben und die reviewten Platinen ins Repository gepackt.</p>
+              <p>Auf der Software-Seite gibt es noch einiges zu tun: Firmware für alle neuen Platinen, ein effizienteres RS-485-Protokoll mit Ausfallsicherung, falls ein Modul nicht antwortet, das CAN-Protokoll und allgemeiner gehaltener CPU-Code. Structured Text liegt wie gesagt erst einmal auf Eis. Auf der Hardware-Seite warten noch das Relais- und das PWM-Modul.</p>
+              <p>Aktuell ruht das Projekt etwas. Aber wie das bei Hobbyprojekten so ist: Es wird weitergehen, wenn die Zeit dafür da ist.</p>
+            </div>
+          </section>
 
         </div>
       </article>
