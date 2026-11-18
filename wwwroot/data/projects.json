@@ -119,8 +119,8 @@
   {
     "id": "6l6-amp",
     "title": {
-      "de": "DRAFT 6L6 Audioverstärker",
-      "en": "DRAFT 6L6 Tube Amplifier"
+      "de": "6L6 Audioverstärker",
+      "en": "6L6 Tube Amplifier"
     },
     "summary": {
       "de": "Eintakt-Röhrenverstärker mit 6L6, EF86 und selbstgewickelten Trafos",
@@ -137,13 +137,13 @@
       ]
     },
     "status": "fertig",
-    "date": "2026-10",
+    "date": "2024-10",
     "links": {
       "repo": null,
       "demo": null
     },
     "image": "assets/img/6l6/6l6_glow.webp",
-    "featured": false
+    "featured": true
   },
   {
     "id": "gitarren-verstaerker",
