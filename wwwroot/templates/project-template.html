@@ -133,13 +133,43 @@
             <h2 id="layout-code">7. Code block</h2>
             <div class="prose">
               <p>Placeholder paragraph. Use a code block to show a snippet, a config file, or a command. It scrolls horizontally on narrow screens.</p>
+              <p>Placeholder paragraph. Set <code>data-lang</code> on the <code>pre</code> to a language key from <code>data/code-languages.json</code> (<code>c</code>, <code>cpp</code>, <code>js</code>, <code>python</code>, <code>bash</code>, <code>ca65</code>); the build then highlights keywords, comments, numbers and strings. Without <code>data-lang</code> the block stays plain. Escape <code>&lt;</code>, <code>&gt;</code> and <code>&amp;</code> inside the code.</p>
             </div>
-            <pre class="code-block"><code>// Placeholder code snippet
+            <!-- Keep the blocks you need; add a language by adding an entry to data/code-languages.json. -->
+            <pre class="code-block" data-lang="c"><code>#include &lt;stdint.h&gt;
+
+#define LED_PIN 13 /* on-board LED */
+
+// Toggle the LED ten times
+int main(void) {
+  const char *msg = "blink";
+  uint8_t state = 0x01;
+  for (int i = 0; i &lt; 10; i++) {
+    state ^= 1;
+  }
+  return 0;
+}</code></pre>
+            <pre class="code-block" data-lang="ca65"><code>; Count up on port B of VIA1
+.segment "CODE"
+reset:
+  ldx #$FF          ; init the stack pointer
+  txs
+  lda #%11111111    ; all pins are outputs
+  sta DDRB1
+loop:
+  inc PORTB1
+  jmp loop</code></pre>
+            <pre class="code-block" data-lang="bash"><code># Assemble every source file
+for file in src/*.s; do
+  ca65 --cpu 65c02 "$file" -o "$file.o"
+done
+exit 0</code></pre>
+            <pre class="code-block" data-lang="js"><code>// Placeholder code snippet
 function greet(name) {
   return `Hello, ${name}!`;
 }
 
-console.log(greet("FooBar"));</code></pre>
+console.log(greet("FooBar"), 42);</code></pre>
           </section>
 
           <!-- 8. LISTS ------------------------------------------ -->

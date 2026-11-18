@@ -18,6 +18,12 @@
   /* Dark badge behind white glyph icons (e.g. Github mark) */
   --color-icon-badge: #1f1f1f;
 
+  /* Syntax highlighting in code blocks */
+  --color-code-keyword: #7a3e9d;
+  --color-code-comment: #5d6560;
+  --color-code-number: #a14a00;
+  --color-code-string: #0b6e6e;
+
   /* Fonts */
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, monospace;
@@ -67,6 +73,10 @@
     --color-focus: #8ab4f8;
     --color-error: #f28b82;
     --color-icon-badge: #3a3a38;
+    --color-code-keyword: #c792ea;
+    --color-code-comment: #8f9690;
+    --color-code-number: #f0a45d;
+    --color-code-string: #7fcfb4;
   }
 }
 

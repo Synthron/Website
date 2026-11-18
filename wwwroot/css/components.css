@@ -396,6 +396,25 @@
   border-radius: var(--radius);
 }
 
+/* Syntax highlighting: spans rendered at build time (data/code-languages.json) */
+.code-block__keyword {
+  font-weight: 600;
+  color: var(--color-code-keyword);
+}
+
+.code-block__comment {
+  font-style: italic;
+  color: var(--color-code-comment);
+}
+
+.code-block__number {
+  color: var(--color-code-number);
+}
+
+.code-block__string {
+  color: var(--color-code-string);
+}
+
 /* Table: wrapped so it scrolls horizontally on small screens */
 .table-wrap {
   overflow-x: auto;

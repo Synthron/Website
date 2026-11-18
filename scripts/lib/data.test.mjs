@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { checkSharedIds, feedEntries, isTodo, loadFolders, loadHam, loadModules, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './data.mjs';
+import { checkSharedIds, feedEntries, isTodo, loadCodeLanguages, loadFolders, loadHam, loadModules, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './data.mjs';
 import { SRC, errors, warnings } from './util.mjs';
 
 const reset = () => { errors.length = 0; warnings.length = 0; };
@@ -349,6 +349,29 @@ test('loadFolders reports unknown keys and languages, bad names, clashes and lef
   reset();
   await loadFolders(SITE, { src: await fixture({ 'data/folders.json': { ham: { de: 'afu' } }, 'de/ham/old.html': '' }) });
   assert.match(errors.join('\n'), /wwwroot\/de\/ham\/: "ham" pages of "de" live in de\/afu\//);
+  reset();
+});
+
+test('loadCodeLanguages compiles every language and defaults to none', async () => {
+  reset();
+  const languages = await loadCodeLanguages({ src: await fixture({ 'data/code-languages.json': { $schema: 'x', c: { keywords: ['int'], lineComment: ['//'] } } }) });
+  assert.deepEqual(Object.keys(languages), ['c']);
+  assert.equal(languages.c.keywords.has('int'), true);
+  assert.deepEqual(await loadCodeLanguages({ src: await fixture({}) }), {});
+  await loadCodeLanguages();
+  assert.deepEqual(errors, []);
+});
+
+test('loadCodeLanguages reports schema errors and bad patterns', async () => {
+  reset();
+  await loadCodeLanguages({ src: await fixture({ 'data/code-languages.json': {
+    C: { keywords: [] }, a: { keywords: [], strings: ['""'] }, b: { keywords: [], number: '(' }, d: { keywords: [], word: '\\w*' },
+  } }) });
+  const text = errors.join('\n');
+  assert.match(text, /must NOT have additional properties "C"/);
+  assert.match(text, /code-languages\.json\.a\.strings\[0\]: must NOT have more than 1 characters/);
+  assert.match(text, /code-languages\.json\.b: Invalid regular expression/);
+  assert.match(text, /code-languages\.json\.d: "word" pattern matches the empty string/);
   reset();
 });
 

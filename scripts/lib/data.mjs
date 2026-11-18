@@ -4,12 +4,13 @@
 
 import path from 'node:path';
 import Ajv from 'ajv';
+import { compileLanguage } from './highlight.mjs';
 import { ROOT, SRC, exists, fail, readJson, safeExternalUrl, walk, warn } from './util.mjs';
 
 const SCHEMA_DIR = path.join(ROOT, 'scripts', 'schemas');
 const ajv = new Ajv({ allErrors: true, verbose: true });
 const schemas = {};
-for (const name of ['site', 'strings', 'nav', 'projects', 'ham', 'pages', 'folders', 'modules']) {
+for (const name of ['site', 'strings', 'nav', 'projects', 'ham', 'pages', 'folders', 'modules', 'code-languages']) {
   schemas[name] = ajv.compile(await readJson(path.join(SCHEMA_DIR, `${name}.schema.json`)));
 }
 
@@ -186,6 +187,26 @@ export async function loadNav(file, site, { src = SRC } = {}) {
     }
   }
   return nav;
+}
+
+// Syntax highlighting rules from data/code-languages.json (optional; a missing
+// file means no highlighting). Returns { <data-lang>: compiled language }.
+export async function loadCodeLanguages({ src = SRC } = {}) {
+  const rel = 'data/code-languages.json';
+  const file = path.join(src, rel);
+  const data = await exists(file) ? await readJson(file) : {};
+  if (!isObject(data)) throw new Error(`${rel}: expected an object with one entry per language`);
+  const invalid = validate('code-languages', rel, data);
+  const languages = {};
+  for (const [name, def] of Object.entries(data)) {
+    if (name === '$schema' || invalid.has(name)) continue;
+    try {
+      languages[name] = compileLanguage(def);
+    } catch (error) {
+      fail(`${rel}.${name}: ${error.message}`);
+    }
+  }
+  return languages;
 }
 
 // Collection folder names per language from data/folders.json (optional; a

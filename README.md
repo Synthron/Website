@@ -45,8 +45,9 @@ Website/
 │   │   ├── preview.mjs    # Shared helpers of serve/dev (root redirect, flasher detection)
 │   │   ├── lighthouse.mjs # Overview page of the Lighthouse CI reports
 │   │   ├── vectorize.mjs  # Raster -> SVG tracing (palette detection, colour layers, potrace, mismatch)
-│   │   └── *.test.mjs     # Unit tests (node --test): util, data, render, pipeline, checks, scaffold, preview, lighthouse, vectorize
-│   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects, ham, modules, pages, folders)
+│   │   ├── highlight.mjs  # Build-time syntax highlighting of code blocks (data/code-languages.json)
+│   │   └── *.test.mjs     # Unit tests (node --test): util, data, render, pipeline, checks, scaffold, preview, lighthouse, vectorize, highlight
+│   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects, ham, modules, pages, folders, code-languages)
 │   ├── e2e/               # Playwright specs (*.spec.mjs)
 │   │   ├── pages.spec.mjs # Every built page: 320/768/1280 px, console, requests, storage, focus
 │   │   ├── language.spec.mjs # Language setup of the built site (lang, canonical, hreflang, selector, sitemap, RSS feeds, root redirect)
@@ -111,6 +112,7 @@ Website/
     │   ├── footer-nav.json # Footer navigation entries per language (label + href)
     │   ├── pages.json      # Pages with different file names per language (empty: pair by identical path)
     │   ├── folders.json    # Collection folder names per language (de: ham -> afu)
+    │   ├── code-languages.json # Syntax highlighting rules per code language (keywords, comments, strings, numbers)
     │   ├── projects.json   # Project entries (single source of truth)
     │   ├── ham.json        # Ham radio page entries (list on hamradio.html)
     │   ├── modules.json    # Module pages below a project or ham entry (see Module Pages)
@@ -190,7 +192,7 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | `npm run clean` | Removes `dist/`. |
 | `npm run setup` | Activates the versioned git hooks: sets `core.hooksPath` to `.githooks` (the `pre-commit` hook runs `npm run check`, then `npm run lint`). Run once after cloning. |
 
-The build copies `wwwroot/` to `dist/` except `partials/`, `data/`, `templates/` and `assets/firmware/dummy/` (the template's example suite is not a real product, so it is not deployed). HTML files and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then local asset URLs are cache-busted and finally the `@raw` blocks are put back unchanged. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
+The build copies `wwwroot/` to `dist/` except `partials/`, `data/`, `templates/` and `assets/firmware/dummy/` (the template's example suite is not a real product, so it is not deployed). HTML files and `robots.txt` are processed in this order: `@raw` blocks are set aside, then includes, tokens and directives run, then local asset URLs are cache-busted, the `@raw` blocks are put back unchanged and finally code blocks with `data-lang` are syntax-highlighted. The output is fully static: no `fetch()` and no runtime content loading. Deploy the contents of `dist/`.
 
 The build also generates `dist/sitemap.xml` from every built page (excluding `404.html`; `index.html` becomes the root URL). Project pages carry a `lastmod` from their `date`; all other pages (module pages included) take it from the last git commit date of their source file — today when the file has uncommitted changes, omitted when git is unavailable or the file is untracked. Draft projects, draft modules and all modules of a draft parent are not listed. Pages of projects that are hidden in a language are not built and therefore not listed; the sitemap has no `hreflang` alternates (those are `<link>` tags in the page heads). The build also fills the `Sitemap:` line in `dist/robots.txt`. Both use the canonical `url` in `data/site.json`. Keep `data/site.json`'s `url` current when the site moves domains.
 
@@ -227,7 +229,7 @@ Installed as `devDependencies`; none of them ship to `dist/`. Use these packages
 - Generated reports (`test-results/`, `playwright-report/`, `.lighthouseci/`) are git-ignored.
 - `npm run build` and `npm run check` stay fast and offline: only `ajv` runs inside them. Lint runs via `npm run lint` (and the pre-commit hook); Playwright and Lighthouse run on demand.
 - `html-validate` and the build's `checkHtmlRules` overlap on purpose: the build check (one `h1`, `<html lang>`, `alt`, no inline scripts or `style` attributes) runs offline in every build and `npm run check`; `html-validate` adds full HTML5 content-model, ARIA and landmark rules on the built pages.
-- `data/site.json` and `data/strings.json` reference their schema via `$schema`; the array files (`projects.json`, `ham.json`, `modules.json`, `pages.json`) and the nav files (`nav.json`, `footer-nav.json`) are mapped via `json.schemas` in `.vscode/settings.json`.
+- `data/site.json`, `data/strings.json` and `data/code-languages.json` reference their schema via `$schema`; the array files (`projects.json`, `ham.json`, `modules.json`, `pages.json`) and the nav files (`nav.json`, `footer-nav.json`) are mapped via `json.schemas` in `.vscode/settings.json`.
 - Add a package with `npm i -D <name>` and list it in this table in the same change. In PowerShell, quote scoped names: `npm i -D '@scope/name'` (a bare `@` starts splatting).
 
 ### Open Graph and Canonical Tags
@@ -316,6 +318,7 @@ Content is never hard-coded where it can be generated. Source pages use these co
 | `<!-- @ham-list level=2\|3 id=list-id -->` | Pre-rendered list of the ham pages from `data/ham.json` (title link, date, status if set, summary, tags), newest first; drafts are skipped; `strings.noHamPages` when empty. |
 | `<!-- @tag-filter list-id [from=projects\|ham] -->` | Tag filter buttons and status line for the list with that `id`. `from` selects the data (default `projects`); `from=ham` uses the ham tags and the count words `hamCountSingular`/`hamCountPlural`. Hidden until `js/projects.js` runs. |
 | `<!-- @raw -->` … `<!-- @endraw -->` | Everything in between is output verbatim: no includes, tokens or directives. Use it for code samples that show `{{…}}` or `<!-- @… -->`. The markers are removed; HTML-escape the content yourself (e.g. `&lt;` inside `<pre><code>`). Unmatched markers fail the build. |
+| `<pre class="code-block" data-lang="…"><code>…</code></pre>` | Syntax highlighting at build time (`scripts/lib/highlight.mjs`): keywords, comments, numbers and strings are wrapped in `span.code-block__keyword` / `__comment` / `__number` / `__string` (colours `--color-code-*` in `css/base.css`). `data-lang` is a key of `data/code-languages.json`; an unknown key, markup inside the code or an unsupported named entity (only `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;`, `&nbsp;` and numeric ones) fails the build. Runs after the `@raw` blocks are restored, so it applies inside `@raw` too. Blocks without `data-lang` stay plain. |
 
 All inserted values are HTML-escaped. Use `{{name}}` (not a hard-coded name) in every `<title>` and `meta[name="description"]`. Source files in `wwwroot/` are templates and are not meant to be opened directly in a browser; open the built files in `dist/`.
 
@@ -406,7 +409,7 @@ Shared site info lives in `data/site.json` — the single source of truth, appli
 [`wwwroot/templates/project-template.html`](wwwroot/templates/project-template.html) is the master template for writing about a project. It is a reference page that is not built into `dist/`; it demonstrates every supported layout pattern with placeholder body content. Its header, title and description are generated from `data/projects.json` like any project page.
 
 - To write a new project page, run `npm run create:project` (it adds the project to `data/projects.json` and copies the template to `<lang>/proj/{id}.html` for every language; `npm run create:afu` does the same for ham pages), keep the includes and `@project-header`, and replace the placeholder body content.
-- Each numbered section shows one layout pattern: pure text, text with a small image, full-width image, text/image side by side, image gallery, callout, code block, lists, and table.
+- Each numbered section shows one layout pattern: pure text, text with a small image, full-width image, text/image side by side, image gallery, callout, code block (one example per highlighted language: `c`, `ca65`, `bash`, `js`), lists, and table.
 - `<!-- @toc -->` after `@project-header` renders a linked table of contents of the sections (each `h2` needs an `id`, as in the template). Keep it on longer pages and delete it on short ones; it works on module pages too (after `@module-header`).
 - The styles for all patterns live in `css/components.css` (base) and `css/responsive.css` (breakpoints at 640px and 960px). Do not add inline styles.
 - To add a NEW layout pattern, append a new numbered section to the template, add its styles to `css/components.css` (and `css/responsive.css` if it needs breakpoints), and note it here.
@@ -585,6 +588,7 @@ de/afu/t2lt.html, de/afu/t2lt/balun.html   # ham entry with a module (mapped col
 | `data/nav.json`, `data/footer-nav.json` | See [Navigation](#navigation-datanavjson). |
 | `data/pages.json` | Groups of the same page under different file names per language, see [Languages](#languages). `[]` when all pages pair by identical path. |
 | `data/folders.json` | Collection folder names per language (`{ "ham": { "de": "afu" } }`), see [Languages](#languages). Optional; unmapped languages use the key. |
+| `data/code-languages.json` | Syntax highlighting rules per code language, keyed by the `data-lang` value (lowercase, hyphenated; shipped: `c`, `cpp`, `js`, `python`, `bash`, `ca65`). Per language: `keywords` (required, whole words), `ignoreCase` (keywords only), `lineComment` (prefixes such as `//`, `#`, `;`), `blockComment` (pairs such as `["/*", "*/"]`), `strings` (single-character quotes; a string ends at the line end, `\` escapes), `number` and `word` (JavaScript regex sources; defaults: decimal/float/`0x`/`0b` numbers and `[A-Za-z_]\w*` words; e.g. `#?[A-Za-z_]\w*` makes `#include` a keyword, `\$[\da-fA-F]+\|%[01]+` matches 6502 numbers; double every backslash in JSON). Matching order: comment, string, number, word. Add a language by adding an entry; invalid or empty-matching patterns fail the build. Optional; a missing file means no highlighting. |
 | `data/site.json` | See [Site Config](#site-config-datasitejson). |
 
 ## Open Work

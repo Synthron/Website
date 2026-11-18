@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "code-languages.schema.json",
+  "title": "wwwroot/data/code-languages.json",
+  "description": "Syntax highlighting rules per code language, keyed by the data-lang value of <pre class=\"code-block\" data-lang=\"…\">.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" }
+  },
+  "patternProperties": {
+    "^[a-z0-9]+(-[a-z0-9]+)*$": { "$ref": "#/definitions/language" }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "nonEmpty": { "type": "string", "minLength": 1 },
+    "language": {
+      "type": "object",
+      "required": ["keywords"],
+      "properties": {
+        "keywords": {
+          "description": "Words highlighted as keywords (matched as whole words, see word).",
+          "type": "array",
+          "items": { "$ref": "#/definitions/nonEmpty" },
+          "uniqueItems": true
+        },
+        "ignoreCase": {
+          "description": "Match keywords case-insensitively (e.g. assembler mnemonics).",
+          "type": "boolean"
+        },
+        "lineComment": {
+          "description": "Prefixes that start a comment up to the line end, e.g. \"//\", \"#\", \";\".",
+          "type": "array",
+          "items": { "$ref": "#/definitions/nonEmpty" }
+        },
+        "blockComment": {
+          "description": "Pairs of comment delimiters, e.g. [\"/*\", \"*/\"].",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/nonEmpty" },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "strings": {
+          "description": "Single-character string quotes; strings end at the line end, a backslash escapes the next character.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 1 }
+        },
+        "number": {
+          "description": "JavaScript regex source for numbers (default: decimal, float, 0x hex, 0b binary).",
+          "type": "string",
+          "minLength": 1
+        },
+        "word": {
+          "description": "JavaScript regex source for words checked against keywords (default: [A-Za-z_]\\w*).",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -6,7 +6,8 @@
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DIST, ROOT, SRC, errors, exists, gitFirstAdded, gitLastModified, posix, shortHash, walk, warn, warnings } from './lib/util.mjs';
-import { checkSharedIds, feedEntries, loadHam, loadModules, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
+import { checkSharedIds, feedEntries, loadCodeLanguages, loadHam, loadModules, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
+import { applyHighlighting } from './lib/highlight.mjs';
 import { ogImageRel, renderFeed, renderOpenGraph, renderSitemap } from './lib/render.mjs';
 import {
   applyCacheBusting, applyDirectives, applyIncludes, applyTokens, classifyPage, isFlasherPage,
@@ -72,6 +73,7 @@ async function build({ check = false } = {}) {
   const navs = await loadNav('nav.json', site);
   const footerNavs = await loadNav('footer-nav.json', site);
   const stringsByLang = await loadStrings(site);
+  const codeLanguages = await loadCodeLanguages();
   // Everything a page needs in its own language; `lang` is merged into the
   // strings for formatDate().
   const perLang = Object.fromEntries(site.languages.map(({ code }) => [code, {
@@ -169,6 +171,8 @@ async function build({ check = false } = {}) {
     // Cache busting before raw blocks are restored, so code samples stay as-is.
     output = applyCacheBusting(output, rel, versions);
     output = restoreRaw(output, raw);
+    // After the raw blocks are back, so code samples inside @raw are highlighted too.
+    output = applyHighlighting(output, codeLanguages, rel);
     // Canonical + Open Graph tags go into every built page except 404.html
     // (never indexed). Until the OG image exists the image tag is omitted and
     // the build warns once.
