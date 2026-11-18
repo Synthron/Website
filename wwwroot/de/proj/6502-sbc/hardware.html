@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/6502-sbc/hardware.md, article-guide.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - ASCII board sketch (layout_overview.png should replace it as an image)
+          - Mermaid interrupt diagram (described as text)
+          - LED forward voltages per colour and the "would need 620/420 ohm" calculation
+          - Jumper JP3 (PIA LEDs off) and PIA header pinout JP1/JP2 (from the netlist)
+          - Scope picture file names; DSUB-9 pin 5 note (GND only via the shell, netlist analysis, check on the board)
+          - W65C51N TDRE bug (general knowledge, not from the documentation)
+          - Reference designators of most parts (only JP4, JP5, JP6, JP9 kept)
+
+          Derived / own wording (please verify):
+          - LED resistors: documentation says 1 kOhm, schematic and BOM 2.2 kOhm; the page uses 2.2 kOhm and the computed currents
+          - "555" instead of NE555 / LM555D (documentation vs. schematic)
+          - VIA3 IRQ -> NMI as timer system tick is inferred from the schematic sheet title
+          - Holder model Platinenschutz.FCStd is inferred
+          - 11 buttons = 8 user, reset, NMI, single step: reset assignment inferred
+          - Total RAM 528 kB is computed
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Die Platine auf einen Blick</h2>
+            <div class="prose">
+              <p>Auf dieser Seite geht es ans Eingemachte: Wie ist die Schaltung aufgebaut, und warum habe ich sie so gebaut? Einen schnellen Überblick gibt es auf der <a href="../6502-sbc.html">Projektseite</a>.</p>
+              <p>CPU, ROM und die beiden RAMs sitzen auf der Platine <strong>in einer Reihe</strong>. Das hält den parallelen Adress- und Datenbus kurz und zeigt auf einen Blick, dass diese vier Chips den Kern bilden. Dekoder, Taktgeber und BluePill liegen an der Oberkante, die Peripheriechips in der Mitte und die seriellen Schnittstellen, das LCD und die Erweiterungsslots unten. Alles, was im Schaltplan zu einem Funktionsblock gehört, sitzt auch auf der Platine beieinander.</p>
+              <p>Der Schaltplan besteht aus <strong>acht A3-Blättern</strong>: Adressdekodierung und Reset, Takterzeugung und Taktauswahl, CPU/RAM/ROM, Ausgänge und NMI, Eingänge und Interrupts, ACIAs und RS-232, BluePill und Abblockkondensatoren sowie die Erweiterungsslots.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="bus">
+            <h2 id="bus">Bus und Bus-LEDs</h2>
+            <div class="prose">
+              <p>Alle Chips hängen parallel am <strong>Adressbus A0–A15</strong>, am <strong>Datenbus D0–D7</strong> sowie an <strong>CLK</strong> und <strong>R/W</strong>. Jede dieser 26 Leitungen hat ihre eigene <strong>LED</strong>. Bei langsamem Takt kann man so den Zustand der CPU direkt ablesen.</p>
+              <p>Damit die LEDs den Bus so wenig wie möglich belasten, habe ich besonders helle Low-Power-LEDs genommen und alle mit demselben, recht hohen Vorwiderstand von <strong>2,2kΩ</strong> betrieben. Das ergibt nur etwa 1,4mA bei den roten und 1,0mA bei den anderen Farben, und das reicht völlig. Mit Jumper <strong>JP6</strong> lassen sich die Bus-LEDs komplett abschalten.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="decoding">
+            <h2 id="decoding">Adressdekodierung</h2>
+            <div class="prose">
+              <p>Der Dekoder besteht ausschließlich aus <strong>74HC-Logik</strong>, ganz ohne programmierbare Bausteine. Er ist in zwei Stufen aufgeteilt.</p>
+              <h3>Hauptdekodierung</h3>
+              <p>Gebraucht werden vier Chip-Selects: ROM, unteres RAM, oberes RAM und die I/O-Seite <code>$7Fxx</code>. Alle sind low-aktiv:</p>
+            </div>
+            <pre class="code-block"><code>/ROM    = NOT A15
+/RAM_LO = NAND(/ROM, NOT A14)
+/IO     = NAND(/ROM, A14, A13, A12, A11, A10, A9, A8)    ← 74HC30
+/RAM_HI = NAND(AND(/ROM, A14), /IO)</code></pre>
+            <div class="prose">
+              <p>Der Trick dabei: <code>/ROM</code> ist gleichzeitig das Signal „A15 ist low“ und wird in den anderen Gleichungen direkt weiterverwendet. Der I/O-Term hat dann genau acht Eingänge, und das passt perfekt auf den <strong>74HC30</strong>, ein NAND mit acht Eingängen, das auch gleich den nötigen low-aktiven Ausgang liefert. Dazu kommen ein <strong>74HC00</strong> (NAND, teils als Inverter) und ein <strong>74HC08</strong> für das eine AND.</p>
+              <h3>I/O-Dekodierung</h3>
+              <p>Alle Peripheriebausteine teilen sich dieselbe Seite. Ein <strong>74HC154</strong> mit A4–A7 als Eingang und <code>/IO</code> als Enable macht daraus 16 Chip-Selects mit je 16 Byte:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Ausgänge des I/O-Dekoders</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Ausgang</th>
+                    <th scope="col">Signal</th>
+                    <th scope="col">Bereich</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>0</td><td>/PIA</td><td><code>$7F00</code></td></tr>
+                  <tr><td>1–3</td><td>/VIA1, /VIA2, /VIA3</td><td><code>$7F10</code>, <code>$7F20</code>, <code>$7F30</code></td></tr>
+                  <tr><td>4–5</td><td>/ACIA1, /ACIA2</td><td><code>$7F40</code>, <code>$7F50</code></td></tr>
+                  <tr><td>6</td><td>/GPU</td><td><code>$7F60</code></td></tr>
+                  <tr><td>7 + 8</td><td>/SID (Dioden-ODER)</td><td><code>$7F70</code>–<code>$7F8F</code></td></tr>
+                  <tr><td>9–11</td><td>/IO9, /IOA, /IOB</td><td><code>$7F90</code>, <code>$7FA0</code>, <code>$7FB0</code></td></tr>
+                  <tr><td>12 + 13</td><td>/IOC (Dioden-ODER)</td><td><code>$7FC0</code>–<code>$7FDF</code></td></tr>
+                  <tr><td>14 + 15</td><td>/IOD (Dioden-ODER)</td><td><code>$7FE0</code>–<code>$7FFF</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Drei Bereiche brauchen 32 Adressen, zum Beispiel für einen <strong>SID 6581/8580</strong> mit seinen 29 Registern. Statt eines weiteren Gatters habe ich dafür jeweils zwei benachbarte Dekoderausgänge mit zwei Dioden und einem Pull-up-Widerstand verknüpft. Das spart einen IC und kostet keine Gatterlaufzeit.</p>
+              <h3>Reicht das Timing?</h3>
+              <p>Bei 1MHz dauert ein Takt 1000ns. Der 65C02 nutzt beide Takthälften, intern während low und auf dem Bus während high. Der Dekoder muss also innerhalb von <strong>500ns</strong> fertig sein.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Laufzeiten des Dekoders</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Signal</th>
+                    <th scope="col">Pfad</th>
+                    <th scope="col">Laufzeit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>/ROM</td><td>74HC00</td><td>7ns</td></tr>
+                  <tr><td>/RAM_LO</td><td>2 × 74HC00</td><td>14ns</td></tr>
+                  <tr><td>/RAM_HI</td><td>74HC30 + 74HC08/00</td><td>19ns</td></tr>
+                  <tr><td>/IO</td><td>74HC30</td><td>12ns</td></tr>
+                  <tr><td>/PIA (als Beispiel für I/O)</td><td>74HC30 + 74HC154</td><td>23ns</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Im schlechtesten Fall sind das etwa <strong>ein Zwanzigstel</strong> des Budgets. Bei 1MHz ist der Dekoder also ganz sicher nicht der Flaschenhals.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="memory">
+            <h2 id="memory">Speicher und RAM-Banking</h2>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Speicherbausteine</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Bereich</th>
+                    <th scope="col">Chip</th>
+                    <th scope="col">Bemerkung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>ROM <code>$8000</code>–<code>$FFFF</code></td><td>AT28C256-15 EEPROM, 32k × 8</td><td>Elektrisch löschbar, ideal zum Entwickeln. Steckt in einem <strong>ZIF-Sockel</strong>, damit die Pins das häufige Umstecken überleben</td></tr>
+                  <tr><td>RAM in Bänken <code>$0000</code>–<code>$3FFF</code></td><td>IS61C5128AS-25, 512k × 8, SMD</td><td>25ns Zugriffszeit. A14–A18 kommen von VIA1 Port B, macht <strong>32 Bänke à 16kB</strong></td></tr>
+                  <tr><td>Gemeinsames RAM <code>$4000</code>–<code>$7EFF</code></td><td>UM61256K-15, 32k × 8, DIP-28</td><td>Aus meiner Bastelkiste. Nur 16kB davon werden genutzt, abzüglich der I/O-Seite</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Zusammen sind das 512kB plus 16.128 Byte, also rund <strong>528kB RAM</strong>. Für einen 8-Bit-Rechner mit 64kB Adressraum ist das schon ordentlich.</p>
+              <h3>Bänke umschalten</h3>
+              <p>VIA1 treibt mit PB0–PB4 die Adressleitungen A14–A18 des großen SRAMs. Wer eine Zahl von 0 bis 31 in <code>PORTB1</code> schreibt, wählt damit die Bank. PB5–PB7 sind noch frei.</p>
+              <h3>Der Haken an der Sache</h3>
+              <p>Zero Page und Stack liegen <strong>mitten im umschaltbaren Bereich</strong>. Nach einem Reset sind die VIA-Ports aber Eingänge, die Bankleitungen hängen in der Luft, und die Bank, und damit auch der Stack, kann sich zufällig ändern. Deshalb muss jedes Programm VIA1 Port B auf Ausgang und Bank 0 setzen, <strong>bevor das erste <code>JSR</code> kommt</strong>. Beim allerersten CPU-Test, als es noch gar keine Software gab, habe ich die Bankleitungen direkt am Sockel von VIA1 auf 0V gelegt.</p>
+              <p>Warum ich mir das trotzdem antue? In einem späteren Multitasking-System könnte jeder Task so seine <strong>eigene Zero Page und seinen eigenen Stack</strong> bekommen. Der Nachteil: Bibliotheksroutinen können sich über Bänke hinweg nicht auf feste Zero-Page-Variablen verlassen.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="clock">
+            <h2 id="clock">Takterzeugung</h2>
+            <div class="prose">
+              <p>Mit dem Jumperfeld <strong>JP9</strong> wird genau eine Taktquelle mit der CPU verbunden:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Taktquellen</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Jumper</th>
+                    <th scope="col">Quelle</th>
+                    <th scope="col">Verwendung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>1–2 (MAN)</td><td>555 monostabil mit Taster</td><td>Entprellter <strong>Einzelschritt</strong></td></tr>
+                  <tr><td>3–4 (555)</td><td>555 astabil, per 1MΩ-Trimmer einstellbar</td><td>Langsamer Takt zum Zuschauen, gemessen von <strong>ca. 5,5Hz</strong> (49% Tastgrad) bis <strong>ca. 776Hz</strong> (65%)</td></tr>
+                  <tr><td>5–6 (OSC)</td><td>1MHz-Quarzoszillator</td><td>Normalbetrieb</td></tr>
+                  <tr><td>7–8 (BP)</td><td>BluePill, Pin PC13</td><td>Nur vorbereitet. Der STM32 liefert 3,3V, dafür bräuchte es noch einen Pegelwandler</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Die beiden 555-Schaltungen habe ich 1:1 von <strong>Ben Eaters Taktmodul</strong> für seinen 8-Bit-Computer übernommen. Warum das Rad neu erfinden, wenn es eine bewährte Schaltung gibt? Auf dem Oszilloskop sieht man schön, wie der Taster prellt und der Ausgang des Monoflops trotzdem sauber bleibt. Auch der 1MHz-Oszillator läuft stabil. Das Überschwingen an den Flanken kam übrigens von der Masseverbindung des Tastkopfs an der USB-Buchse, nicht vom Oszillator.</p>
+              <p>Der vollständig statische <strong>W65C02S</strong> kommt mit all diesen Takten problemlos klar, auch mit einem komplett angehaltenen.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="parallel-io">
+            <h2 id="parallel-io">Parallele I/O: PIA und VIAs</h2>
+            <div class="prose">
+              <h3>PIA: 16 LEDs</h3>
+              <p>Am R6520 hängen an Port A die LEDs 1–8 und an Port B die LEDs 9–16, jeweils zusätzlich auf eine Stiftleiste geführt. Mehr darf der PIA bei mir nicht machen. Er hat nämlich die Eigenheit, dass <strong>Datenrichtungsregister und Portregister unter derselben Adresse</strong> liegen. Welches von beiden man erwischt, entscheidet Bit 2 im Steuerregister. Ständiges Hin- und Herschalten ist mühsam, deshalb bekommt der PIA keine bidirektionalen Aufgaben wie das LCD.</p>
+              <h3>VIA1: LCD und RAM-Bänke</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Belegung von VIA1</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Pin</th>
+                    <th scope="col">Funktion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>PA0</td><td>LCD RS</td></tr>
+                  <tr><td>PA1</td><td>LCD R/W</td></tr>
+                  <tr><td>PA2</td><td>LCD E (2 × 16) bzw. E1 (4 × 40)</td></tr>
+                  <tr><td>PA3</td><td>LCD E2 (zweiter Controller eines 4 × 40 LCDs)</td></tr>
+                  <tr><td>PA4–PA7</td><td>LCD D4–D7 (4-Bit-Modus)</td></tr>
+                  <tr><td>PB0–PB4</td><td>RAM-Bank, A14–A18</td></tr>
+                  <tr><td>PB5–PB7</td><td>frei</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <h3>VIA2: Taster und Interrupt-Controller</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Belegung von VIA2</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Pin</th>
+                    <th scope="col">Funktion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>PA0 / PA1</td><td>/IRQ von ACIA1 / ACIA2</td></tr>
+                  <tr><td>PA2–PA7</td><td>/IRQ2–/IRQ7 von den Erweiterungsslots</td></tr>
+                  <tr><td>CA1</td><td>Dioden-ODER aller Interruptquellen an Port A</td></tr>
+                  <tr><td>PB0–PB7</td><td>8 Taster (low-aktiv)</td></tr>
+                  <tr><td>CB1</td><td>Dioden-ODER aller Taster</td></tr>
+                  <tr><td>IRQB</td><td>→ /IRQ der CPU</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <h3>VIA3: User-Port</h3>
+              <p>Alle Portpins von VIA3 gehen auf den <strong>User-Port JP5</strong>, eine 2 × 12-polige Stiftleiste:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Pinbelegung des User-Ports</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Pin</th>
+                    <th scope="col">Signal</th>
+                    <th scope="col">Pin</th>
+                    <th scope="col">Signal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>+5V</td><td>2</td><td>+5V</td></tr>
+                  <tr><td>3</td><td>PB0</td><td>4</td><td>PA0</td></tr>
+                  <tr><td>5</td><td>PB1</td><td>6</td><td>PA1</td></tr>
+                  <tr><td>7</td><td>PB2</td><td>8</td><td>PA2</td></tr>
+                  <tr><td>9</td><td>PB3</td><td>10</td><td>PA3</td></tr>
+                  <tr><td>11</td><td>PB4</td><td>12</td><td>PA4</td></tr>
+                  <tr><td>13</td><td>PB5</td><td>14</td><td>PA5</td></tr>
+                  <tr><td>15</td><td>PB6</td><td>16</td><td>PA6</td></tr>
+                  <tr><td>17</td><td>PB7</td><td>18</td><td>PA7</td></tr>
+                  <tr><td>19</td><td>CB1</td><td>20</td><td>CA1</td></tr>
+                  <tr><td>21</td><td>CB2</td><td>22</td><td>CA2</td></tr>
+                  <tr><td>23</td><td>GND</td><td>24</td><td>GND</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Der IRQ-Ausgang von VIA3 geht auf den Jumper <strong>JP4</strong>. Steckt der Jumper, landet er auf dem <strong>/NMI</strong> der CPU. Gedacht ist das für einen VIA-Timer als nicht maskierbaren System-Tick, das Schaltplanblatt heißt nicht umsonst „NMI for Timer-Interrupt“. Zusätzlich kann ein eigener Taster /NMI auf low ziehen.</p>
+              <h3>Nicht jeder 65C22 ist gleich</h3>
+              <p>Verbaut sind zwei <strong>Rockwell R65C22</strong> von 2002 und ein <strong>WDC W65C22S</strong> von 2018. Die sind aber nicht ganz austauschbar: Der WDC hat einen <strong>Push-Pull-IRQ-Ausgang</strong>, die Rockwells einen <strong>Open-Drain-Ausgang</strong> mit externem Pull-up. Genau dieser Unterschied hat mir bei der Inbetriebnahme einen <a href="inbetriebnahme.html#interrupts">schönen Fehler</a> beschert.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="interrupts">
+            <h2 id="interrupts">Interrupts</h2>
+            <div class="prose">
+              <p>Der 65C02 hat nur <strong>einen maskierbaren IRQ-Eingang</strong> (plus den NMI). Würde man einfach alle Quellen per Wired-OR darauf legen, müsste die Interrupt-Routine jeden Chip einzeln abfragen, um herauszufinden, wer sich gemeldet hat. Deshalb spielt hier <strong>VIA2 den Interrupt-Controller</strong>:</p>
+              <ul>
+                <li>Jede Interruptleitung geht auf einen Portpin, damit die Routine nachlesen kann, wer es war, <strong>und</strong> gleichzeitig über eine Diode auf CA1 bzw. CB1 mit Pull-up.</li>
+                <li>CA1 und CB1 reagieren auf eine <strong>fallende Flanke</strong> (<code>PCR = $CC</code>). VIA2 setzt dann das passende Bit in seinem <strong>Interrupt-Flag-Register (IFR)</strong> und zieht IRQB auf low.</li>
+                <li>Die Interrupt-Routine liest das IFR von VIA2. War es CA1, liest sie Port A und springt zur passenden Quelle, sonst liest sie Port B mit den Tastern. Das Lesen des Ports löscht auch gleich das Flag.</li>
+              </ul>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Zuordnung der Interruptleitungen</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Leitung</th>
+                    <th scope="col">Quelle</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>PA0</td><td>ACIA1</td></tr>
+                  <tr><td>PA1</td><td>ACIA2</td></tr>
+                  <tr><td>PA2</td><td>GPU-Slot</td></tr>
+                  <tr><td>PA3–PA7</td><td>Slots IO9, IOA, IOB, IOC, IOD</td></tr>
+                  <tr><td>PB0–PB7</td><td>8 Taster</td></tr>
+                  <tr><td>–</td><td>Der Sound-Slot hat keinen IRQ</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Macht zusammen 16 Interruptquellen an einem einzigen IRQ-Pin, plus NMI über VIA3 oder den Taster.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="lcd">
+            <h2 id="lcd">LCD</h2>
+            <div class="prose">
+              <ul>
+                <li>Verbaut ist ein HD44780-kompatibles <strong>2 × 16</strong> Zeichen-LCD.</li>
+                <li>Ein zweiter Footprint ist für ein <strong>4 × 40</strong> LCD vorgesehen. Das hat zwei Controller, deshalb liefert VIA1 an PA3 eine zweite Enable-Leitung.</li>
+                <li>Um Portpins zu sparen, läuft das LCD im <strong>4-Bit-Modus</strong>: Nur D4–D7 sind angeschlossen, das obere Nibble kommt zuerst. Den Kontrast stellt ein 10kΩ-Trimmer ein.</li>
+                <li>R/W ist angeschlossen. Der Treiber kann also das <strong>Busy-Flag abfragen</strong>, statt mit festen Wartezeiten zu arbeiten.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="serial">
+            <h2 id="serial">Serielle Schnittstellen</h2>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten der seriellen Schnittstellen</caption>
+                <tbody>
+                  <tr><th scope="row">UART</th><td>2 × 6551 ACIA</td></tr>
+                  <tr><th scope="row">Baudratentakt</th><td>Ein gemeinsamer 1,8432MHz-Oszillator für beide ACIAs</td></tr>
+                  <tr><th scope="row">Pegelwandler</th><td>2 × MAX232 pro Schnittstelle, damit auch alle Handshake-Leitungen umgesetzt werden</td></tr>
+                  <tr><th scope="row">Anschlüsse</th><td>Je eine DSUB-9-Buchse mit RS-232-Pegel und eine 1 × 8 Stiftleiste mit TTL-Pegel</td></tr>
+                  <tr><th scope="row">Getestet</th><td>8N1 mit <strong>9600Bd</strong>, gemessene Bitzeit 104,2µs; die Bibliothek kann auch 19200Bd</td></tr>
+                  <tr><th scope="row">Pegel</th><td>ca. ±9V an der Platine, invertierte Logik</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Die TTL-Stiftleisten haben die Belegung TXD, RXD, /RTS, /CTS, /DTR, /DCD, /DSR, GND auf Pin 1 bis 8.</p>
+              <p>Zwei Dinge aus der Praxis: Der 6551 sendet nur, solange <strong>/CTS low</strong> ist. Ohne Handshake-Partner muss also eine Brücke von RTS nach CTS her. Und weil ein normaler USB-RS-232-Adapter dieselbe Belegung hat wie die Platine, habe ich mir zwei <strong>Nullmodem-Adapter</strong> in Metall-DSUB-Gehäusen gebaut, in denen TX/RX und die Handshake-Leitungen gekreuzt sind.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="slots">
+            <h2 id="slots">Erweiterungsslots</h2>
+            <div class="prose">
+              <p>Für Erweiterungskarten gibt es sieben <strong>2 × 12-polige Buchsenleisten</strong> im Abstand von <strong>12,7mm</strong>, sodass kleine Karten senkrecht eingesteckt werden können.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Erweiterungsslots</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Slot</th>
+                    <th scope="col">Adresse</th>
+                    <th scope="col">Register</th>
+                    <th scope="col">IRQ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Soundkarte</td><td><code>$7F70</code></td><td>32</td><td>–</td></tr>
+                  <tr><td>GPU (FPGA)</td><td><code>$7F60</code></td><td>16</td><td>/IRQ2</td></tr>
+                  <tr><td>IO9</td><td><code>$7F90</code></td><td>16</td><td>/IRQ3</td></tr>
+                  <tr><td>IOA</td><td><code>$7FA0</code></td><td>16</td><td>/IRQ4</td></tr>
+                  <tr><td>IOB</td><td><code>$7FB0</code></td><td>16</td><td>/IRQ5</td></tr>
+                  <tr><td>IOC</td><td><code>$7FC0</code></td><td>32</td><td>/IRQ6</td></tr>
+                  <tr><td>IOD</td><td><code>$7FE0</code></td><td>32</td><td>/IRQ7</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Alle Slots haben dieselbe Belegung:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Pinbelegung der Erweiterungsslots</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Pin</th>
+                    <th scope="col">Signal</th>
+                    <th scope="col">Pin</th>
+                    <th scope="col">Signal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>+5V</td><td>2</td><td>+5V</td></tr>
+                  <tr><td>3</td><td>A0</td><td>4</td><td>D0</td></tr>
+                  <tr><td>5</td><td>A1</td><td>6</td><td>D1</td></tr>
+                  <tr><td>7</td><td>A2</td><td>8</td><td>D2</td></tr>
+                  <tr><td>9</td><td>A3</td><td>10</td><td>D3</td></tr>
+                  <tr><td>11</td><td>A4</td><td>12</td><td>D4</td></tr>
+                  <tr><td>13</td><td>R/W</td><td>14</td><td>D5</td></tr>
+                  <tr><td>15</td><td>n.c.</td><td>16</td><td>D6</td></tr>
+                  <tr><td>17</td><td>CLK</td><td>18</td><td>D7</td></tr>
+                  <tr><td>19</td><td>n.c.</td><td>20</td><td>/RES</td></tr>
+                  <tr><td>21</td><td>/CS (Slot-Auswahl)</td><td>22</td><td>/IRQ (beim Sound-Slot n.c.)</td></tr>
+                  <tr><td>23</td><td>GND</td><td>24</td><td>GND</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Auf den Slots liegen nur A0–A4, das reicht für 32 Register. Größere Geräte mit eigenem Speicher bräuchten also ihr eigenes Banking. Getestet sind die Slots noch nicht, weil es schlicht noch keine Karten gibt. Ihre Chip-Selects kommen aber aus demselben Dekoder, den alle anderen Tests schon bestätigt haben.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="analyzer">
+            <h2 id="analyzer">Eingebauter Logikanalysator</h2>
+            <div class="prose">
+              <p>In einem Sockel auf der Platine steckt ein <strong>STM32F103C8 „BluePill“</strong> mit 72MHz. Er liest bei jeder <strong>steigenden Taktflanke</strong> den Bus ein und schickt pro Zyklus eine Zeile über USB an den PC:</p>
+            </div>
+            <pre class="code-block"><code>1000000000000011   10101001   ADDR=8003  R DATA=a9</code></pre>
+            <div class="prose">
+              <ul>
+                <li>Idee und Originalcode stammen von <strong>Ben Eater</strong>, dort noch auf einem Arduino Mega. Ich habe das Ganze auf den BluePill portiert, mit neuer Pinbelegung und anderer Ausgabe.</li>
+                <li>Er hat 26 Eingänge: A0–A15, D0–D7, CLK und R/W.</li>
+                <li>Viele STM32-Pins sind <strong>5V-tolerant</strong> und hängen direkt am Bus. Die übrigen bekommen einen <strong>10kΩ/10kΩ-Spannungsteiler</strong>, der aus 5V 2,5V macht. Der STM32 braucht bei 3,3V Versorgung V<sub>IH</sub> = 0,41 · (V<sub>DD</sub> − 2V) + 1,3V ≈ 1,83V, die 2,5V sind also ein sicherer High-Pegel. Den Bus belastet der Teiler mit gerade mal 250µA.</li>
+                <li>Brauchbar ist er bis etwa <strong>1kHz</strong> Takt. Bei 1MHz kommt er nicht mehr mit und wird für den Vollgasbetrieb abgezogen.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="power">
+            <h2 id="power">Stromversorgung</h2>
+            <div class="prose">
+              <p>Die Platine läuft ausschließlich mit <strong>5V</strong>. Die kommen entweder über eine <strong>USB-B-Buchse</strong>, die nur zur Versorgung dient, oder über eine zweipolige Schraubklemme. Beide sind parallel geschaltet. Am Eingang sitzt ein 100µF-Elko, an jedem IC ein 100nF-Abblockkondensator.</p>
+              <p>Spannungsregler, Sicherung oder Verpolschutz gibt es auf der Platine nicht. Die Versorgung sollte also eine saubere 5V-Quelle sein. Weil die ganze Logik in CMOS ausgeführt ist, also 74HC, W65C02S und 65C22, ist der Stromverbrauch angenehm gering. Dazu kommen noch eine Power-on-Reset-Schaltung und ein Reset-Taster.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="pcb">
+            <h2 id="pcb">Platine und Fertigung</h2>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten der Platine</caption>
+                <tbody>
+                  <tr><th scope="row">EDA</th><td>Autodesk EAGLE 9.6.2 mit Education-Lizenz, also ohne Grenzen bei Lagen, Größe und Pins</td></tr>
+                  <tr><th scope="row">Größe</th><td><strong>200 × 200mm</strong>, das Maximum laut Pflichtenheft</td></tr>
+                  <tr><th scope="row">Lagen</th><td><strong>4</strong>: zwei Masse- und zwei Versorgungsflächen, das macht das Routing leichter und jeder IC hat eine solide Masse</td></tr>
+                  <tr><th scope="row">Bestückungsdruck</th><td>Speicherkarte, Beschriftung der Funktionsblöcke und Anschlüsse, „65C02 Computer · Marco Müller · Version 1.0“</td></tr>
+                  <tr><th scope="row">Fertigung</th><td>JLCPCB, 5 Platinen (Mindestmenge) plus SMD-Schablone, Flying-Probe-Test inklusive</td></tr>
+                  <tr><th scope="row">Bauteile</th><td>Reichelt und meine Bastelkiste</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>JLCPCB ist es geworden, weil es für ein selbst finanziertes Projekt einfach deutlich günstiger war als europäische Fertiger wie Aisler oder Eurocircuits.</p>
+              <p>Bestückt habe ich in der klassischen Reihenfolge: Lötpaste über die Schablone, SMD-Bauteile mit der Pinzette von klein nach groß, dann <strong>Reflow mit Heißluft</strong>, danach die THT-Bauteile von niedrig nach hoch und zum Schluss alles mit Isopropanol und einem weichen Pinsel gereinigt. Später kam noch ein in FreeCAD konstruierter und in PLA gedruckter <strong>Halter</strong> für die Platine dazu.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="bom">
+            <h2 id="bom">Stückliste (Kurzfassung)</h2>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Wichtigste Bauteile</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Anzahl</th>
+                    <th scope="col">Bauteil</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>W65C02S CPU</td></tr>
+                  <tr><td>1</td><td>AT28C256 EEPROM</td></tr>
+                  <tr><td>1</td><td>IS61C5128AS-25 SRAM</td></tr>
+                  <tr><td>1</td><td>UM61256 SRAM</td></tr>
+                  <tr><td>1</td><td>R6520 PIA</td></tr>
+                  <tr><td>3</td><td>65C22 VIA</td></tr>
+                  <tr><td>2</td><td>6551 ACIA</td></tr>
+                  <tr><td>4</td><td>MAX232</td></tr>
+                  <tr><td>2</td><td>555</td></tr>
+                  <tr><td>1 / 1</td><td>Oszillator 1MHz / 1,8432MHz</td></tr>
+                  <tr><td>je 1</td><td>74HC00, 74HC08, 74HC30, 74HC154</td></tr>
+                  <tr><td>22</td><td>1N4148 (MiniMELF)</td></tr>
+                  <tr><td>42</td><td>LEDs 0805</td></tr>
+                  <tr><td>11</td><td>Taster 6 × 6mm (8 × Benutzer, Reset, NMI, Einzelschritt)</td></tr>
+                  <tr><td>2</td><td>DSUB-9-Buchse</td></tr>
+                  <tr><td>1</td><td>STM32 BluePill</td></tr>
+                  <tr><td>–</td><td>Widerstände und Kondensatoren 0805, Tantal-Elkos, Stiftleisten, Sockel</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Mit Preisen kommt die Stückliste auf <strong>225,56€</strong>. Die größten Posten stehen auf der <a href="../6502-sbc.html#cost">Projektseite</a>.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

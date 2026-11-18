@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/6502-sbc/bring-up.md, article-guide.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Mermaid bring-up flow chart (described as an ordered list)
+          - Measurement equipment models (Hantek DSO4254B, Mastech MS8261); FT232RL kept
+          - Datasheet page reference for the 6551 CTS requirement (p. 4)
+          - Literature sources for the RAM timing (Garth Wilson's 6502 Primer is named, Tietze/Schenk omitted)
+          - Repetition of the full bug summary table of the source (merged with the overview page table)
+
+          Derived / own wording (please verify):
+          - Opening quote is a translation of the thesis quote in the source (English there)
+          - "Der Bus hat sich ueber USB unterhalten" and similar framings are my wording
+          - Long-run crash cause (input capacitance of the BluePill) is a theory in the source, not measured
+          - The closing sentence of the lessons-learned section is my framing
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="strategy">
+            <h2 id="strategy">Die Strategie</h2>
+            <div class="prose">
+              <p>„Da es sich um einen Prototyp handelt, sind Fehler nicht nur möglich, sondern zu erwarten. Wichtig ist, aus ihnen zu lernen.“ So steht es in meiner Technikerarbeit, und so ist es dann auch gekommen. Hier die ganze Geschichte der Inbetriebnahme, der Reihe nach: was getestet wurde, was schiefging, wie ich den Fehler gefunden und wie ich ihn behoben habe.</p>
+              <p>Alle 65xx-Chips, das ROM und das gemeinsame RAM stecken in Sockeln und wurden <strong>einer nach dem anderen</strong> eingesetzt. Hardware- und Softwaretests gingen dabei Hand in Hand: Jeder neue Chip hat sein eigenes kleines <a href="software.html#tests">Testprogramm</a> bekommen. Die Reihenfolge:</p>
+              <ol>
+                <li>Leere Platine auf Kurzschlüsse prüfen</li>
+                <li>Taktquellen mit dem Oszilloskop</li>
+                <li>Logikanalysator</li>
+                <li>CPU mit NOP-Test, dann ROM</li>
+                <li>Gemeinsames RAM</li>
+                <li>PIA und LEDs, VIAs und Taster</li>
+                <li>RAM-Bänke und LCD</li>
+                <li>Interrupts</li>
+                <li>ACIA senden, ACIA empfangen, MAX232</li>
+                <li>Dauertest und finale Demo</li>
+              </ol>
+              <p>Das wichtigste Werkzeug war dabei der <a href="hardware.html#analyzer">eingebaute Logikanalysator</a>, dazu Oszilloskop, Multimeter, ein USB-TTL-Adapter (FT232RL) und ein USB-RS-232-Adapter.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="first-power-up">
+            <h2 id="first-power-up">Die ersten Tests</h2>
+            <div class="prose">
+              <ol>
+                <li><strong>Kurzschlüsse:</strong> Mit dem Multimeter VCC gegen GND und alle Adress- und Datenleitungen untereinander durchgemessen. Keine Kurzschlüsse, wobei der Platinenhersteller ja schon einen Flying-Probe-Test gemacht hatte.</li>
+                <li><strong>Takt:</strong> Alle drei Quellen mit dem Oszilloskop gemessen. Der Taster prellt, der Ausgang des Monoflops bleibt sauber, der Einzelschritt funktioniert also. Der astabile 555 geht von etwa 5,5Hz bis etwa 776Hz, und der 1MHz-Oszillator läuft stabil.</li>
+                <li><strong>Logikanalysator:</strong> BluePill programmiert und die Ausgabe bei etwa 10Hz und 1kHz geprüft. Ohne CPU natürlich nur zufällige Buswerte, aber korrekt formatiert.</li>
+              </ol>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="cpu-test">
+            <h2 id="cpu-test">CPU-Test: freilaufende NOPs und die USB-Pins</h2>
+            <div class="prose">
+              <p><strong>Der Aufbau:</strong> CPU im Sockel, ROM-Sockel leer. Widerstände am ZIF-Sockel legen <code>$EA</code> auf den Datenbus, den Opcode für <strong>NOP</strong>. Die Bankleitungen PB0–PB4 von VIA1 habe ich direkt am Sockel auf 0V gelegt, damit der Stack nicht die Bank wechseln kann. Jeder Lesezugriff liefert jetzt ein NOP, die CPU zählt also einfach stumpf durch den Adressraum.</p>
+              <p><strong>Das Problem:</strong> Kaum steckte die CPU, kamen vom Logikanalysator keine Daten mehr.</p>
+              <p><strong>Die Fehlersuche:</strong> BluePill raus, und die Adress-LEDs zeigten, dass die CPU brav hochzählt. <strong>Die CPU funktionierte also.</strong> BluePill wieder rein: Die CPU zählte weiter, aber am PC kam nichts an. Das Problem lag also irgendwo zwischen BluePill und PC. Ein Blick auf die Pinbelegung des BluePill brachte die Lösung: Die Adressleitungen <strong>A7 und A8 lagen auf PA11 und PA12</strong>. Die sind zwar 5V-tolerant, aber eben auch die <strong>USB-Datenleitungen D− und D+</strong>. Der Adressbus hat sich quasi über die USB-Verbindung unterhalten.</p>
+              <p><strong>Die Lösung:</strong> Die Kontakte für PA11 und PA12 habe ich aus dem BluePill-Sockel entfernt. Weil keine 5V-toleranten Pins mehr frei waren, hängen A7 und A8 jetzt über dieselben 10k/10k-Spannungsteiler an PC14 und PC15.</p>
+              <p><strong>Die Bestätigung:</strong> Danach zeigte der Logikanalysator die Reset-Sequenz des 65C02 wie aus dem Lehrbuch:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Mitschnitt der Reset-Sequenz</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Adresse</th>
+                    <th scope="col">Daten</th>
+                    <th scope="col">R/W</th>
+                    <th scope="col">Bedeutung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>FFFF</code></td><td><code>EA</code></td><td>R</td><td>Reset-Zyklen …</td></tr>
+                  <tr><td><code>EAFB</code></td><td><code>EA</code></td><td>R</td><td></td></tr>
+                  <tr><td><code>015D</code></td><td><code>EA</code></td><td>R</td><td>Dummy-Zugriffe auf den Stack</td></tr>
+                  <tr><td><code>015C</code></td><td><code>EA</code></td><td>R</td><td></td></tr>
+                  <tr><td><code>015B</code></td><td><code>EA</code></td><td>R</td><td></td></tr>
+                  <tr><td><code>FFFC</code></td><td><code>EA</code></td><td>R</td><td>Reset-Vektor, Low-Byte</td></tr>
+                  <tr><td><code>FFFD</code></td><td><code>EA</code></td><td>R</td><td>Reset-Vektor, High-Byte</td></tr>
+                  <tr><td><code>EAEA</code></td><td><code>EA</code></td><td>R</td><td>Sprung nach <code>$EAEA</code>, NOP</td></tr>
+                  <tr><td><code>EAEB</code></td><td><code>EA</code></td><td>R</td><td>nächstes NOP …</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Der Reset-Vektor zeigt auf <code>$EAEA</code>, weil eben jedes Byte <code>$EA</code> ist.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="rom-ram">
+            <h2 id="rom-ram">ROM und RAM</h2>
+            <div class="prose">
+              <ul>
+                <li><strong>ROM:</strong> Komplett mit <code>$EA</code> gefüllt und eingesteckt. Gleicher Mitschnitt wie oben, nur dass jetzt auch ROM-Chip-Select und R/W-Logik mitgetestet sind. Läuft.</li>
+                <li><strong>Gemeinsames RAM:</strong> Das erste echte Programm schreibt <code>$55</code> und <code>$AA</code> nach <code>$4000</code> und <code>$4001</code> und liest beides zurück. Im Logikanalysator sieht man die Schreibzyklen und die Lesezyklen mit denselben Daten. Läuft auch.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="pia">
+            <h2 id="pia">PIA-Test: vertauschte Adressleitungen</h2>
+            <div class="prose">
+              <p><strong>Der Test:</strong> Das Muster <code>$49</code> soll durch beide LED-Ports des PIA rotieren.</p>
+              <p><strong>Das Problem:</strong> Die LEDs blieben dunkel.</p>
+              <p><strong>Die Fehlersuche:</strong> Laut Logikanalysator hat die CPU an die richtigen Adressen <code>$7F00</code>–<code>$7F03</code> die richtigen Daten geschrieben. Die Software war es also nicht. Also Takt angehalten und mit dem Multimeter an den Chip-Select des PIA: Der <strong>blieb high</strong>, obwohl <code>$7F0x</code> auf dem Bus lag. Am 74HC154 war <code>/IO</code> korrekt low, der Dekoder also aktiv, aber es war <strong>der falsche Ausgang</strong> aktiv. Ein Blick in den Schaltplan: <strong>A4–A7 waren in falscher Reihenfolge an den 74HC154 angeschlossen.</strong></p>
+              <p><strong>Die Lösung:</strong> Man hätte das auch in Software lösen können, einfach die Adressen in der Linker-Konfiguration anpassen. Ich wollte es aber richtig machen und habe die Hardware repariert: Leiterbahnen auf der Unterseite mit dem Skalpell aufgetrennt, mit Fädeldraht zwischen den Vias neu verbunden, auf Durchgang und Kurzschlüsse geprüft und das freigelegte Kupfer mit einem Permanentmarker gegen Korrosion versiegelt. Danach lief das Muster über die LEDs.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="vias">
+            <h2 id="vias">VIAs, Taster, RAM-Bänke und LCD</h2>
+            <div class="prose">
+              <ul>
+                <li><strong>VIA und Taster:</strong> Taster mit den <code>BBR</code>-Befehlen des 65C02 abgefragt, ein LED-Muster pro Taster. Alle drei 65C22, also beide Rockwells und der WDC, haben im Tastersockel bestanden.</li>
+                <li><strong>RAM-Bänke:</strong> Zuerst VIA1 Port B initialisiert, sonst würden die offenen Bankleitungen den Stack umschalten. Dann <code>$55</code> in Bank 0 und <code>$AA</code> in Bank 1 an dieselbe Adresse geschrieben, hin- und hergeschaltet und beides auf den LEDs angezeigt. Das Banking funktioniert.</li>
+                <li><strong>LCD:</strong> Ben Eaters LCD-Bibliothek mit dem HD44780-Datenblatt auf den 4-Bit-Modus umgebaut. Nach ein paar Korrekturen stand dann endlich <strong>„Hello, World!“</strong> und <strong>„6502 is alive!“</strong> auf dem Display. Ein schöner Moment.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="interrupts">
+            <h2 id="interrupts">Interrupts und der RAM-Timing-Fehler</h2>
+            <div class="prose">
+              <p>Der Interrupt-Test hatte es in sich: Hier lagen gleich <strong>zwei Fehler übereinander</strong>.</p>
+              <h3>Die IRQ-Leitung bleibt low</h3>
+              <p><strong>Der Test:</strong> Taster-Interrupts über VIA2 (CB1). Jede Interrupt-Routine setzt ein LED-Muster, die Hauptschleife ist leer.</p>
+              <p><strong>Das Problem:</strong> Der erste Interrupt funktionierte, Taster 1 schaltete LED 1, und dann schien die CPU zu hängen.</p>
+              <p><strong>Die Fehlersuche:</strong> Nach dem Reset lag die IRQ-Leitung der CPU auf 5V, nach dem ersten Interrupt aber <strong>dauerhaft auf 0V</strong>. Eigentlich hätte das Flag im VIA beim Lesen von Port B gelöscht werden müssen. Im VIA2-Sockel steckte der <strong>WDC</strong>-65C22, den ich bewusst ausgewählt hatte, weil sein Datenblatt einen <strong>Push-Pull-IRQ-Ausgang</strong> statt Open-Drain beschreibt.</p>
+              <p><strong>Die Lösung:</strong> Ein <strong>Pull-up-Widerstand</strong> zwischen VCC und dem IRQ-Pin der CPU nachgelötet und einen <strong>Rockwell</strong>-65C22 in den VIA2-Sockel gesteckt. Jetzt funktionierte jeder Taster-Interrupt, aber dafür tauchte direkt der nächste Fehler auf.</p>
+              <h3>Rücksprung ins Nirgendwo</h3>
+              <p><strong>Das Problem:</strong> Nach einem Interrupt kam die CPU nicht mehr in die Hauptschleife zurück. Stattdessen sprang sie an eine scheinbar zufällige RAM-Adresse, führte Datenmüll aus und stürzte ab. Unterprogramme mit <code>JSR</code>/<code>RTS</code> hatten vorher aber funktioniert.</p>
+              <p><strong>Die Fehlersuche:</strong> Ein Programm mit einem <a href="software.html#tests">„falschen Interrupt“</a> legt die Rücksprungadresse <code>$8000</code> und das Statusregister auf den Stack und führt dann <code>RTI</code> aus. Eigentlich sollte die CPU danach bei <code>$8000</code> neu starten. Der Logikanalysator zeigte aber das hier:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Mitschnitt des falschen Interrupts</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Zeile</th>
+                    <th scope="col">Adresse</th>
+                    <th scope="col">Daten</th>
+                    <th scope="col">R/W</th>
+                    <th scope="col">Bedeutung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>5</td><td><code>01FF</code></td><td><code>80</code></td><td>W</td><td>High-Byte <code>$80</code> auf den Stack</td></tr>
+                  <tr><td>10</td><td><code>01FE</code></td><td><code>00</code></td><td>W</td><td>Low-Byte <code>$00</code> auf den Stack</td></tr>
+                  <tr><td>13</td><td><code>01FD</code></td><td><code>32</code></td><td>W</td><td>Statusregister auf den Stack</td></tr>
+                  <tr><td>17</td><td><code>01FD</code></td><td><code>32</code></td><td>R</td><td>Statusregister zurück, passt</td></tr>
+                  <tr><td>18</td><td><code>01FE</code></td><td><code>00</code></td><td>R</td><td>Low-Byte zurück, passt</td></tr>
+                  <tr><td>19</td><td><code>01FF</code></td><td><strong><code>00</code></strong></td><td>R</td><td>High-Byte zurück, <strong>falsch</strong>, sollte <code>$80</code> sein</td></tr>
+                  <tr><td>20</td><td><code>0000</code></td><td><code>00</code></td><td>R</td><td>CPU macht bei <code>$0000</code> weiter</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Das RAM hat statt des High-Bytes <strong>noch einmal das Low-Byte</strong> geliefert. Eine Buskollision konnte ich ausschließen, also musste es am <strong>Timing</strong> liegen.</p>
+              <p><strong>Die Ursache:</strong> Die <code>/WE</code>-Pins der RAMs hingen <strong>direkt an der R/W-Leitung</strong> der CPU. R/W geht aber schon früh im Zyklus auf low, während der Takt noch low ist und <strong>der Datenbus noch gar nicht gültig ist</strong>. Das RAM kann so falsche Daten übernehmen. Auf die richtige Spur hat mich unter anderem Garth Wilsons 6502 Primer gebracht.</p>
+              <p><strong>Die Lösung:</strong> Das Schreibsignal muss mit dem Takt verknüpft werden, sodass <code>/WE</code> nur dann low ist, wenn <strong>CLK high und R/W low</strong> ist:</p>
+            </div>
+            <pre class="code-block"><code>/WE = NAND(NOT R/W, CLK)</code></pre>
+            <div class="prose">
+              <p>Das sind genau zwei NAND-Gatter, eins davon als Inverter. Nur war auf der Platine kein NAND mehr frei. Also habe ich einen <strong>zusätzlichen Logik-IC auf die Platine geklebt</strong> und mit isoliertem Silberdraht verdrahtet. Das gemeinsame RAM habe ich von R/W getrennt, indem ich die Leiterbahn weggekratzt habe, beim SMD-RAM habe ich den Pin angehoben. Danach kam der falsche Interrupt brav bei <code>$8000</code> heraus.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="serial">
+            <h2 id="serial">Serielle Schnittstellen</h2>
+            <div class="prose">
+              <h3>Der vergessene Chip-Select</h3>
+              <p>Diesmal habe ich vor dem Test den Schaltplan noch einmal durchgesehen, und siehe da: <strong>CS0 beider ACIAs war nirgends angeschlossen</strong>. Der 6551 hat zwei Chip-Selects, CS0 high-aktiv und /CS1 low-aktiv. Ohne CS0 kann man den Chip also nie auswählen. Mit etwas Fädeldraht auf der Unterseite war das schnell behoben.</p>
+              <h3>Der Babbling Idiot</h3>
+              <p><strong>Der Test:</strong> 9600Bd, 8N1, keine Parität, kein Handshake, und dann endlos „Hello World!“ senden. Mitgelesen habe ich mit einem USB-TTL-Adapter an der TTL-Stiftleiste.</p>
+              <p><strong>Das Problem:</strong> Auf TxD tat sich nichts, auch nicht auf dem Oszilloskop.</p>
+              <p><strong>Die Ursache:</strong> Der 6551 sendet nur, solange <strong>/CTS low</strong> ist. Steht so im Datenblatt, man muss es nur lesen. Ein Jumper von RTS nach CTS und den Empfänger im Command-Register eingeschaltet, und schon kam der Text an.</p>
+              <p>Zur Kontrolle der Baudrate habe ich ein Bit ausgemessen: <strong>104,2µs</strong>, das macht 1 / 104,2µs ≈ 9597Bit/s. Nah genug an 9600.</p>
+              <h3>Empfangen mit Interrupt</h3>
+              <p>Als Nächstes kam der Empfangsinterrupt dazu. Die Interrupt-Routine liest das Byte und schickt es als <strong>Echo</strong> zurück. Ein „H“ am PC gedrückt, und auf dem Oszilloskop sieht man, wie das Byte auf RxD ankommt und kurz darauf auf TxD wieder rausgeht.</p>
+              <h3>MAX232 und Nullmodem</h3>
+              <p>Mit eingesteckten MAX232 sind die Signale invertiert und schwingen um etwa <strong>±9V</strong>, der USB-Adapter schafft ±10V. Weil der Adapter am PC dieselbe Belegung hat wie die Platine, habe ich mir zwei <strong>Nullmodem-Adapter</strong> in Metall-DSUB-Gehäusen gebaut, und damit klappte die Kommunikation. ACIA2 hat danach alle Tests ohne weitere Fehlersuche bestanden.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="long-run">
+            <h2 id="long-run">Dauertest und der Logikanalysator</h2>
+            <div class="prose">
+              <p><strong>Der Test:</strong> Rund 10.000 Zeichen Lorem Ipsum am Stück an die Platine schicken.</p>
+              <p><strong>Das Problem:</strong> In unregelmäßigen Abständen brach die Verbindung ab und die CPU hing.</p>
+              <p><strong>Der erste Verdacht:</strong> Kurzschlüsse auf der Unterseite, weil die Platine auf einer ESD-Matte lag. Also habe ich in FreeCAD einen <strong>Halter für die Platine</strong> konstruiert und in PLA gedruckt. Das Problem blieb.</p>
+              <p><strong>Die Lösung, eher zufällig:</strong> Für diesen Test lief die CPU mit 1MHz, und dafür ist der Logikanalysator zu langsam. Also habe ich den BluePill abgezogen, und <strong>ohne BluePill lief die Übertragung ohne einen einzigen Fehler</strong>.</p>
+              <p>Meine Theorie, die ich aber nicht nachgemessen habe: Die Eingangskapazität der BluePill-Pins und der Spannungsteiler verzerrt bei 1MHz die Bussignale. Dann könnte die CPU nach einem Interrupt eine falsche Rücksprungadresse vom Stack lesen und ins Leere springen.</p>
+              <p>Die Konsequenz: Der Logikanalysator ist ein Werkzeug für <strong>langsamen Takt</strong>. Bei voller Geschwindigkeit bleibt er draußen.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="untested">
+            <h2 id="untested">Was noch fehlt</h2>
+            <div class="prose">
+              <ul>
+                <li><strong>VIA3 und der User-Port:</strong> Dafür gibt es noch keine Aufgabe. Der Chip selbst hat im VIA2-Sockel bestanden. Im VIA3-Sockel steckt allerdings der WDC-Baustein, das IRQ-Verhalten von oben könnte dort also wieder eine Rolle spielen.</li>
+                <li><strong>Die Erweiterungsslots:</strong> Es gibt noch keine Karten. Die Chip-Selects kommen aber aus dem Dekoder, den alle anderen Tests bestätigt haben, und auf den Slots liegen sonst nur Bus, Takt, R/W, Reset und IRQ.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="lessons">
+            <h2 id="lessons">Lessons Learned</h2>
+            <div class="prose">
+              <p>Ehrlich gesagt waren die meisten Fehler vermeidbar. Bei meiner Fehleranalyse kam das hier heraus:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Fehlerursachen</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Ursache</th>
+                    <th scope="col">Beispiele</th>
+                    <th scope="col">Wäre aufgefallen durch</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Flüchtigkeit im Schaltplan</td><td>Vertauschte A4–A7, BluePill an den USB-Pins, <code>/WE</code> ohne Takt</td><td>Ein <strong>Design-Review</strong> durch eine zweite Person</td></tr>
+                  <tr><td>Fehlende Prüfung</td><td>CS0 der ACIAs offen</td><td>Einen <strong>ERC/DRC</strong> auf den Schaltplan</td></tr>
+                  <tr><td>Datenblätter zu schnell gelesen</td><td>RAM-Schreibtiming, CTS beim 6551, IRQ-Ausgänge verschiedener 65C22-Hersteller</td><td>Timing-Diagramme und Pinbeschreibungen vollständig lesen</td></tr>
+                  <tr><td>Chips verschiedener Hersteller gemischt</td><td>IRQ-Ausgänge von WDC und Rockwell 65C22</td><td>Ein Pull-up an IRQ kostet nichts, und Platz war genug</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Die gute Seite: Jeder Fehler ließ sich <strong>systematisch analysieren und schnell beheben</strong>, und der eingebaute Logikanalysator hat sich dabei mehrfach bezahlt gemacht. Die Funktionsweise der CPU hatte ich schnell verstanden, Assembler war viel leichter zu durchschauen als gedacht, und es ist schon faszinierend zu sehen, wie Schleifen und Bedingungen aus Hochsprachen auf Maschinencode-Ebene aussehen.</p>
+              <p>Unterm Strich ist die Platine mit Fädeldrähten, einem aufgeklebten IC und ein paar Jumpern zwar nicht mehr ganz jungfräulich, aber sie läuft. Und gelernt habe ich bei jedem einzelnen Fehler etwas.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

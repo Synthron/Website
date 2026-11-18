@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{projectSummary}}">
+  <title>{{projectTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <p class="back-link"><a href="{{langRoot}}{{projectsPage}}">{{t:backToProjects}}</a></p>
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/6502-sbc/index.md, article-guide.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Supervisor name and school (article guide: ask before naming people); only "Technikerarbeit" is mentioned
+          - Mermaid block diagram (described as a numbered list instead)
+          - Detailed cost list per part (only the biggest items), planned vs. actual timeline table (condensed to text)
+          - Repository structure, Media and Downloads section, license note (no license file in the repository)
+          - Target audience list of the requirements spec (only one sentence)
+          - Project date: projects.json "date" is the scaffold default (2026-11), the board is from 2021/22
+
+          Derived / own wording (please verify):
+          - Opening "Ein Kasten voller 65xx-Chips ..." and the closing sentence of the status section are my framing
+          - "Version 1.0 auf der Platine, V2 im Schaltplan" explanation (V1 = breadboard) is inferred in the source
+          - Revision ideas (WE gating, decoder order, ACIA CS0, BluePill pins, IRQ pull-up) are inferred from the bug list
+          - Breadboard phase is inferred from the repository (memory_breadboard.cfg, vasm test files)
+          - Status "fertig" chosen because the thesis is finished and the board works
+        -->
+        <!-- @project-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <!-- 1. Übersicht -------------------------------------- -->
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Der 65C02 Homebrew-Computer ist ein selbst entworfener <strong>Einplatinencomputer</strong> rund um den <strong>WDC W65C02S</strong>, also die moderne CMOS-Variante des Prozessors, der schon im Apple II, im Commodore 64 und im NES gesteckt hat. Geplant, gelayoutet, bestückt, in Betrieb genommen und programmiert habe ich ihn als <strong>Abschlussprojekt meiner Technikerausbildung</strong> (Fachrichtung Datentechnik) im Schuljahr 2021/22.</p>
+              <p>Alles sitzt auf einer einzigen <strong>200 × 200mm</strong> großen Platine mit 4 Lagen: CPU, 32kB EEPROM, <strong>528kB RAM</strong> (512kB in Bänken plus 16kB gemeinsamer Speicher), fünf klassische 65xx-Peripheriechips, zwei RS-232-Schnittstellen, ein Zeichen-LCD, 16 LEDs, 8 Taster, drei umschaltbare Taktquellen und ein <strong>eingebauter Logikanalysator</strong> auf Basis eines STM32-„BluePill“. Sieben Erweiterungsslots lassen Platz für eine Grafikkarte, eine Soundkarte und weitere I/O-Karten.</p>
+              <p>Die Adressdekodierung besteht ausschließlich aus <strong>diskreter 74HC-Logik</strong>, ohne GAL oder CPLD. Und weil jede Adress-, Daten- und Steuerleitung ihre eigene LED hat, kann man der CPU im Einzelschrittbetrieb buchstäblich bei der Arbeit zusehen. Genau das war auch die Idee: ein Lernobjekt zum Anfassen.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Eckdaten des 65C02 Homebrew-Computers</caption>
+                <tbody>
+                  <tr><th scope="row">CPU</th><td>WDC W65C02S, 1MHz Quarzoszillator, alternativ 555-Takt (ca. 5,5–776Hz) oder Einzelschritt per Taster</td></tr>
+                  <tr><th scope="row">Speicher</th><td>32kB EEPROM AT28C256 (ZIF-Sockel), 512kB SRAM IS61C5128 in 32 Bänken à 16kB, 16kB gemeinsames SRAM UM61256</td></tr>
+                  <tr><th scope="row">Peripherie</th><td>1 × R6520 PIA, 3 × 65C22 VIA, 2 × 6551 ACIA</td></tr>
+                  <tr><th scope="row">Ein-/Ausgabe</th><td>2 × RS-232 (DSUB-9, MAX232, 9600Bd getestet), 2 × 16 LCD im 4-Bit-Modus, 8 Taster, 16 LEDs, 26 Bus-LEDs</td></tr>
+                  <tr><th scope="row">Erweiterung</th><td>7 Slots (2 × 12 Pins): GPU, Sound (SID), IO9, IOA, IOB, IOC, IOD</td></tr>
+                  <tr><th scope="row">Debugging</th><td>STM32F103 BluePill als Logikanalysator: Adresse, Daten und R/W pro Takt über USB</td></tr>
+                  <tr><th scope="row">Platine</th><td>200 × 200mm, 4 Lagen, SMD und THT gemischt, Eagle 9.6.2, gefertigt bei JLCPCB</td></tr>
+                  <tr><th scope="row">Software</th><td>65C02-Assembler mit cc65 (ca65 / ld65), geflasht mit TL866A und minipro</td></tr>
+                  <tr><th scope="row">Kosten</th><td>ca. 226€ für ein Board</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Weil es zu dem Projekt ziemlich viel zu erzählen gibt, habe ich es auf mehrere Seiten aufgeteilt:</p>
+              <ul>
+                <li><a href="6502-sbc/hardware.html">Hardware im Detail</a>: Adressdekodierung, RAM-Banking, Takt, Interrupts, Schnittstellen und Platine</li>
+                <li><a href="6502-sbc/software.html">Software und Toolchain</a>: cc65, Linker-Konfiguration, Bibliotheken und Testprogramme</li>
+                <li><a href="6502-sbc/inbetriebnahme.html">Inbetriebnahme und Fehlersuche</a>: Chip für Chip in Betrieb genommen, und jeder Fehler, der dabei aufgetaucht ist</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- 2. Entstehungsgeschichte -------------------------- -->
+          <section class="project-section" aria-labelledby="history">
+            <h2 id="history">Entstehungsgeschichte</h2>
+            <div class="prose">
+              <p>Mikroprozessoren und selbstgebaute Computer haben mich schon lange fasziniert. Vor diesem Projekt hatte ich bereits die <strong>MyCPU</strong> von Dennis Kuschel nachgebaut, eine 6502-ähnliche CPU, die komplett aus diskreten Logikchips besteht.</p>
+              <p>Dann hat mir ein ehemaliger Kollege eine ganze Reihe <strong>65xx-ICs</strong> geschenkt. Ein Kasten voller 65xx-Chips auf dem Tisch, da liegt die Idee für einen eigenen 65xx-Computer natürlich nahe. Dazu kamen die YouTube-Serien über 6502-Computer, allen voran <strong>Ben Eaters „Build a 6502 computer“</strong>, die die Motivation noch einmal ordentlich gesteigert haben.</p>
+              <p>Als dann das Thema für die <strong>Technikerarbeit</strong> anstand, war die Sache klar. Abgesehen von den geschenkten ICs habe ich alles selbst finanziert, inklusive der Platine. Meine Ziele: besser verstehen, wie CPUs und Computer im Innersten funktionieren, 6502-Assembler lernen und am Ende ein Vorführ- und Lernobjekt haben, das man auch auf Messen zeigen kann.</p>
+              <h3>Erst mal auf dem Steckbrett</h3>
+              <p>Bevor es die Platine gab, lief eine erste Version auf Steckbrettern. Davon zeugen im Repository noch eine eigene Speicherkonfiguration mit den VIAs bei <code>$7000</code>, <code>$7200</code> und <code>$7400</code>, der PIA bei <code>$7600</code> und den ACIAs bei <code>$7800</code> und <code>$7A00</code>, sowie frühe Testprogramme für den <strong>vasm</strong>-Assembler. Für die Platine sind dann alle I/O-Bausteine in eine einzige 256-Byte-Seite bei <code>$7F00</code> umgezogen, und als Toolchain kam cc65 dazu.</p>
+              <p>Deshalb steht im Schaltplan übrigens „6502 Computer V2“, auf der Platine aber „Version 1.0“: Die V1 war das Steckbrett, die erste Platine ist die V2 des Schaltplans.</p>
+            </div>
+          </section>
+
+          <!-- 3. Ziele ------------------------------------------ -->
+          <section class="project-section" aria-labelledby="goals">
+            <h2 id="goals">Ziele und Anforderungen</h2>
+            <div class="prose">
+              <p>Wie sich das für eine Technikerarbeit gehört, gab es ein <strong>Pflichtenheft</strong>. Der Schwerpunkt lag klar auf der <strong>Hardware</strong>. Die Software musste nur beweisen, dass die Hardware funktioniert. Einen C-Compiler zu schreiben oder zu benutzen war ausdrücklich nicht vorgesehen, und Grafik und Sound waren auch nicht Teil des Projekts, sollten aber über Slots vorbereitet werden.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Muss- und Kann-Kriterien aus dem Pflichtenheft</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Kriterium</th>
+                    <th scope="col">Art</th>
+                    <th scope="col">Ergebnis</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Einplatinencomputer mit WDC 65C02</td><td>Muss</td><td>W65C02S</td></tr>
+                  <tr><td>32kB Programmspeicher</td><td>Muss</td><td>AT28C256 EEPROM</td></tr>
+                  <tr><td>16kB RAM</td><td>Muss</td><td>übertroffen: 512kB in Bänken plus 16kB gemeinsam</td></tr>
+                  <tr><td>1MHz Takt aus einem Oszillator</td><td>Muss</td><td>erfüllt</td></tr>
+                  <tr><td>8 LEDs und 8 Taster</td><td>Muss</td><td>16 LEDs, 8 Taster</td></tr>
+                  <tr><td>2 × 16 Zeichen LCD</td><td>Muss</td><td>im 4-Bit-Modus</td></tr>
+                  <tr><td>Eine RS-232-Schnittstelle, mind. 9600Bd</td><td>Muss</td><td>zwei Schnittstellen, 9600Bd gemessen</td></tr>
+                  <tr><td>Erweiterungsanschlüsse für freie Adressbereiche</td><td>Muss</td><td>7 Slots</td></tr>
+                  <tr><td>Leicht verständlich und erweiterbar</td><td>Muss</td><td>diskrete Logik, Bus-LEDs, Einzelschritt</td></tr>
+                  <tr><td>RAM-Banking</td><td>Kann</td><td>32 Bänke à 16kB</td></tr>
+                  <tr><td>Manueller Takt / Einzelschritt</td><td>Kann</td><td>entprellt über 555-Monoflop</td></tr>
+                  <tr><td>Zwei serielle Schnittstellen</td><td>Kann</td><td>ACIA1 und ACIA2</td></tr>
+                  <tr><td>4 × 40 LCD</td><td>Kann</td><td>Footprint und zweite Enable-Leitung vorbereitet</td></tr>
+                  <tr><td>GPIO-Stiftleiste</td><td>Kann</td><td>User-Port an VIA3 (noch nicht getestet)</td></tr>
+                  <tr><td>Integrierter Logikanalysator, der die CPU nicht stört</td><td>Kann</td><td>BluePill (mit einer kleinen Einschränkung, siehe <a href="6502-sbc/inbetriebnahme.html#long-run">Dauertest</a>)</td></tr>
+                  <tr><td>Platine max. 20 × 20cm</td><td>Kann</td><td>exakt 200 × 200mm</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Weil die Zusatzschaltungen für die Kann-Kriterien jeweils recht klein waren, habe ich kurzerhand <strong>alle</strong> umgesetzt.</p>
+            </div>
+          </section>
+
+          <!-- 4. Systemaufbau ----------------------------------- -->
+          <section class="project-section" aria-labelledby="system">
+            <h2 id="system">So funktioniert das System</h2>
+            <div class="prose">
+              <p>Im Kern hängen CPU, ROM und die beiden RAMs gemeinsam am 16-Bit-Adressbus, am 8-Bit-Datenbus und an der R/W-Leitung. Darum herum gruppiert sich der Rest:</p>
+              <ol>
+                <li>Die CPU legt eine Adresse auf den Bus. Der <strong>Adressdekoder</strong> macht aus den oberen Adressbits genau ein aktives Chip-Select: ROM, RAM in Bänken, gemeinsames RAM oder die I/O-Seite.</li>
+                <li>Innerhalb der I/O-Seite teilt ein <strong>74HC154</strong> (4-zu-16-Dekoder) die 256 Adressen in <strong>16 Bereiche zu je 16 Byte</strong>. Drei Paare davon sind über <strong>Dioden-ODER</strong> zu 32-Byte-Bereichen zusammengefasst, etwa für einen SID-Soundchip.</li>
+                <li><strong>VIA1</strong> treibt die oberen Adressleitungen A14–A18 des großen SRAMs. Wer eine Banknummer von 0 bis 31 in Port B schreibt, schaltet die kompletten unteren 16kB um, <strong>inklusive Zero Page und Stack</strong>.</li>
+                <li><strong>VIA2</strong> arbeitet als <strong>Interrupt-Controller</strong>. Alle Interruptquellen laufen per Dioden-ODER auf seine Eingänge CA1 und CB1, die einzelnen Leitungen kann man zusätzlich an den Ports auslesen. Sein IRQ-Ausgang ist die einzige Verbindung zum IRQ-Pin der CPU.</li>
+                <li>Der <strong>BluePill</strong> hört passiv am Bus mit und schickt jeden Taktzyklus mit Adresse, Daten und Lese-/Schreibrichtung an den PC.</li>
+              </ol>
+              <p>Für den Takt sorgt wahlweise ein 1MHz-Quarzoszillator, ein einstellbarer 555-Taktgeber oder ein entprellter Taster für den Einzelschritt. Ausgewählt wird per Jumper. Das geht nur, weil der W65C02S <strong>vollständig statisch</strong> ist: Anders als der originale NMOS-6502 darf man seinen Takt beliebig verlangsamen oder ganz anhalten, ohne dass er seinen Zustand verliert.</p>
+            </div>
+          </section>
+
+          <!-- 5. Speicherkarte ---------------------------------- -->
+          <section class="project-section" aria-labelledby="memory-map">
+            <h2 id="memory-map">Speicherkarte</h2>
+            <div class="prose">
+              <p>Die Speicherkarte ist auch auf den Bestückungsdruck der Platine gedruckt, damit man sie beim Programmieren immer vor Augen hat.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Speicherkarte des 65C02 Homebrew-Computers</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Start</th>
+                    <th scope="col">Ende</th>
+                    <th scope="col">Größe</th>
+                    <th scope="col">Baustein</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>$0000</code></td><td><code>$3FFF</code></td><td>16kB × 32 Bänke</td><td><strong>RAM in Bänken</strong> (inkl. Zero Page <code>$00xx</code> und Stack <code>$01xx</code>)</td></tr>
+                  <tr><td><code>$4000</code></td><td><code>$7EFF</code></td><td>16.128 Byte</td><td><strong>Gemeinsames RAM</strong></td></tr>
+                  <tr><td><code>$7F00</code></td><td><code>$7F0F</code></td><td>16 Byte</td><td>PIA (LEDs)</td></tr>
+                  <tr><td><code>$7F10</code></td><td><code>$7F1F</code></td><td>16 Byte</td><td>VIA1 (LCD, RAM-Bänke)</td></tr>
+                  <tr><td><code>$7F20</code></td><td><code>$7F2F</code></td><td>16 Byte</td><td>VIA2 (Taster, Interrupt-Controller)</td></tr>
+                  <tr><td><code>$7F30</code></td><td><code>$7F3F</code></td><td>16 Byte</td><td>VIA3 (User-Port)</td></tr>
+                  <tr><td><code>$7F40</code></td><td><code>$7F4F</code></td><td>16 Byte</td><td>ACIA1</td></tr>
+                  <tr><td><code>$7F50</code></td><td><code>$7F5F</code></td><td>16 Byte</td><td>ACIA2</td></tr>
+                  <tr><td><code>$7F60</code></td><td><code>$7F6F</code></td><td>16 Byte</td><td>GPU-Slot (FPGA geplant)</td></tr>
+                  <tr><td><code>$7F70</code></td><td><code>$7F8F</code></td><td>32 Byte</td><td>Sound-Slot (SID 6581/8580 oder AY-3)</td></tr>
+                  <tr><td><code>$7F90</code></td><td><code>$7F9F</code></td><td>16 Byte</td><td>Slot IO9</td></tr>
+                  <tr><td><code>$7FA0</code></td><td><code>$7FAF</code></td><td>16 Byte</td><td>Slot IOA</td></tr>
+                  <tr><td><code>$7FB0</code></td><td><code>$7FBF</code></td><td>16 Byte</td><td>Slot IOB</td></tr>
+                  <tr><td><code>$7FC0</code></td><td><code>$7FDF</code></td><td>32 Byte</td><td>Slot IOC</td></tr>
+                  <tr><td><code>$7FE0</code></td><td><code>$7FFF</code></td><td>32 Byte</td><td>Slot IOD</td></tr>
+                  <tr><td><code>$8000</code></td><td><code>$FFFF</code></td><td>32kB</td><td><strong>ROM</strong> (Vektoren bei <code>$FFFA</code>–<code>$FFFF</code>, Reset springt nach <code>$8000</code>)</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Warum gerade so? Der 65C02 holt sich seinen Reset-Vektor ganz oben aus dem Speicher, also muss das ROM nach oben. Zero Page und Stack liegen ganz unten, also muss dort RAM hin. Hält man beide Bereiche zusammenhängend, bleibt der Dekoder schön einfach.</p>
+              <p>Dass gerade das RAM in Bänken unten liegt, ist Absicht: In einem späteren <strong>Multitasking-System</strong> könnte so jeder Task seine eigene Zero Page und seinen eigenen Stack bekommen. Wie das im Detail funktioniert und welchen Haken es hat, steht auf der <a href="6502-sbc/hardware.html#memory">Hardware-Seite</a>.</p>
+            </div>
+          </section>
+
+          <!-- 6. Hardware --------------------------------------- -->
+          <section class="project-section" aria-labelledby="hardware">
+            <h2 id="hardware">Hardware im Überblick</h2>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Baugruppen der Platine</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Baugruppe</th>
+                    <th scope="col">Umsetzung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>CPU</td><td>W65C02S6TPG-14 (DIP-40)</td></tr>
+                  <tr><td>ROM</td><td>AT28C256-15 EEPROM im ZIF-Sockel</td></tr>
+                  <tr><td>RAM in Bänken</td><td>IS61C5128AS-25 (512k × 8, 25ns, SMD)</td></tr>
+                  <tr><td>Gemeinsames RAM</td><td>UM61256 (32k × 8, DIP-28, davon 16kB genutzt)</td></tr>
+                  <tr><td>Dekoder</td><td>74HC00, 74HC08, 74HC30, 74HC154, maximal 23ns Laufzeit bei 500ns Budget</td></tr>
+                  <tr><td>Takt</td><td>1MHz-Oszillator, 555 astabil (per Poti einstellbar), 555 monostabil mit Taster für den Einzelschritt, Auswahl per Jumper</td></tr>
+                  <tr><td>Parallele I/O</td><td>R6520 PIA, 3 × 65C22 VIA (2 × Rockwell, 1 × WDC)</td></tr>
+                  <tr><td>Seriell</td><td>2 × 6551 ACIA mit gemeinsamem 1,8432MHz-Oszillator, 4 × MAX232, 2 × DSUB-9, 2 × TTL-Stiftleiste</td></tr>
+                  <tr><td>Anzeige</td><td>HD44780-LCD im 4-Bit-Modus an VIA1, zweite Enable-Leitung für ein 4 × 40 LCD</td></tr>
+                  <tr><td>LEDs</td><td>42 × 0805: A0–A15, D0–D7, R/W, CLK und je 8 an PIA-Port A und B</td></tr>
+                  <tr><td>Versorgung</td><td>5V über USB-B (nur Strom) oder Schraubklemme, kein Spannungsregler auf der Platine</td></tr>
+                  <tr><td>Logikanalysator</td><td>STM32F103C8 BluePill im Sockel, 5V-tolerante Pins oder 10k/10k-Spannungsteiler</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Alle 65xx-Chips, das ROM und das gemeinsame RAM stecken in <strong>Sockeln</strong>. Das hat sich bei der Inbetriebnahme mehr als bezahlt gemacht. Alle Details zu Dekoder, Banking, Takt, Interrupts und Schnittstellen gibt es auf der Seite <a href="6502-sbc/hardware.html">Hardware im Detail</a>.</p>
+            </div>
+          </section>
+
+          <!-- 7. Software --------------------------------------- -->
+          <section class="project-section" aria-labelledby="software">
+            <h2 id="software">Software im Überblick</h2>
+            <div class="prose">
+              <p>Programmiert wird der Rechner in reinem <strong>65C02-Assembler</strong>, natürlich inklusive der Zusatzbefehle des 65C02 wie <code>BBR</code>/<code>BBS</code>, <code>PHX</code>/<code>PHY</code>, <code>STZ</code>, <code>WAI</code> und <code>STP</code>. Geschrieben wird in VS Code, assembliert mit <strong>ca65</strong>, gelinkt mit <strong>ld65</strong> und einer eigenen Speicherkonfiguration, und das fertige <code>rom.bin</code> landet per <strong>minipro</strong> und TL866A-Programmer im EEPROM. Das alles erledigt ein einziges Bash-Skript unter Ubuntu.</p>
+              <p>Für jeden Peripheriechip gibt es eine kleine Bibliothek: PIA, VIA, ACIA und einen HD44780-Treiber im 4-Bit-Modus, der auf Ben Eaters LCD-Code basiert. Dazu kommt ein Testprogramm pro Chip in genau der Reihenfolge, in der die Chips in Betrieb genommen wurden, und eine finale Demo: Taster auf die LEDs, ACIA1 aufs LCD, ACIA2 auf die LEDs mit Echo zurück. Der serielle Empfang läuft dabei interruptgesteuert mit 1MHz.</p>
+              <p>Mehr dazu, inklusive ein paar 6502-Grundlagen und Codebeispielen, auf der Seite <a href="6502-sbc/software.html">Software und Toolchain</a>.</p>
+            </div>
+          </section>
+
+          <!-- 8. Inbetriebnahme --------------------------------- -->
+          <section class="project-section" aria-labelledby="bring-up">
+            <h2 id="bring-up">Inbetriebnahme und Lessons Learned</h2>
+            <div class="prose">
+              <p>In Betrieb genommen habe ich die Platine <strong>Chip für Chip</strong>, jeder mit seinem eigenen Testprogramm und dem Logikanalysator als wichtigstem Werkzeug. Dabei sind sechs Hardwareprobleme aufgetaucht, die ich alle beheben konnte:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Gefundene Hardwarefehler</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Problem</th>
+                    <th scope="col">Lösung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>Logikanalysator: Adressleitungen A7/A8 liegen auf den USB-Pins PA11/PA12 des BluePill</td><td>Sockelkontakte entfernt, A7/A8 über Spannungsteiler auf andere Pins gelegt</td></tr>
+                  <tr><td>2</td><td>I/O-Dekoder: A4–A7 in falscher Reihenfolge am 74HC154</td><td>Leiterbahnen aufgetrennt, Fädeldraht</td></tr>
+                  <tr><td>3</td><td>Der IRQ-Ausgang des WDC 65C22 hält die IRQ-Leitung der CPU dauerhaft low</td><td>Rockwell 65C22 im Interrupt-Controller-Sockel, Pull-up an IRQ</td></tr>
+                  <tr><td>4</td><td>RAM-Schreibtiming: <code>/WE</code> hängt direkt an R/W, dadurch werden bei low-Takt falsche Daten geschrieben</td><td>Zusätzliche NAND-Logik, <code>/WE</code> nur bei CLK high, aufgeklebter IC mit Drähten</td></tr>
+                  <tr><td>5</td><td>ACIA: CS0 nicht angeschlossen</td><td>Fädeldraht, CS0 fest auf high</td></tr>
+                  <tr><td>6</td><td>ACIA sendet nicht, solange CTS high ist</td><td>Jumper RTS ↔ CTS</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Dazu kommt eine offene Beobachtung: Im Dauertest mit vielen seriellen Daten ist die CPU sporadisch abgestürzt, aber nur, <strong>solange der Logikanalysator steckte</strong>. Ohne ihn lief alles fehlerfrei.</p>
+              <p>Mein ehrliches Fazit: Die meisten Fehler kamen von <strong>fehlenden Design-Reviews</strong>, einem ausgelassenen ERC/DRC im Schaltplan und zu schnell gelesenen Datenblättern. Aber jeder Fehler war schnell analysiert und behoben, und bei jedem habe ich etwas gelernt. Die ganze Geschichte samt Logikanalysator-Mitschnitten steht auf der Seite <a href="6502-sbc/inbetriebnahme.html">Inbetriebnahme und Fehlersuche</a>.</p>
+            </div>
+          </section>
+
+          <!-- 9. Kosten und Zeitplan ---------------------------- -->
+          <section class="project-section" aria-labelledby="cost">
+            <h2 id="cost">Kosten und Zeitplan</h2>
+            <div class="prose">
+              <p>Unterm Strich hat ein Board rund <strong>225,56€</strong> gekostet. Die dicksten Posten waren Platine und SMD-Schablone mit 63,90€, die drei 65C22 mit 30,63€, die vier MAX232 mit 23,20€, die zwei 6551 mit 14,62€ und das AT28C256 mit 11,22€. Die CPU selbst schlägt mit 10,81€ zu Buche, der R6520 mit 10,21€. Einige ICs waren geschenkt oder lagen sowieso in der Bastelkiste, deren Preise sind geschätzt.</p>
+              <p>Geplant war das Ganze von September bis April: Recherche und Themenfindung im September, Pflichtenheft im November, Hardware-Entwurf und Bestellung im Dezember, erster Testcode im Januar, finale Software im Februar und die Dokumentation im März. Wie das so ist, wurde es am Ende <strong>Mai</strong>. Die Fehlersuche, die Corona-Situation und der Mehraufwand für die Kann-Kriterien haben ihren Teil dazu beigetragen.</p>
+            </div>
+          </section>
+
+          <!-- 10. Stand ----------------------------------------- -->
+          <section class="project-section" aria-labelledby="status">
+            <h2 id="status">Stand und Ausblick</h2>
+            <div class="prose">
+              <p>Der Rechner läuft. CPU, ROM, beide RAMs und das Banking funktionieren, ebenso PIA mit den 16 LEDs, VIA2 mit den Tastern, VIA1 mit dem LCD, die Interrupts über VIA2, beide ACIAs samt MAX232 mit 9600Bd, alle drei Taktquellen und der Logikanalysator.</p>
+              <p>Noch nicht getestet sind:</p>
+              <ul>
+                <li><strong>VIA3 und der User-Port</strong>. Der Chip selbst hat im VIA2-Sockel funktioniert. Weil im VIA3-Sockel aber der WDC-Baustein steckt, könnte das IRQ-Problem dort wieder auftauchen.</li>
+                <li><strong>Die Erweiterungsslots</strong>, ganz einfach weil es noch keine Karten gibt. Die Dekodierung ist aber indirekt über alle anderen Tests bestätigt.</li>
+              </ul>
+              <p>Ideen gibt es natürlich genug: eine <strong>Grafikkarte</strong> mit FPGA, eine <strong>Soundkarte</strong> mit SID 8580, <strong>Multitasking</strong> mit eigener Zero Page und eigenem Stack pro Task, ein VIA3-Timer als nicht maskierbarer System-Tick, und der BluePill als Taktquelle, sobald ein Pegelwandler dazukommt.</p>
+              <p>Und für eine zweite Platinenrevision steht die Liste eigentlich schon fest: das <code>/WE</code>-Gating direkt einbauen, die Reihenfolge am I/O-Dekoder korrigieren, CS0 der ACIAs anschließen, die BluePill-Pins neu verteilen und einen Pull-up an IRQ vorsehen. Mal sehen, wann es so weit ist.</p>
+            </div>
+          </section>
+
+          <!-- 11. Danke ----------------------------------------- -->
+          <section class="project-section" aria-labelledby="credits">
+            <h2 id="credits">Danke</h2>
+            <div class="prose">
+              <p>Ohne die Vorarbeit anderer wäre das Projekt so nicht entstanden. Danke an den ehemaligen Kollegen für die 65xx-ICs, an <strong>Ben Eater</strong> für die 6502-Serie, die 555-Taktschaltungen, die LCD-Routinen und die Idee zum Logikanalysator, an <strong>Garth Wilson</strong> für den 6502 Primer (der mir beim RAM-Timing die Augen geöffnet hat), an <strong>Bruce Clark</strong> und 6502.org für die Doku zu den 65C02-Opcodes und an <strong>Dennis Kuschel</strong> für die MyCPU.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <!-- @include footer -->
+
+</body>
+</html>

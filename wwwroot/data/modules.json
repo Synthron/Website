@@ -268,5 +268,50 @@
     "status": "in Arbeit",
     "date": "2026-11",
     "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "6502-sbc",
+    "id": "hardware",
+    "title": {
+      "de": "DRAFT Hardware im Detail",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Adressdekodierung, RAM-Banking, Takt, Interrupts, Schnittstellen und Platine im Detail",
+      "en": "TODO"
+    },
+    "status": "fertig",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "6502-sbc",
+    "id": "software",
+    "title": {
+      "de": "DRAFT Software und Toolchain",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Toolchain mit cc65, Linker-Konfiguration, Bibliotheken und Testprogramme in 65C02-Assembler",
+      "en": "TODO"
+    },
+    "status": "fertig",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
+  },
+  {
+    "parent": "6502-sbc",
+    "id": "inbetriebnahme",
+    "title": {
+      "de": "DRAFT Inbetriebnahme",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Chip für Chip in Betrieb genommen: jeder Fehler, wie er gefunden und behoben wurde",
+      "en": "TODO"
+    },
+    "status": "fertig",
+    "date": "2026-11",
+    "image": "assets/img/placeholder.svg"
   }
 ]

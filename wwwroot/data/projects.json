@@ -218,5 +218,31 @@
     },
     "image": "assets/img/plantomation/plantomation_logo_notext.svg",
     "featured": false
+  },
+  {
+    "id": "6502-sbc",
+    "title": {
+      "de": "DRAFT 65C02 Homebrew-Computer",
+      "en": "TODO"
+    },
+    "summary": {
+      "de": "Selbstgebauter Einplatinencomputer mit 65C02, 528kB RAM und eingebautem Logikanalysator",
+      "en": "TODO"
+    },
+    "tags": {
+      "de": [
+        "elektronik",
+        "software"
+      ],
+      "en": []
+    },
+    "status": "fertig",
+    "date": "2026-11",
+    "links": {
+      "repo": null,
+      "demo": null
+    },
+    "image": "assets/img/placeholder.svg",
+    "featured": false
   }
 ]

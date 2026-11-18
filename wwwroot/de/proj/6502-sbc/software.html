@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <!-- @include head -->
+  <meta name="description" content="{{moduleSummary}}">
+  <title>{{projectTitle}} — {{moduleTitle}} — {{name}}</title>
+</head>
+<body>
+  <!-- @include header -->
+
+  <main class="site-main" id="main">
+    <div class="container">
+      <!-- @module-nav -->
+
+      <article class="project-detail">
+        <!--
+          REVIEW NOTES (source: project_summaries/6502-sbc/software.md, article-guide.md).
+          Remove before publishing: HTML comments are copied to dist/.
+
+          Omitted:
+          - Mermaid diagrams (toolchain, final demo flow); described as text and lists
+          - VS Code extension name/author, hexdump step in the diagram (kept only as -d option)
+          - Project 01_button_leds (early test, "will not build as is" is inferred)
+          - Links into the repository (no repo link in projects.json yet)
+          - STM32duino core for the analyzer (inferred from pin names)
+
+          Derived / own wording (please verify):
+          - Final demo: the page follows the repository code (LED_Full, echo on both ports);
+            the thesis says one LED per button (LED_Single) and echo on ACIA2 only. Describe what runs on the board.
+          - Sentence "cc65 koennte spaeter auch C" is a possibility named in the source, not a plan
+          - Explanatory sentences for BBR (65C02 vs. 6502) and the STP fill are my wording
+        -->
+        <!-- @module-header -->
+        <!-- @toc -->
+
+        <div class="project-content">
+
+          <section class="project-section" aria-labelledby="overview">
+            <h2 id="overview">Übersicht</h2>
+            <div class="prose">
+              <p>Die Software hat in diesem Projekt genau eine Aufgabe: <strong>beweisen, dass die Hardware funktioniert</strong>. Geschrieben ist sie in reinem <strong>65C02-Assembler</strong>, ein kleines Programm pro Chip, dazu eine finale Demo. Hier geht es um die Toolchain, die Speicherkonfiguration, die Bibliotheken und die Programme, und zwischendurch auch um ein paar 6502-Grundlagen, damit man dem Code folgen kann.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="toolchain">
+            <h2 id="toolchain">Toolchain</h2>
+            <div class="prose">
+              <p>Der Weg vom Quelltext ins EEPROM sieht so aus: In <strong>VS Code</strong> mit einer cc65-Erweiterung für das Syntax-Highlighting schreiben, mit <strong>ca65</strong> assemblieren, mit <strong>ld65</strong> und einer eigenen Speicherkonfiguration zu einem 32kB großen <code>rom.bin</code> linken, und das dann mit dem <strong>TL866A</strong>-Programmer und dem Open-Source-Tool <strong>minipro</strong> ins EEPROM schreiben. Das EEPROM wandert danach in den ZIF-Sockel auf der Platine.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Werkzeuge</caption>
+                <tbody>
+                  <tr><th scope="row">Betriebssystem</th><td>Ubuntu 20.04 LTS</td></tr>
+                  <tr><th scope="row">Editor</th><td>Visual Studio Code mit cc65-Syntax-Erweiterung</td></tr>
+                  <tr><th scope="row">Assembler / Linker</th><td>cc65-Suite: ca65 und ld65</td></tr>
+                  <tr><th scope="row">Programmer</th><td>TL866A (MiniPro) mit minipro auf der Kommandozeile</td></tr>
+                  <tr><th scope="row">Debugging</th><td><code>hexdump</code> für das ROM-Image, der eingebaute Logikanalysator und das Oszilloskop</td></tr>
+                  <tr><th scope="row">Früher</th><td>Die Steckbrett-Tests liefen noch mit dem <strong>vasm</strong>-Assembler</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Einen C-Compiler zu schreiben oder zu benutzen war laut Pflichtenheft ausdrücklich nicht Teil des Projekts. Die cc65-Suite <em>könnte</em> aber auch C für diese Platine übersetzen, die passende Speicherkonfiguration gibt es ja schon.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="build">
+            <h2 id="build">Das Build-Skript</h2>
+            <div class="prose">
+              <p>Jedes Projekt hat ein kleines Bash-Skript <code>compile.bash</code>. Dateinamen braucht es keine: Es assembliert einfach jede <code>.s</code>-Datei im Ordner <code>source/</code>, linkt alle Objektdateien und flasht auf Wunsch gleich das ROM:</p>
+            </div>
+            <pre class="code-block"><code>./compile.bash        # assemblieren + linken → output/rom.bin
+./compile.bash -d     # … und das ROM-Image als Hexdump anzeigen
+./compile.bash -f     # … und per minipro ins AT28C256 schreiben</code></pre>
+            <div class="prose">
+              <p>Im Kern passiert dabei nicht viel mehr als das hier:</p>
+            </div>
+            <pre class="code-block"><code>ca65 --cpu 65c02 $file -o ../output/$file.o -l ../output/$file.list -I ../../lib
+ld65 -C ../memory_pcb.cfg -m main.map $OBJECTS -o rom.bin
+minipro -p AT28C256 -w rom.bin</code></pre>
+            <div class="prose">
+              <p>Jedes Projekt bringt zwei Linker-Konfigurationen mit: <code>memory_pcb.cfg</code> für die Platine und <code>memory_breadboard.cfg</code> mit der alten Adressbelegung vom Steckbrett.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="linker">
+            <h2 id="linker">Die Linker-Konfiguration</h2>
+            <div class="prose">
+              <p>In <code>memory_pcb.cfg</code> steckt die komplette <a href="../6502-sbc.html#memory-map">Speicherkarte</a> der Platine. Ein paar Kniffe darin haben sich richtig bewährt:</p>
+              <ul>
+                <li>Jeder Peripheriechip ist ein eigener <code>MEMORY</code>-Bereich mit <code>define=yes</code>. Der Linker exportiert dann Symbole wie <code>__VIA1_START__</code>, und die Bibliotheken berechnen ihre Registeradressen daraus (<code>PORTB1 = __VIA1_START__ + 0</code>). <strong>Zieht ein Chip um, ändert sich eine Zeile in der Konfiguration, nicht der Code.</strong></li>
+                <li><strong>32 Segmente <code>BANK0</code> bis <code>BANK31</code></strong> liegen alle auf demselben Bereich <code>$0000</code>–<code>$3FFF</code>, eins pro RAM-Bank.</li>
+                <li><code>ZEROPAGE</code> liegt bei <code>$0000</code>, der Stack bei <code>$0100</code> und <code>BSS</code> im gemeinsamen RAM.</li>
+                <li><code>CODE</code>, <code>ISRS</code> und <code>RODATA</code> liegen im ROM, die <code>VECTORS</code> bei <code>$FFFA</code>–<code>$FFFF</code>.</li>
+                <li><strong>Ungenutztes ROM wird mit <code>$DB</code> aufgefüllt</strong>, dem Opcode für <code>STP</code>. Springt die CPU aus Versehen ins Leere, bleibt sie einfach stehen, statt Datenmüll auszuführen. Auf dem Steckbrett war es noch <code>$EA</code>, also <code>NOP</code>.</li>
+                <li>In den Kommentaren ist auch die Interrupt-Zuordnung dokumentiert: ACIA1 auf IRQ0, ACIA2 auf IRQ1, GPU auf IRQ2, IO9 bis IOD auf IRQ3 bis IRQ7 und VIA3 auf NMI.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="basics">
+            <h2 id="basics">6502-Grundlagen in 60 Sekunden</h2>
+            <div class="prose">
+              <p>Für alle, die noch nie 6502-Assembler gesehen haben, hier das Nötigste:</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">6502-Grundbegriffe</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Begriff</th>
+                    <th scope="col">Erklärung</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>Zero Page</strong> <code>$0000</code>–<code>$00FF</code></td><td>Die ersten 256 Byte. Spezielle Adressierungsarten brauchen hier nur das untere Byte, die Befehle werden dadurch kürzer und schneller. Die Bitbefehle <code>BBR</code>/<code>BBS</code>/<code>RMB</code>/<code>SMB</code> des 65C02 funktionieren nur hier</td></tr>
+                  <tr><td><strong>Stack</strong> <code>$0100</code>–<code>$01FF</code></td><td>Seite 1. Hier landen Rücksprungadressen und gesicherte Register, <code>PHA</code>/<code>PLA</code> legen ab und holen zurück. Initialisiert wird er mit <code>LDX #$FF</code> / <code>TXS</code></td></tr>
+                  <tr><td><strong>Vektoren</strong></td><td><code>$FFFA</code> NMI, <code>$FFFC</code> RESET, <code>$FFFE</code> IRQ, jeweils eine 2-Byte-Adresse. Bei mir zeigt RESET immer auf <code>$8000</code>, den Anfang des ROMs</td></tr>
+                  <tr><td><strong>Reset</strong></td><td>Nach einem Reset initialisiert sich die CPU 7 Takte lang und liest in Takt 6 und 7 den Reset-Vektor</td></tr>
+                  <tr><td><strong>Zahlen</strong></td><td><code>$5A</code> ist hexadezimal, <code>%0101</code> binär, und <code>#</code> heißt „direkter Wert“ statt Adresse</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Auf dieser Platine liegen Zero Page und Stack im <a href="hardware.html#memory">RAM mit Bänken</a>. Deshalb fängt jedes Programm so an:</p>
+            </div>
+            <pre class="code-block"><code>RESET:
+    ldx #$FF        ; Stackpointer initialisieren
+    txs
+    lda #$FF        ; VIA1 Port B = Ausgang (Bankleitungen)
+    sta DDRB1
+    lda #$00        ; Bank 0 wählen
+    sta PORTB1
+    ; erst ab hier ist JSR sicher, vorher könnte der Stack die Bank wechseln</code></pre>
+          </section>
+
+          <section class="project-section" aria-labelledby="libraries">
+            <h2 id="libraries">Bibliotheken</h2>
+            <div class="prose">
+              <p>Die Bibliotheken liegen alle in einem gemeinsamen <code>lib</code>-Ordner und werden per <code>.include</code> eingebunden.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Bibliotheken</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Datei</th>
+                    <th scope="col">Inhalt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>pia.s</code></td><td>Registernamen und <code>PIA_Init</code>: wählt über das Steuerregister das Datenrichtungsregister, setzt beide Ports auf Ausgang und schaltet zurück aufs Portregister</td></tr>
+                  <tr><td><code>via.s</code></td><td>Registernamen für VIA1–3, die Bitbelegung von PCR, IER und IFR als Kommentar, Init-Routinen für alle drei VIAs sowie Routinen zum Ein- und Ausschalten der Taster- und externen Interrupts</td></tr>
+                  <tr><td><code>acia.s</code></td><td>Registernamen und komplett kommentierte Bitbelegung für beide ACIAs. <code>ACIAx_INIT</code> macht einen Soft-Reset, schaltet den Empfangsinterrupt ein und stellt 8N1 mit <strong>9600Bd</strong> ein (19200Bd vorbereitet). <code>ACIAx_TRANSMIT</code> wartet auf ein leeres Senderegister und sendet dann</td></tr>
+                  <tr><td><code>lcd_2x16.s</code></td><td>HD44780 im <strong>4-Bit-Modus</strong>: Setup, Befehle, Zeichen ausgeben, Cursor setzen (0–15 Zeile 1, 40–55 Zeile 2), Busy-Flag abfragen und ein 100µs-Delay für höhere Taktraten. Basiert auf Ben Eaters 8-Bit-LCD-Code, mit dem Datenblatt auf 4 Bit umgebaut</td></tr>
+                  <tr><td><code>zeropage.txt</code></td><td>Handgeschriebene Liste der Zero-Page-Variablen</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <p>Die Zero Page ist dabei noch sehr übersichtlich belegt: <code>$00</code> und <code>$01</code> für das obere und untere LCD-Nibble, <code>$02</code> als Zähler für das LCD-Delay, <code>$03</code> als Kopie des VIA2-Ports für <code>BBR</code>-Abfragen und <code>$04</code>/<code>$05</code> als Kopien der ACIA-Statusregister.</p>
+            </div>
+          </section>
+
+          <section class="project-section" aria-labelledby="tests">
+            <h2 id="tests">Testprogramme</h2>
+            <div class="prose">
+              <p>Jeder neu eingesteckte Chip hat sein <strong>eigenes Testprogramm</strong> bekommen. So konnten Routinen für den einen Chip keinen Fehler im anderen verdecken. Wie die Tests im Einzelnen gelaufen sind, steht auf der Seite zur <a href="inbetriebnahme.html">Inbetriebnahme</a>.</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <caption class="visually-hidden">Testprogramme</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Projekt</th>
+                    <th scope="col">Testet</th>
+                    <th scope="col">Was es tut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>(kein Code)</td><td>CPU</td><td><code>$EA</code> (NOP) per Widerständen am leeren ROM-Sockel auf den Datenbus gelegt. Die CPU läuft frei durch, der Logikanalysator zeigt die Reset-Sequenz</td></tr>
+                  <tr><td>(kein Code)</td><td>ROM</td><td>ROM komplett mit <code>$EA</code> gefüllt. Gleiches Ergebnis, jetzt aber über ROM-Chip-Select und R/W</td></tr>
+                  <tr><td><code>02_RAM-test</code></td><td>Gemeinsames RAM</td><td>Schreibt <code>$55</code>/<code>$AA</code> nach <code>$4000</code>/<code>$4001</code> und liest beides zurück</td></tr>
+                  <tr><td><code>03_PIA-test</code></td><td>PIA und LEDs</td><td>Das Muster <code>$49</code> läuft per <code>ROR</code> durch beide LED-Ports. Das Carry-Flag spielt dabei das versteckte 9. Bit</td></tr>
+                  <tr><td><code>04_VIA2-test</code></td><td>VIA2 und Taster</td><td>Fragt die Taster ab und zeigt pro Taster ein Muster, einmal klassisch mit <code>BIT</code>, einmal mit <code>BBR</code></td></tr>
+                  <tr><td>(Doku)</td><td>RAM-Bänke</td><td>Schreibt <code>$55</code> in Bank 0 und <code>$AA</code> in Bank 1 an dieselbe Adresse, schaltet hin und her und zeigt beides auf den LEDs</td></tr>
+                  <tr><td><code>05_LCD-test</code></td><td>VIA1 und LCD</td><td>„Hello, World!“ in Zeile 1, „6502 is alive!“ in Zeile 2, dazu ein Lauflicht</td></tr>
+                  <tr><td><code>06_Interrupt-test</code></td><td>IRQ über VIA2</td><td>Interrupt-Routine für die Taster. Enthält auch den „falschen Interrupt“, mit dem ich den RAM-Timing-Fehler gefunden habe</td></tr>
+                  <tr><td><code>07_ACIA-test</code></td><td>ACIA senden</td><td>Der „Babbling Idiot“: schickt endlos „Hello World!“ samt Zeilenumbruch</td></tr>
+                  <tr><td><code>08_EXT_IRQ</code></td><td>ACIA empfangen</td><td>Empfangsinterrupt, Byte auf den LEDs anzeigen und als Echo zurückschicken</td></tr>
+                  <tr><td><code>09_final</code></td><td>Alles</td><td>Die finale Demo, siehe unten</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="prose">
+              <h3>Das erste echte Programm</h3>
+              <p>Funktioniert das RAM? Viel einfacher als so kann ein Test kaum aussehen:</p>
+            </div>
+            <pre class="code-block"><code>loop:
+    lda #$55        ; 01010101
+    sta $4000       ; ins RAM schreiben
+    lda #$AA        ; 10101010
+    sta $4001
+    nop
+    lda $4000       ; zurücklesen
+    lda $4001
+    nop
+    jmp loop</code></pre>
+            <div class="prose">
+              <p>Und so sieht das im Logikanalysator aus:</p>
+            </div>
+            <pre class="code-block"><code>ADDR  DATA  R/W
+8003  A9    R     lda #
+8004  55    R       $55
+8005  8D    R     sta abs
+8006  00    R       Low-Byte
+8007  40    R       High-Byte
+4000  55    W     ← ins RAM geschrieben
+…
+4000  55    R     ← aus dem RAM zurückgelesen</code></pre>
+            <div class="prose">
+              <h3>Taster abfragen: 6502 gegen 65C02</h3>
+              <p>Hier sieht man schön, was die Zusatzbefehle des 65C02 bringen. Klassisch braucht man drei Befehle pro Bit, mit <code>BBR</code> („branch if bit reset“) nur noch einen. Der Haken: <code>BBR</code> geht nur auf die Zero Page, deshalb wird der Port vorher dorthin kopiert.</p>
+            </div>
+            <pre class="code-block"><code>; klassischer 6502: 3 Befehle pro Bit
+    lda #$01
+    bit PORTB2
+    beq taster1
+
+; 65C02: 1 Befehl pro Bit (nur Zero Page)
+    lda PORTB2
+    sta $03
+    bbr0 $03, Taster_1   ; springen, wenn Bit 0 = 0 (Taster gedrückt)
+    bbr1 $03, Taster_2
+    ; … bis bbr7</code></pre>
+            <div class="prose">
+              <h3>Hello World auf dem LCD</h3>
+            </div>
+            <pre class="code-block"><code>    jsr lcd_setup
+    ldx #0
+HW: lda hello_world,x
+    beq NEXT            ; Null-Terminator
+    jsr print_char
+    inx
+    jmp HW
+NEXT:
+    lda #40             ; Cursor in Zeile 2
+    jsr set_cursor
+    ; … " 6502 is alive! " ausgeben
+
+hello_world: .asciiz " Hello, World!"
+alive:       .asciiz " 6502 is alive! "</code></pre>
+            <div class="prose">
+              <h3>Ein falscher Interrupt</h3>
+              <p>Mit diesen paar Zeilen habe ich den hartnäckigsten Fehler des Projekts eingekreist. Das Programm legt eine Rücksprungadresse und das Statusregister auf den Stack und tut dann so, als käme es aus einem Interrupt zurück. Eigentlich sollte die CPU danach bei <code>$8000</code> neu anfangen. Was stattdessen passiert ist, steht bei der <a href="inbetriebnahme.html#interrupts">Inbetriebnahme</a>.</p>
+            </div>
+            <pre class="code-block"><code>    lda #$80    ; Rücksprungadresse High-Byte
+    pha
+    lda #$00    ; Rücksprungadresse Low-Byte
+    pha
+    php         ; Statusregister
+    rti         ; "zurück" → sollte bei $8000 neu starten</code></pre>
+          </section>
+
+          <section class="project-section" aria-labelledby="final">
+            <h2 id="final">Die finale Demo</h2>
+            <div class="prose">
+              <p>Die finale Software läuft mit vollen <strong>1MHz</strong>, weil bei langsamem Takt die seriellen Puffer überlaufen würden. Der Logikanalysator bleibt dafür draußen. Nach dem Reset werden Stack und Bank 0 eingerichtet, dann PIA, VIA2 mit CA1-Interrupt, LCD und beide ACIAs initialisiert, und mit <code>CLI</code> geht es los:</p>
+              <ul>
+                <li><strong>Taster → LEDs:</strong> Die Hauptschleife liest die Taster an VIA2 Port B, invertiert sie und schreibt sie auf PIA Port B. Alle gedrückten Taster sind also gleichzeitig zu sehen.</li>
+                <li><strong>ACIA1 → LCD:</strong> Jedes empfangene Zeichen erscheint auf dem LCD und geht als Echo zurück. Man tippt am PC und liest auf der Platine.</li>
+                <li><strong>ACIA2 → LEDs:</strong> Jedes empfangene Byte erscheint binär auf PIA Port A und geht ebenfalls als Echo zurück.</li>
+                <li>Der serielle Empfang läuft komplett <strong>interruptgesteuert</strong> über den Interrupt-Controller VIA2.</li>
+              </ul>
+              <p>Die Interrupt-Routine dazu ist angenehm kurz. Das Lesen von Port A verrät die Quelle und löscht gleichzeitig das CA1-Flag:</p>
+            </div>
+            <pre class="code-block"><code>ISR:
+    sei
+    pha
+    lda PORTA2          ; welche Quelle? (löscht auch das CA1-Flag)
+    sta $03
+    bbr0 $03, COM1      ; IRQ von ACIA1 aktiv (low)
+    bbr1 $03, COM2      ; IRQ von ACIA2 aktiv (low)
+    jmp RETURN_IRQ
+COM1:
+    lda RXDATA1
+    sta $20
+    jsr print_char      ; aufs LCD
+    lda $20
+    jsr ACIA1_TRANSMIT  ; Echo
+    jmp RETURN_IRQ
+COM2:
+    lda RXDATA2
+    sta PORTA_PIA       ; auf die LEDs
+    jsr ACIA2_TRANSMIT  ; Echo
+RETURN_IRQ:
+    pla
+    cli
+    rti</code></pre>
+          </section>
+
+          <section class="project-section" aria-labelledby="analyzer">
+            <h2 id="analyzer">Firmware des Logikanalysators</h2>
+            <div class="prose">
+              <p>Der Logikanalysator ist ein kleiner Arduino-Sketch für den BluePill. Die 16 Adress- und 8 Datenpins sowie CLK und R/W sind Eingänge. Per <code>attachInterrupt</code> wird bei jeder steigenden Taktflanke eine Routine aufgerufen, die alle Leitungen einliest und als eine Zeile ausgibt: erst die Adressbits, dann die Datenbits und am Ende Adresse, Richtung und Daten in Hex.</p>
+              <p>In der Pinliste sieht man übrigens noch die Narbe aus der Inbetriebnahme: A7 und A8 liegen inzwischen auf <strong>PC15/PC14</strong> statt auf den USB-Pins PA11/PA12. Wie es dazu kam, steht bei der <a href="inbetriebnahme.html#cpu-test">Inbetriebnahme</a>.</p>
+            </div>
+          </section>
+
+        </div>
+      </article>
+
+      <!-- @module-nav -->
+    </div>
+  </main>
+
+  <!-- @include footer -->
+</body>
+</html>

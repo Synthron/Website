@@ -31,6 +31,10 @@ Agents never write or translate site content. The build warns about every leftov
 | ↳ Load                     | [x]          | [ ]          | [ ]             |
 | ↳ Diode Tester             | [x]          | [ ]          | [ ]             |
 | ↳ Power Monitor            | [x]          | [ ]          | [ ]             |
+| 6502 SBC (mit Unterseiten) | [x]          | [ ]          | [ ]             |
+| ↳ Hardware                 | [x]          | [ ]          | [ ]             |
+| ↳ Software                 | [x]          | [ ]          | [ ]             |
+| ↳ Inbetriebnahme           | [x]          | [ ]          | [ ]             |
 | S65 (mit Unterseiten)      | [ ]          | [ ]          | [ ]             |
 | Röhrenverstärker 6L6       | [x]          | [ ]          | [ ]             |
 | Gitarrenverstärker         | [x]          | [ ]          | [ ]             |
