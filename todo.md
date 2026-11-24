@@ -36,7 +36,7 @@ Agents never write or translate site content. The build warns about every leftov
 | ↳ Software                 | [x]          | [ ]          | [ ]             |
 | ↳ Inbetriebnahme           | [x]          | [ ]          | [ ]             |
 | S65 (mit Unterseiten)      | [ ]          | [ ]          | [ ]             |
-| Röhrenverstärker 6L6       | [x]          | [ ]          | [ ]             |
+| Röhrenverstärker 6L6       | [x]          | [x]          | [x]             |
 | Gitarrenverstärker         | [x]          | [ ]          | [ ]             |
 | Modular 6502               | [ ]          | [ ]          | [ ]             |
 | Plantomation               | [x]          | [ ]          | [ ]             |
