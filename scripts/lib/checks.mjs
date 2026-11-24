@@ -222,7 +222,11 @@ export async function checkUnusedAssets(pages) {
   const pageText = pages.map(([, html]) => html).join('\n');
   for (const rel of imgFiles) {
     if (isPlaceholderImg(rel)) continue;
-    if (!pageText.includes(`assets/img/${path.posix.basename(rel)}`)) {
+    // Pages reference images with the path under assets/img/ (e.g.
+    // {{root}}assets/img/6l6/6l6_amp.webp); match the full sub-path, with the
+    // bare file name as a fallback for relative references.
+    const subPath = rel.slice('assets/img/'.length);
+    if (!pageText.includes(`assets/img/${subPath}`) && !pageText.includes(path.posix.basename(rel))) {
       warn(`wwwroot/${rel}: not referenced by any built page`);
     }
   }
