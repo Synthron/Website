@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "build:clean": "node scripts/build.mjs --clean",
     "check": "node scripts/build.mjs --check",
     "check:external": "node scripts/check-external.mjs",
     "clean": "node -e \"import('node:fs').then((fs) => fs.rmSync('dist', { recursive: true, force: true }))\"",

@@ -10,7 +10,7 @@ import { checkSharedIds, feedEntries, loadCodeLanguages, loadHam, loadModules, l
 import { applyHighlighting } from './lib/highlight.mjs';
 import { ogImageRel, renderFeed, renderOpenGraph, renderSitemap } from './lib/render.mjs';
 import {
-  applyCacheBusting, applyDirectives, applyIncludes, applyTokens, classifyPage, isFlasherPage,
+  applyCacheBusting, applyDirectives, applyIncludes, applyTokens, classifyPage, isFlasherPage, isUnpublishedPage,
   protectRaw, restoreRaw, versionCssUrls, versionJsImports,
 } from './lib/pipeline.mjs';
 import {
@@ -62,7 +62,7 @@ async function computeVersions(files) {
   return { versions, outputs };
 }
 
-async function build({ check = false } = {}) {
+async function build({ check = false, clean = false } = {}) {
   const site = await loadSite();
   const { defaultLang } = site;
   const pageIndex = await loadPages(site);
@@ -106,7 +106,7 @@ async function build({ check = false } = {}) {
   const files = (await walk(SRC)).filter((rel) => !isSkipped(rel));
   const { versions, outputs } = await computeVersions(files);
 
-  const pages = [];
+  const prepared = new Map();
   for (const rel of files) {
     const from = path.join(SRC, rel);
     const to = path.join(DIST, rel);
@@ -139,12 +139,39 @@ async function build({ check = false } = {}) {
     // also need their module.
     if (projectId !== undefined && !project && lang !== defaultLang) continue;
     if (isModule && !module && lang !== defaultLang) continue;
+    if (clean && isHtml && isUnpublishedPage(source, project, module)) continue;
+
+    prepared.set(rel, { source, page, root, projectId, rawProject, project, isModule, rawModule, module });
+  }
+
+  if (clean) {
+    for (const [rel, { page, isModule }] of prepared) {
+      if (isModule && !prepared.has(`${pageDir(page.lang)}/${pageIndex.parentPage(page.lang, page.pagePath)}`)) prepared.delete(rel);
+    }
+    for (const { code } of site.languages) {
+      for (const [name, entries] of Object.entries(perLang[code].lists)) {
+        perLang[code].lists[name] = entries.filter((entry) => {
+          const file = name === 'modules'
+            ? pageIndex.modulePage(code, entry.parent, entry.id, entry.folder)
+            : pageIndex.projectPage(code, entry.id, name === 'ham' ? 'ham' : 'proj');
+          return prepared.has(`${pageDir(code)}/${file}`);
+        });
+      }
+    }
+  }
+
+  const pages = [];
+  for (const [rel, { source, page, root, projectId, rawProject, project, isModule, rawModule, module }] of prepared) {
+    const to = path.join(DIST, rel);
+    const isHtml = rel.endsWith('.html');
+    const { lang } = page;
 
     // Available language versions of this page; hidden projects and modules get none.
     const langVersions = page.pagePath === undefined ? [] : [...pageIndex.counterparts(lang, page.pagePath)]
       .filter(([code]) => projectId === undefined || (rawProject && Object.hasOwn(rawProject.title, code)))
       .filter(([code]) => !isModule || (rawModule && Object.hasOwn(rawModule.title, code)))
-      .map(([code, file]) => ({ lang: code, rel: `${pageDir(code)}/${file}` }));
+      .map(([code, file]) => ({ lang: code, rel: `${pageDir(code)}/${file}` }))
+      .filter((version) => !clean || prepared.has(version.rel));
 
     const ctx = {
       rel,
@@ -260,9 +287,10 @@ async function build({ check = false } = {}) {
 // --check: validate everything, write nothing (used by `npm run check` and
 // the pre-commit hook). Errors print like a normal build and exit non-zero.
 const check = process.argv.includes('--check');
+const clean = process.argv.includes('--clean');
 
 try {
-  const count = await build({ check });
+  const count = await build({ check, clean });
   if (errors.length > 0) {
     console.error(`Build failed with ${errors.length} error(s):`);
     errors.forEach((message) => console.error(`  - ${message}`));

@@ -2,7 +2,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyPage, applyDirectives, applyTokens } from './pipeline.mjs';
+import { classifyPage, applyDirectives, applyTokens, isUnpublishedPage } from './pipeline.mjs';
 import { errors } from './util.mjs';
 
 const site = {
@@ -13,6 +13,17 @@ const site = {
   footerNote: { de: 'Keine Cookies.', en: 'No cookies.' },
 };
 const pageDir = (code) => (code === 'de' ? 'html' : code);
+
+test('isUnpublishedPage detects draft data, draft parents and TODO or DRAFT headings', () => {
+  assert.equal(isUnpublishedPage('', { draft: true }), true);
+  assert.equal(isUnpublishedPage('', { draft: true }, { draft: false }), true);
+  assert.equal(isUnpublishedPage('', { draft: false }, { draft: true }), true);
+  assert.equal(isUnpublishedPage('<title> TODO: Translation </title>'), true);
+  assert.equal(isUnpublishedPage('<h1 class="title"><span>DRAFT</span> Page</h1>'), true);
+  assert.equal(isUnpublishedPage('<title>Published</title><p>TODO: add image</p>'), false);
+  assert.equal(isUnpublishedPage('<!-- <h1>DRAFT example</h1> --><h1>Published</h1>'), false);
+  assert.equal(isUnpublishedPage('<title>TODOist</title>'), false);
+});
 
 test('classifyPage reads the language from the folder', () => {
   assert.deepEqual(classifyPage('html/proj/sy317.html', '', '../../', site, pageDir),

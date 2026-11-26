@@ -1,6 +1,7 @@
 // Page pipeline: raw blocks out -> includes -> tokens -> directives -> versioning -> raw blocks back in.
 
 import path from 'node:path';
+import { isDraftTitle, isTodo } from './data.mjs';
 import { esc, fail, ref } from './util.mjs';
 import { renderEntryList, renderLangSwitch, renderModuleHeader, renderModuleNav, renderNav, renderProjectHeader, renderProjectList, renderTagFilter, renderToc } from './render.mjs';
 
@@ -26,6 +27,13 @@ const CSP = "default-src 'self'; img-src 'self'; object-src 'none'; base-uri 'se
 const CSP_FLASHER = `${CSP}; style-src 'self' 'unsafe-inline'`;
 
 export const isFlasherPage = (html) => /<esp-web-install-button\b/.test(html);
+
+export function isUnpublishedPage(source, project, module) {
+  if (project?.draft || module?.draft) return true;
+  const titles = [...source.replace(/<!--[\s\S]*?-->/g, '').matchAll(/<(?:title|h1)\b[^>]*>([\s\S]*?)<\/(?:title|h1)>/gi)]
+    .map((match) => match[1].replace(/<[^>]*>/g, '').trim());
+  return titles.some((title) => isDraftTitle(title) || isTodo(title));
+}
 
 // Language of a page. Language pages live in their language folder
 // (`pageDir(code)`), common pages are root pages whose source carries a literal
