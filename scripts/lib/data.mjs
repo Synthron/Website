@@ -482,7 +482,7 @@ async function loadCollection(name, site, pages, { src = SRC } = {}) {
     checkLangKeys(`${label}.tags`, project.tags, codes, [defaultLang]);
 
     const entry = { ...project, title: {}, summary: {}, tags: {}, draft: Object.values(project.title).some(isDraftTitle) };
-    if (entry.draft) warn(`${label} (${project.id}): draft (title starts with DRAFT); page built but not listed`);
+    if (entry.draft) warn(`${label} (${project.id}): draft (title starts with DRAFT); not listed; omitted by build:clean`);
     for (const code of codes) {
       const hasPage = pages.projectPage(code, project.id, folder) !== null;
       const pageRel = `wwwroot/${pages.dir(code)}/${pages.folder(folder, code)}/${project.id}.html`;
@@ -573,7 +573,7 @@ export async function loadModules(site, pages, collections, { src = SRC } = {}) 
 
     const { folder } = COLLECTIONS[parent.name];
     const entry = { ...module, collection: parent.name, folder, title: {}, summary: {}, draft: Object.values(module.title).some(isDraftTitle) };
-    if (entry.draft) warn(`${label} (${key}): draft (title starts with DRAFT); page built but not linked`);
+    if (entry.draft) warn(`${label} (${key}): draft (title starts with DRAFT); not linked; omitted by build:clean`);
     for (const code of codes) {
       const hasPage = pages.modulePage(code, module.parent, module.id, folder) !== null;
       const parentPage = pages.projectPage(code, module.parent, folder);

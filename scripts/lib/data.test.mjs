@@ -212,7 +212,7 @@ test('loadProjects marks a project as draft when a title starts with DRAFT and w
   assert.equal(projects.find((entry) => entry.id === 'b').draft, false);
   assert.equal(localize(projects.find((entry) => entry.id === 'a'), 'de').draft, true);
   assert.equal(warnings.length, 1);
-  assert.match(warnings[0], /\(a\): draft \(title starts with DRAFT\)/);
+  assert.match(warnings[0], /\(a\): draft \(title starts with DRAFT\); not listed; omitted by build:clean$/);
   reset();
 });
 
@@ -546,7 +546,7 @@ test('loadModules hides modules without translation, page or visible parent and 
   assert.deepEqual(errors, []);
   const text = warnings.join('\n');
   assert.match(text, /modules\.json\[0\] \(synsps\/cpu\): "en" title\/summary missing or TODO; module hidden in "en"/);
-  assert.match(text, /modules\.json\[1\] \(synsps\/netzteil\): draft/);
+  assert.match(text, /modules\.json\[1\] \(synsps\/netzteil\): draft \(title starts with DRAFT\); not linked; omitted by build:clean/);
   assert.match(text, /modules\.json\[2\] \(synsps\/io\): no "en" page \(wwwroot\/en\/proj\/synplc\/io\.html\); module hidden in "en"/);
   assert.equal(localize(modules[0], 'en'), null);
   assert.equal(modules[1].draft, true);
