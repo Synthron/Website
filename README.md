@@ -35,8 +35,9 @@ Website/
 ├── lighthouserc.json      # Lighthouse CI config (npm run lighthouse)
 ├── scripts/
 │   ├── build.mjs          # Build CLI: wwwroot/ -> dist/ (orchestration only)
+│   ├── build.test.mjs     # Integration test of `build.mjs --clean` on a temporary copy of wwwroot/
 │   ├── lib/               # Build modules (importable, unit-testable)
-│   │   ├── util.mjs       # Paths, error collection, escaping, small helpers
+│   │   ├── util.mjs       # Paths (`SITE_ROOT` env relocates wwwroot/ and dist/ for tests), error collection, escaping, small helpers; `walk()` rejects symlinks
 │   │   ├── data.mjs       # Load and validate data/*.json (ajv + file checks)
 │   │   ├── render.mjs     # HTML/XML renderers for directives and sitemap
 │   │   ├── pipeline.mjs   # @raw, includes, tokens, directives, cache busting (assets/JS/CSS)
@@ -49,7 +50,7 @@ Website/
 │   │   └── *.test.mjs     # Unit tests (node --test): util, data, render, pipeline, checks, scaffold, preview, lighthouse, vectorize, highlight
 │   ├── schemas/           # JSON Schemas for data/*.json (site, strings, nav, projects, ham, modules, pages, folders, code-languages)
 │   ├── e2e/               # Playwright specs (*.spec.mjs)
-│   │   ├── pages.spec.mjs # Every built page: 320/768/1280 px, console, requests, storage, focus
+│   │   ├── pages.spec.mjs # Every built page: 320/768/1280 px, console, requests, storage, focus; HTTP CSP header (inline styles on flasher pages only)
 │   │   ├── language.spec.mjs # Language setup of the built site (lang, canonical, hreflang, selector, sitemap, RSS feeds, root redirect)
 │   │   ├── modules.spec.mjs  # Module pages (header, back/previous/next links, language pairs, hidden modules)
 │   │   └── filter.spec.mjs   # Ham tag filter on the ham listing pages (hide/show entries, status count)
@@ -100,7 +101,8 @@ Website/
     │   ├── base.css       # Reset, custom properties, typography, colour schemes
     │   ├── layout.css     # Container, header, nav, footer, sections
     │   ├── components.css # Cards, tags, filter, buttons, messages
-    │   └── responsive.css # Breakpoints (640px, 960px), fluid type
+    │   ├── responsive.css # Breakpoints (640px, 960px), fluid type
+    │   └── no-js.css      # Keeps the mobile navigation visible without JavaScript
     ├── js/
     │   ├── main.js        # Bootstrap, initialises modules per page
     │   ├── projects.js    # Tag filter for the pre-rendered project list
@@ -179,7 +181,7 @@ Requires Node.js ≥ 24. Run `npm install` once after cloning and whenever `pack
 | `npm run check:external` | Sends a HEAD request to every external link found in `wwwroot/` (pages, partials, template, `data/*.json`) and reports the status. Manual only — never part of `build` or `check`. |
 | `npm run firmware -- <suite> --chip <family> [--chip …]` | Creates `assets/firmware/<suite>/manifest.json` with a `builds` entry per `--chip` and prints the `<esp-web-install-button>` snippet. Supported chips: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 (see Firmware section for offsets). |
 | `npm run dev` | Build once, serve `dist/`, then rebuild automatically on changes in `wwwroot/` and `scripts/` (debounced `fs.watch`). Live reload via Server-Sent Events: the dev server injects a same-origin `<script src="/__reload.js">` into served HTML and broadcasts a reload after each successful build — never written into `dist/`, and the CSP (`'self'`) still holds. Build errors print to the terminal; the server keeps running so a fix triggers the next rebuild. Serves on `localhost:8000` (`PORT`/`HOST` overrides apply as with `serve`). |
-| `npm test` | Runs the unit tests (`node --test "scripts/**/*.test.mjs"`): helpers, data loaders (fixture trees), renderers (nav, language selector, cards, sitemap, RSS feed, Open Graph), pipeline (page classification, tokens), output checks, the scaffolding helpers and the preview helpers. |
+| `npm test` | Runs the unit tests (`node --test "scripts/**/*.test.mjs"`): helpers, data loaders (fixture trees), renderers (nav, language selector, cards, sitemap, RSS feed, Open Graph), pipeline (page classification, tokens), output checks, the scaffolding helpers and the preview helpers; plus an integration test of `build:clean` (draft pages and their modules absent from files, links, sitemap and feeds). |
 | `npm run lint` | Runs `lint:js`, `lint:css` and `lint:html` (stops at the first failing linter). Also run by the pre-commit hook. |
 | `npm run lint:js` | ESLint over `wwwroot/js/` (browser) and `scripts/` + root configs (Node). |
 | `npm run lint:css` | Stylelint over `wwwroot/css/`. |
@@ -285,7 +287,8 @@ Beyond the link, anchor and HTML-rule checks, the build verifies the language se
 | Visible, non-draft module page that its overview page in the same language does not link | warn |
 | Link from a language page into another language's folder (the language selector and entries with `hreflang`/`lang` are exempt; common pages are not checked) | warn |
 | Link into the removed `html/` folder (old URLs; the pages moved to `<lang>/`) | fail |
-| Flasher page (`<esp-web-install-button>`) whose file name is not covered by a `<Files>`/`<FilesMatch>` block with `'unsafe-inline'` in `wwwroot/.htaccess` | warn |
+| Flasher page (`<esp-web-install-button>`) whose file name is not covered by a `<Files>`/`<FilesMatch>` block with `'unsafe-inline'` in `wwwroot/.htaccess` (also when `.htaccess` is missing) | fail |
+| Symbolic link anywhere below `wwwroot/` (it could copy files from outside the tree into `dist/`) | fail |
 
 `TODO` placeholders and missing translations in `data/projects.json` are reported when the data is loaded (one warning per project and language). Built pages that still contain "Placeholder paragraph" or `TODO` / `TODO_…` / `TODO:` markers outside HTML comments get one warning each (with the number of markers).
 
@@ -339,15 +342,15 @@ The common `<head>` content (charset, viewport, CSP, colour scheme, favicon, sty
 </head>
 ```
 
-The header (skip link, brand, language selector, nav) and footer live once in `wwwroot/partials/`; the landing page and `404.html` use the smaller `header-common.html` (skip link, brand, selector). Edit them there; every page picks them up on the next build. All texts come from `data/strings.json` via `{{t:key}}`. The nav toggle starts `hidden` so that without JavaScript the nav is always visible. The language selector sits next to the toggle, outside the collapsible nav. Required header structure (used by `css/layout.css` and `js/nav.js`):
+The header (skip link, brand, language selector, nav) and footer live once in `wwwroot/partials/`; the landing page and `404.html` use the smaller `header-common.html` (skip link, brand, selector). Edit them there; every page picks them up on the next build. All texts come from `data/strings.json` via `{{t:key}}`. On mobile, the nav starts collapsed and the toggle visible to avoid a layout shift during JavaScript initialisation. A `<noscript>` stylesheet keeps the nav expanded and hides the inactive toggle when JavaScript is disabled. The language selector sits next to the toggle, outside the collapsible nav. Required header structure (used by `css/layout.css` and `js/nav.js`):
 
 ```html
 <header class="site-header">
   <div class="container site-header__inner">
     <a class="site-brand" href="{{langRoot}}index.html">…</a>
     <!-- @lang-switch -->
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden>{{t:menu}}</button>
-    <nav class="site-nav" id="site-nav" aria-label="{{t:mainNavLabel}}">…</nav>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">{{t:menu}}</button>
+    <nav class="site-nav is-collapsed" id="site-nav" aria-label="{{t:mainNavLabel}}">…</nav>
   </div>
 </header>
 ```

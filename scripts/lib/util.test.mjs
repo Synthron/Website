@@ -2,7 +2,38 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { esc, formatDate, safeExternalUrl, slugify } from './util.mjs';
+import { mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { esc, formatDate, mapLimit, safeExternalUrl, slugify, walk } from './util.mjs';
+
+test('walk rejects symbolic links', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'site-walk-'));
+  try {
+    await writeFile(path.join(dir, 'a.txt'), 'a');
+    assert.deepEqual(await walk(dir), ['a.txt']);
+    // File symlinks need a privilege on Windows; a junction counts as a link too.
+    await symlink(dir, path.join(dir, 'link'), 'junction');
+    await assert.rejects(walk(dir), /link: symbolic links are not allowed/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('mapLimit keeps input order and never exceeds the limit', async () => {
+  let running = 0;
+  let peak = 0;
+  const results = await mapLimit([5, 1, 4, 2, 3], 2, async (value) => {
+    running += 1;
+    peak = Math.max(peak, running);
+    await new Promise((resolve) => setTimeout(resolve, value));
+    running -= 1;
+    return value * 10;
+  });
+  assert.deepEqual(results, [50, 10, 40, 20, 30]);
+  assert.equal(peak, 2);
+  assert.deepEqual(await mapLimit([], 4, async (value) => value), []);
+});
 
 test('esc escapes HTML characters', () => {
   // \x26 = "&": written via escapes so the literal entity text is not decoded.

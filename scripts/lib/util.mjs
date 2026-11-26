@@ -8,8 +8,10 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const SRC = path.join(ROOT, 'wwwroot');
-export const DIST = path.join(ROOT, 'dist');
+// SITE_ROOT (used by the build integration test) relocates wwwroot/ and dist/; schemas stay in ROOT.
+export const SITE_ROOT = process.env.SITE_ROOT ? path.resolve(process.env.SITE_ROOT) : ROOT;
+export const SRC = path.join(SITE_ROOT, 'wwwroot');
+export const DIST = path.join(SITE_ROOT, 'dist');
 
 export const errors = [];
 export const fail = (message) => errors.push(message);
@@ -51,6 +53,8 @@ export async function walk(dir, base = '') {
   const files = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const rel = base ? `${base}/${entry.name}` : entry.name;
+    // A link could pull files from outside the tree into dist/.
+    if (entry.isSymbolicLink()) throw new Error(`${posix(path.relative(ROOT, path.join(dir, entry.name)))}: symbolic links are not allowed in the source tree`);
     if (entry.isDirectory()) files.push(...await walk(path.join(dir, entry.name), rel));
     else files.push(rel);
   }
@@ -91,6 +95,21 @@ export function formatDate(value, locale = 'en') {
 const execFileAsync = promisify(execFile);
 const isoDate = (date) => date.toISOString().slice(0, 10);
 
+// Runs `task` over `items` with at most `limit` in flight; results keep the input order.
+export async function mapLimit(items, limit, task) {
+  const results = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      results[index] = await task(items[index], index);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
 // Last git commit date (YYYY-MM-DD) of a wwwroot-relative source
 // file, used for the sitemap lastmod of non-project pages. Uncommitted changes
 // -> today; untracked files or an unavailable git -> null (lastmod omitted).
@@ -98,14 +117,14 @@ export async function gitLastModified(rel) {
   const file = posix(`wwwroot/${rel}`);
   let status;
   try {
-    ({ stdout: status } = await execFileAsync('git', ['status', '--porcelain', '--', file], { cwd: ROOT }));
+    ({ stdout: status } = await execFileAsync('git', ['status', '--porcelain', '--', file], { cwd: SITE_ROOT }));
   } catch {
     return null;
   }
   if (status.trim().startsWith('??')) return null; // untracked: no git history
   if (status.trim() !== '') return isoDate(new Date());
   try {
-    const { stdout } = await execFileAsync('git', ['log', '-1', '--format=%cs', '--', file], { cwd: ROOT });
+    const { stdout } = await execFileAsync('git', ['log', '-1', '--format=%cs', '--', file], { cwd: SITE_ROOT });
     return /^\d{4}-\d{2}-\d{2}$/.test(stdout.trim()) ? stdout.trim() : null;
   } catch {
     return null;
@@ -118,7 +137,7 @@ export async function gitLastModified(rel) {
 export async function gitFirstAdded(rel) {
   const file = posix(`wwwroot/${rel}`);
   try {
-    const { stdout } = await execFileAsync('git', ['log', '--follow', '--diff-filter=A', '--format=%aI', '--', file], { cwd: ROOT });
+    const { stdout } = await execFileAsync('git', ['log', '--follow', '--diff-filter=A', '--format=%aI', '--', file], { cwd: SITE_ROOT });
     return stdout.trim().split('\n')[0] || isoDate(new Date());
   } catch {
     return null;

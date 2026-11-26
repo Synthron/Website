@@ -193,18 +193,21 @@ export function checkLanguageLinks(pages, infoByRel, site, pageDir) {
 // Flasher pages need the CSP exception in .htaccess (a <Files> or
 // <FilesMatch> block that sets 'unsafe-inline'); the server matches by file name.
 export function checkFlasherHtaccess(pages, htaccess) {
-  if (!htaccess) return;
+  const flasherPages = pages.filter(([, html]) => /<esp-web-install-button\b/.test(html));
+  if (!htaccess) {
+    for (const [rel] of flasherPages) fail(`wwwroot/${rel}: flasher page needs the CSP exception in wwwroot/.htaccess, which is missing or empty`);
+    return;
+  }
   const matchers = [];
   for (const [, kind, pattern, body] of htaccess.matchAll(/<(Files|FilesMatch)\s+"([^"]+)">([\s\S]*?)<\/\1>/g)) {
     if (!body.includes('unsafe-inline')) continue;
     const source = kind === 'FilesMatch' ? pattern : `^${pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.')}$`;
     matchers.push(new RegExp(source));
   }
-  for (const [rel, html] of pages) {
-    if (!/<esp-web-install-button\b/.test(html)) continue;
+  for (const [rel] of flasherPages) {
     const name = path.posix.basename(rel);
     if (!matchers.some((matcher) => matcher.test(name))) {
-      warn(`wwwroot/${rel}: flasher page "${name}" is not covered by the CSP exception in wwwroot/.htaccess`);
+      fail(`wwwroot/${rel}: flasher page "${name}" is not covered by the CSP exception in wwwroot/.htaccess`);
     }
   }
 }

@@ -2,7 +2,7 @@
 // layout at 320/768/1280 px, no console errors, no external requests,
 // no cookies or storage, visible keyboard focus.
 
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
@@ -34,6 +34,44 @@ function watch(page, baseURL) {
 
 test('dist/ contains built pages', () => {
   expect(pages.length, 'run `npm run build` first').toBeGreaterThan(0);
+});
+
+test('HTTP CSP header allows inline styles on flasher pages only', async ({ request }) => {
+  const flasher = pages.filter((rel) => /<esp-web-install-button\b/.test(readFileSync(path.join(DIST, rel), 'utf8')));
+  expect(flasher.length, 'flasher pages').toBeGreaterThan(0);
+  for (const rel of pages) {
+    const header = (await request.get(`/${rel}`)).headers()['content-security-policy'] ?? '';
+    expect(header, `${rel}: CSP header`).toContain("default-src 'self'");
+    expect(header.includes("'unsafe-inline'"), `${rel}: 'unsafe-inline' in CSP header`).toBe(flasher.includes(rel));
+  }
+});
+
+test('mobile navigation starts collapsed without layout shift', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    window.layoutShifts = [];
+    new PerformanceObserver((list) => {
+      window.layoutShifts.push(...list.getEntries().filter((entry) => !entry.hadRecentInput));
+    }).observe({ type: 'layout-shift', buffered: true });
+  });
+  await page.goto('/en/projects.html', { waitUntil: 'networkidle' });
+  await expect(page.locator('.nav-toggle')).toBeVisible();
+  await expect(page.locator('.nav-toggle')).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('.site-nav')).toBeHidden();
+  const cls = await page.evaluate(() => window.layoutShifts.reduce((sum, entry) => sum + entry.value, 0));
+  expect(cls, 'layout shift score after mobile navigation bootstrap').toBeLessThan(0.1);
+});
+
+test('mobile navigation remains visible when JavaScript is disabled', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+  try {
+    const page = await context.newPage();
+    await page.goto(`${baseURL}/en/projects.html`, { waitUntil: 'networkidle' });
+    await expect(page.locator('.site-nav')).toBeVisible();
+    await expect(page.locator('.nav-toggle')).toBeHidden();
+  } finally {
+    await context.close();
+  }
 });
 
 for (const rel of pages) {

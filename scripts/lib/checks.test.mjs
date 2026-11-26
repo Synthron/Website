@@ -196,16 +196,26 @@ test('checkLanguageLinks leaves html/ alone while a language still lives there',
   assert.deepEqual([errors, warnings], [[], []]);
 });
 
-test('checkFlasherHtaccess warns when a flasher page is not covered by the CSP exception', () => {
+test('checkFlasherHtaccess fails when a flasher page is not covered by the CSP exception', () => {
   reset();
   const htaccess = '<Files "nixie-clock.html">\nHeader always set Content-Security-Policy "style-src \'self\' \'unsafe-inline\'"\n</Files>\n<Files "other.html">\nHeader set X-Test 1\n</Files>';
   const button = '<esp-web-install-button manifest="m.json">';
   checkFlasherHtaccess([['de/proj/nixie-clock.html', button], ['en/proj/nixie-clock.html', button], ['en/proj/clock-en.html', button], ['de/about.html', '<p>']], htaccess);
-  assert.equal(warnings.length, 1);
-  assert.match(warnings[0], /en\/proj\/clock-en\.html: flasher page "clock-en\.html"/);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /en\/proj\/clock-en\.html: flasher page "clock-en\.html"/);
   reset();
   checkFlasherHtaccess([['en/proj/clock-en.html', button]], '<FilesMatch "^(nixie-clock|clock-en)\\.html$">\nHeader set CSP "unsafe-inline"\n</FilesMatch>');
-  assert.deepEqual(warnings, []);
+  assert.deepEqual(errors, []);
+});
+
+test('checkFlasherHtaccess fails for flasher pages when .htaccess is missing, but not otherwise', () => {
+  reset();
+  checkFlasherHtaccess([['de/about.html', '<p>']], '');
+  assert.deepEqual(errors, []);
+  checkFlasherHtaccess([['de/proj/a.html', '<esp-web-install-button manifest="m.json">']], '');
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /de\/proj\/a\.html: flasher page needs the CSP exception .* missing or empty/);
+  reset();
 });
 
 test('the real .htaccess covers the flasher page in every language folder', async () => {
@@ -213,9 +223,9 @@ test('the real .htaccess covers the flasher page in every language folder', asyn
   const htaccess = await readFile(path.join(SRC, '.htaccess'), 'utf8');
   const button = '<esp-web-install-button manifest="m.json">';
   checkFlasherHtaccess([['de/proj/nixie-clock.html', button], ['en/proj/nixie-clock.html', button]], htaccess);
-  assert.deepEqual(warnings, []);
+  assert.deepEqual(errors, []);
   checkFlasherHtaccess([['en/proj/renamed.html', button]], htaccess);
-  assert.equal(warnings.length, 1);
+  assert.equal(errors.length, 1);
   reset();
 });
 

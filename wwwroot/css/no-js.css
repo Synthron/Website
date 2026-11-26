@@ -1,0 +1,9 @@
+@media (max-width: 639px) {
+  .site-nav.is-collapsed {
+    display: block;
+  }
+
+  .nav-toggle {
+    display: none;
+  }
+}

@@ -13,6 +13,10 @@
         "http://127.0.0.1:8020/de/datenschutz.html",
         "http://127.0.0.1:8020/de/impressum.html",
         "http://127.0.0.1:8020/de/index.html",
+        "http://127.0.0.1:8020/de/proj/6502-sbc.html",
+        "http://127.0.0.1:8020/de/proj/6502-sbc/hardware.html",
+        "http://127.0.0.1:8020/de/proj/6502-sbc/inbetriebnahme.html",
+        "http://127.0.0.1:8020/de/proj/6502-sbc/software.html",
         "http://127.0.0.1:8020/de/proj/6l6-amp.html",
         "http://127.0.0.1:8020/de/proj/dcf77-uhr.html",
         "http://127.0.0.1:8020/de/proj/gitarren-verstaerker.html",
@@ -27,6 +31,9 @@
         "http://127.0.0.1:8020/de/proj/modlab/schaltnetzteil.html",
         "http://127.0.0.1:8020/de/proj/modlab/sym-netzteil.html",
         "http://127.0.0.1:8020/de/proj/nixie-uhr.html",
+        "http://127.0.0.1:8020/de/proj/plantomation.html",
+        "http://127.0.0.1:8020/de/proj/plantomation/v1.html",
+        "http://127.0.0.1:8020/de/proj/plantomation/v2.html",
         "http://127.0.0.1:8020/de/proj/sy317.html",
         "http://127.0.0.1:8020/de/proj/synplc.html",
         "http://127.0.0.1:8020/de/proj/synplc/ai4.html",
@@ -74,13 +81,13 @@
         "categories:accessibility": [
           "error",
           {
-            "minScore": 0.9
+            "minScore": 0.95
           }
         ],
         "categories:performance": [
           "error",
           {
-            "minScore": 0.9
+            "minScore": 0.95
           }
         ]
       }

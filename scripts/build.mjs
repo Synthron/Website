@@ -5,7 +5,7 @@
 
 import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { DIST, ROOT, SRC, errors, exists, gitFirstAdded, gitLastModified, posix, shortHash, walk, warn, warnings } from './lib/util.mjs';
+import { DIST, ROOT, SRC, errors, exists, gitFirstAdded, gitLastModified, mapLimit, posix, shortHash, walk, warn, warnings } from './lib/util.mjs';
 import { checkSharedIds, feedEntries, loadCodeLanguages, loadHam, loadModules, loadNav, loadPages, loadProjects, loadSite, loadStrings, localize } from './lib/data.mjs';
 import { applyHighlighting } from './lib/highlight.mjs';
 import { ogImageRel, renderFeed, renderOpenGraph, renderSitemap } from './lib/render.mjs';
@@ -26,6 +26,8 @@ const SKIP_FILES = new Set(['.gitkeep']);
 const SKIP_PATHS = ['assets/firmware/dummy'];
 // Warn once per missing Open Graph image.
 const warnedOgImages = new Set();
+// Parallel git processes for sitemap lastmod lookups.
+const GIT_CONCURRENCY = 8;
 // Non-HTML files that also go through the token pass.
 const TEMPLATE_FILES = new Set(['robots.txt']);
 
@@ -254,11 +256,9 @@ async function build({ check = false, clean = false } = {}) {
     // lastmod for non-project pages = last git commit date of the source
     // file; omitted when git is unavailable or the file is untracked.
     const lastmodByRel = new Map();
-    for (const [rel] of pages) {
-      if (rel === '404.html' || projectByRel.has(rel)) continue;
-      const lastmod = await gitLastModified(rel);
-      if (lastmod) lastmodByRel.set(rel, lastmod);
-    }
+    const lastmodRels = pages.map(([rel]) => rel).filter((rel) => rel !== '404.html' && !projectByRel.has(rel));
+    const lastmods = await mapLimit(lastmodRels, GIT_CONCURRENCY, gitLastModified);
+    lastmodRels.forEach((rel, index) => { if (lastmods[index]) lastmodByRel.set(rel, lastmods[index]); });
     await writeFile(path.join(DIST, 'sitemap.xml'), renderSitemap(pages, site.url, projectByRel, lastmodByRel, moduleByRel));
 
     // Feed items: pubDate = date the page source was first committed
