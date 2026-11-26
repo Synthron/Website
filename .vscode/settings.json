@@ -19,7 +19,7 @@
     "*.js": "${capture}.spec.js, ${capture}.test.js, ${capture}.js.map, ${capture}.js.json",
     "package.json": "package-lock.json, .npmrc, .nvmrc, playwright.config.mjs, lighthouserc.json, .htmlvalidate.json, svgo.config.mjs, eslint.config.js, .stylelintrc.json",
     ".gitignore": ".gitattributes, .gitmodules",
-    "README.md": "AGENTS.md, todo.md"
+    "README.md": "*.md"
   },
 
 }
