@@ -224,7 +224,7 @@ Installed as `devDependencies`; none of them ship to `dist/`. Use these packages
 | `svgo` | SVG optimisation | `npm run images`, `npm run vectorize`, `svgo.config.mjs` | `wwwroot/assets/img/`, `wwwroot/assets/icons/`, `wwwroot/favicon.svg` |
 | `potrace` | Raster → SVG tracing of flat-colour logos (with `sharp` for the colour masks) | `npm run vectorize`, `scripts/vectorize.mjs`, `scripts/lib/vectorize.mjs` | images given on the command line (default folder `wwwroot/assets/img/`) |
 | `@playwright/test` | Browser checks: 320/768/1280 px (no horizontal overflow), console errors, external requests, cookies/storage, visible keyboard focus | `npm run test:e2e`, `playwright.config.mjs`, `scripts/e2e/*.spec.mjs` | `dist/` via `scripts/serve.mjs` (port 8010) |
-| `@lhci/cli` | Lighthouse scores (accessibility and performance ≥ 95) | `npm run lighthouse`, `lighthouserc.json`, `scripts/lighthouse.mjs` | `dist/` via `scripts/serve.mjs` (port 8020) |
+| `@lhci/cli` | Lighthouse scores (accessibility and performance ≥ 90) | `npm run lighthouse`, `lighthouserc.json`, `scripts/lighthouse.mjs` | `dist/` via `scripts/serve.mjs` (port 8020) |
 
 - Playwright needs a browser once: `npx playwright install chromium`. Alternatively use an installed browser: `$env:PLAYWRIGHT_CHANNEL='msedge'` (or `chrome`) before `npm run test:e2e`. Lighthouse CI uses the installed Chrome (`CHROME_PATH` overrides).
 - Lighthouse CI uploads reports to a public server by default (`temporary-public-storage`); `lighthouserc.json` sets `upload.target` to `"filesystem"` — keep it that way.

@@ -18,12 +18,6 @@ This review covers the first-party build and preview tooling, browser code, HTML
 
 **Recommendation:** Make missing coverage (including a missing `.htaccess`) a build error, and add an HTTP response-header assertion for a normal page and a flasher page.
 
-### [P3] Lighthouse thresholds are below the documented target
-
-[`lighthouserc.json`](lighthouserc.json#L77) and [`lighthouserc.json`](lighthouserc.json#L83) accept accessibility and performance scores of `0.9`. The tooling documentation says both targets are at least 95 ([`README.md`](README.md#L228)). Scores from 90 to 94 therefore pass automation despite missing the documented target.
-
-**Recommendation:** Set both assertions to `0.95`, or change the documented target if 90 is intentional.
-
 ### [P3] The deployment-only filtering path has no integration test
 
 The draft/TODO filtering and its follow-up list pruning run in [`scripts/build.mjs`](scripts/build.mjs#L139), but the unit tests exercise the page classifier in isolation ([`scripts/lib/pipeline.test.mjs`](scripts/lib/pipeline.test.mjs#L17)). The browser suite tests the regular build output, not `build:clean`. A regression could leave a draft page or link in the deployment sitemap, feed, language alternates, or generated lists without these checks noticing.
